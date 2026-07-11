@@ -25,7 +25,7 @@ export async function generateMetadata({
       title: c.title,
       description: c.intro,
       url: `${siteConfig.url}/${locale}`,
-      images: ["/images/farm-aerial.jpg"],
+      images: ["/images/farm-aerial.webp"],
     },
   };
 }
@@ -42,7 +42,7 @@ export default async function Home({
       <section className="home-hero">
         <div className="hero-media">
           <Image
-            src="/images/farm-aerial.jpg"
+            src="/images/farm-aerial.webp"
             alt={c.heroAlt}
             fill
             priority
@@ -94,7 +94,7 @@ export default async function Home({
             <article>
               <div className="story-image">
                 <Image
-                  src="/images/harvest.jpg"
+                  src="/images/harvest.webp"
                   alt=""
                   fill
                   sizes="(min-width:760px) 33vw,100vw"
@@ -110,7 +110,7 @@ export default async function Home({
             <article>
               <div className="story-image tall">
                 <Image
-                  src="/images/piglets.png"
+                  src="/images/piglets.webp"
                   alt=""
                   fill
                   sizes="(min-width:760px) 33vw,100vw"
@@ -126,7 +126,7 @@ export default async function Home({
             <article>
               <div className="story-image">
                 <Image
-                  src="/images/family-field.jpg"
+                  src="/images/family-field.webp"
                   alt=""
                   fill
                   sizes="(min-width:760px) 33vw,100vw"
@@ -160,7 +160,7 @@ export default async function Home({
         <div className="shell split">
           <div className="contact-image">
             <Image
-              src="/images/microscope.png"
+              src="/images/microscope.webp"
               alt=""
               fill
               sizes="(min-width:760px) 45vw,100vw"

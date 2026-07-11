@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { localizedPath } from "@/lib/i18n";
-import { resolveLegalLocale } from "@/features/pages/legal-page";
+import { requireLocale } from "@/lib/require-locale";
 
 export default async function LegacyAboutPage({
   params,
@@ -8,5 +8,5 @@ export default async function LegacyAboutPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  redirect(localizedPath(resolveLegalLocale(locale), "/about"));
+  redirect(localizedPath(requireLocale(locale), "/about"));
 }

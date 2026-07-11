@@ -7,6 +7,7 @@ import {
 } from "@/components/knowledge-layout";
 import { LegacyFigure, PageHero, TableWrap } from "@/components/primitives";
 import { siteConfig } from "@/config/site";
+import { getDictionary } from "@/content/dictionaries";
 import { getKnowledgeText } from "@/content/locales/knowledge-pages";
 import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
 
@@ -36,7 +37,7 @@ export default async function Animals({
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const legacyLabel = locale === "vi" ? "Tư liệu gốc" : "Legacy reference";
+  const legacyLabel = getDictionary(locale).legacyReference;
   const toc = [
     {
       id: "philosophy",
@@ -361,7 +362,7 @@ export default async function Animals({
           <div className="media-prose feature-prose">
             <figure className="feature-figure portrait">
               <Image
-                src="/images/chickens.png"
+                src="/images/chickens.webp"
                 alt={getKnowledgeText(
                   locale,
                   "animals.chickens.in.a.naturally.ventilated.farm.shelter",

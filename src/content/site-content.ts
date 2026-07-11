@@ -29,6 +29,7 @@ const en = {
     rights: "Natural Farming Vietnam. Knowledge grows through observation.",
     onThisPage: "On this page",
     brandTagline: "Living Soil · From soil, life begins",
+    legacyReference: "Legacy reference",
     notFound: {
       eyebrow: "404",
       title: "This path has not taken root.",
@@ -192,6 +193,7 @@ const vi: SiteContent = {
     rights: "Natural Farming Vietnam. Kiến thức lớn lên từ quan sát.",
     onThisPage: "Trong trang này",
     brandTagline: "Đất sống · Từ đất, sự sống bắt đầu",
+    legacyReference: "Tư liệu gốc",
     notFound: {
       eyebrow: "404",
       title: "Lối đi này chưa bén rễ.",

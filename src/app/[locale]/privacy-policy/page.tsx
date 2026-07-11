@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { resolveLegalLocale } from "@/features/pages/legal-page";
+import { requireLocale } from "@/lib/require-locale";
 import { localizedPath } from "@/lib/i18n";
 
 export default async function LegacyPrivacyPolicyPage({
@@ -8,5 +8,5 @@ export default async function LegacyPrivacyPolicyPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  redirect(localizedPath(resolveLegalLocale(locale), "/privacy-policy"));
+  redirect(localizedPath(requireLocale(locale), "/privacy-policy"));
 }

@@ -13,6 +13,7 @@ import {
 } from "@/components/primitives";
 import { siteConfig } from "@/config/site";
 import { plantInputs } from "@/content/knowledge";
+import { getDictionary } from "@/content/dictionaries";
 import { getKnowledgeText } from "@/content/locales/knowledge-pages";
 import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
 
@@ -42,7 +43,7 @@ export default async function Plants({
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  const legacyLabel = locale === "vi" ? "Tư liệu gốc" : "Legacy reference";
+  const legacyLabel = getDictionary(locale).legacyReference;
   const toc = [
     {
       id: "context",

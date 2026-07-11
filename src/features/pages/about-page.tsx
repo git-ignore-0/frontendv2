@@ -94,7 +94,7 @@ export default async function About({
         <div className="shell split">
           <div className="about-image editorial-image">
             <Image
-              src="/images/farmer-field.jpg"
+              src="/images/farmer-field.webp"
               alt={c.gardenAlt}
               fill
               sizes="(min-width:760px) 48vw,100vw"

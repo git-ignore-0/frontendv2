@@ -67,7 +67,7 @@ export function TextLink({
 export function ReviewNote({ children }: { children: ReactNode }) {
   return (
     <aside className="review-note">
-      <strong>i</strong>
+      <strong aria-hidden="true">i</strong>
       <p>{children}</p>
     </aside>
   );

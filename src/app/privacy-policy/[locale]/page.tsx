@@ -1,8 +1,5 @@
-import {
-  LegalPage,
-  getLegalMetadata,
-  resolveLegalLocale,
-} from "@/features/pages/legal-page";
+import { LegalPage, getLegalMetadata } from "@/features/pages/legal-page";
+import { requireLocale } from "@/lib/require-locale";
 
 export async function generateMetadata({
   params,
@@ -10,7 +7,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  return getLegalMetadata(resolveLegalLocale(locale), "privacy");
+  return getLegalMetadata(requireLocale(locale), "privacy");
 }
 
 export default async function PrivacyPolicyPage({
@@ -19,5 +16,5 @@ export default async function PrivacyPolicyPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  return <LegalPage locale={resolveLegalLocale(locale)} kind="privacy" />;
+  return <LegalPage locale={requireLocale(locale)} kind="privacy" />;
 }

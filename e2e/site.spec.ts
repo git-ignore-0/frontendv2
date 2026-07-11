@@ -87,6 +87,7 @@ test("language switch keeps the corresponding route", async ({ page }) => {
 
 test("localized shell exposes the active language", async ({ page }) => {
   await page.goto("/about/vi");
+  await expect(page.locator("html")).toHaveAttribute("lang", "vi");
   await expect(page.locator("[data-locale-shell]")).toHaveAttribute(
     "lang",
     "vi",

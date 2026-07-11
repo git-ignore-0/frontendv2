@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import localFont from "next/font/local";
 import { siteConfig } from "@/config/site";
-import { defaultLocale } from "@/lib/i18n";
+import { defaultLocale, isLocale } from "@/lib/i18n";
 import "./globals.css";
 
 const body = localFont({
@@ -32,11 +33,16 @@ export const metadata: Metadata = {
     "Natural farming knowledge rooted in living soil, healthy plants, animals and communities.",
   icons: { icon: "/images/logo-mark.png" },
 };
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const requestedLocale = (await headers()).get("x-site-locale");
+  const locale =
+    requestedLocale && isLocale(requestedLocale)
+      ? requestedLocale
+      : defaultLocale;
   return (
-    <html lang={defaultLocale} className={`${body.variable} ${display.variable}`}>
+    <html lang={locale} className={`${body.variable} ${display.variable}`}>
       <body>{children}</body>
     </html>
   );

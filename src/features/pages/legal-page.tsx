@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { TextLink } from "@/components/primitives";
 import { contactEmailHref } from "@/config/site";
 import { getSiteContent } from "@/content/site-content";
-import {
-  isLocale,
-  languageAlternates,
-  localizedPath,
-  type Locale,
-} from "@/lib/i18n";
+import { languageAlternates, localizedPath, type Locale } from "@/lib/i18n";
 
 export type LegalPageKind = "privacy" | "terms";
 
@@ -52,9 +46,4 @@ export function LegalPage({
       </div>
     </section>
   );
-}
-
-export function resolveLegalLocale(value: string): Locale {
-  if (!isLocale(value)) notFound();
-  return value;
 }

@@ -4,10 +4,10 @@ export const defaultLocale: Locale = "en";
 
 export const localeConfig: Record<
   Locale,
-  { label: string; shortLabel: string }
+  { label: string; shortLabel: string; icon: string }
 > = {
-  en: { label: "English", shortLabel: "EN" },
-  vi: { label: "Tiếng Việt", shortLabel: "VI" },
+  en: { label: "English", shortLabel: "EN", icon: "🌐" },
+  vi: { label: "Tiếng Việt", shortLabel: "VI", icon: "🇻🇳" },
 };
 
 export function isLocale(value: string): value is Locale {

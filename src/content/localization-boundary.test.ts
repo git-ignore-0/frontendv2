@@ -13,6 +13,11 @@ const translatedAttributeNames = new Set([
   "placeholder",
   "title",
 ]);
+const technicalStringTokens = new Set([
+  "page",
+  "privacy-policy",
+  "term-conditions",
+]);
 
 function findTsxFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -48,6 +53,17 @@ function inlineCopy(file: string) {
       node.initializer.text.trim().length > 0
     ) {
       findings.push(`${node.name.getText(ast)}=${node.initializer.text}`);
+    }
+    if (ts.isConditionalExpression(node)) {
+      for (const branch of [node.whenTrue, node.whenFalse]) {
+        if (
+          ts.isStringLiteralLike(branch) &&
+          /[A-Za-zÀ-ỹ]{2}/u.test(branch.text) &&
+          !technicalStringTokens.has(branch.text)
+        ) {
+          findings.push(`conditional=${branch.text}`);
+        }
+      }
     }
     ts.forEachChild(node, visit);
   };
