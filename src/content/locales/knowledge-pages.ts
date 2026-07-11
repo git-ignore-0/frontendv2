@@ -166,7 +166,7 @@ export const knowledgePageText = {
     "animals.lactating.sows": "Lactating sows",
     "animals.sows.returning.to.mating": "Sows returning to mating",
     "animals.weight.estimation.retained.from.the.legacy.page":
-      "Weight estimation retained from the legacy page",
+      "Weight-estimation reference",
     "animals.measure.heart.girth.and.body.length.in.metres":
       "Measure heart girth and body length in metres. The legacy formula is: heart girth × heart girth × body length × 69.3. Treat this only as an estimate and verify with current husbandry guidance.",
     "animals.dry.footing.fresh.air.and.room.to.scratch":
@@ -383,7 +383,7 @@ export const knowledgePageText = {
     "animals.lactating.sows": "Heo nái cho sữa",
     "animals.sows.returning.to.mating": "Heo nái trở lại phối giống",
     "animals.weight.estimation.retained.from.the.legacy.page":
-      "Ước tính khối lượng giữ từ trang cũ",
+      "Tư liệu ước tính khối lượng",
     "animals.measure.heart.girth.and.body.length.in.metres":
       "Đo vòng ngực và chiều dài thân theo mét. Công thức cũ là: vòng ngực × vòng ngực × chiều dài thân × 69,3. Chỉ xem đây là ước tính và xác minh với hướng dẫn chăn nuôi hiện hành.",
     "animals.dry.footing.fresh.air.and.room.to.scratch":

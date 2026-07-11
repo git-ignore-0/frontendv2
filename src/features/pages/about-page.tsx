@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { ContactLinks } from "@/components/contact-links";
 import { notFound } from "next/navigation";
-import { PageHero, ReviewNote, TextLink } from "@/components/primitives";
-import { contactEmailHref } from "@/config/site";
+import { PageHero, ReviewNote } from "@/components/primitives";
 import { getDictionary } from "@/content/dictionaries";
 import { getSiteContent } from "@/content/site-content";
 import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
@@ -106,7 +106,7 @@ export default async function About({
             <h2 className="section-heading">{c.truth}</h2>
             <p className="lede">{c.truthBody}</p>
             <ReviewNote>{t.review}</ReviewNote>
-            <TextLink href={contactEmailHref}>{c.cta}</TextLink>
+            <ContactLinks dictionary={t} showSocials={false} />
           </div>
         </div>
       </section>

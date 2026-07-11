@@ -8,6 +8,11 @@ const en = {
     language: "Language",
     external: "opens in a new tab",
     contact: "Connect",
+    email: "Email",
+    phone: "Phone",
+    facebook: "Facebook",
+    youtube: "YouTube",
+    socialLinks: "Social media",
     primaryNavigation: "Primary navigation",
     mobileNavigation: "Mobile navigation",
     footerNavigation: "Footer navigation",
@@ -22,14 +27,14 @@ const en = {
       terms: "Terms & Conditions",
     },
     review:
-      "Editorial note: technical material has been carefully transferred from the legacy site. Verify practical instructions with an experienced practitioner and relevant local professionals.",
+      "Practical guidance should be adapted to local conditions and verified with experienced practitioners when needed.",
     footer:
       "A living knowledge home for soil, plants, animals and farming communities in Vietnam.",
     footerNote: "For learning, collaboration and farm conversations.",
     rights: "Natural Farming Vietnam. Knowledge grows through observation.",
     onThisPage: "On this page",
     brandTagline: "Living Soil · From soil, life begins",
-    legacyReference: "Legacy reference",
+    legacyReference: "Reference material",
     notFound: {
       eyebrow: "404",
       title: "This path has not taken root.",
@@ -148,9 +153,9 @@ const en = {
     eyebrow: "Website information",
     pendingTitle: "Content pending legal review",
     pendingBody:
-      "The legacy website contains placeholder text rather than a valid policy. Natural Farming Vietnam is reviewing the official content before publication. Please contact us if you have a privacy or website-use question in the meantime.",
+      "Natural Farming Vietnam is reviewing the official content before publication. Please contact us if you have a privacy or website-use question in the meantime.",
     sourceNote:
-      "This notice deliberately replaces invalid Lorem Ipsum content found on the legacy page; no legal terms have been invented.",
+      "No legal terms have been inferred or published before formal review.",
     contactCta: "Contact Natural Farming Vietnam",
   },
 } as const;
@@ -172,6 +177,11 @@ const vi: SiteContent = {
     language: "Ngôn ngữ",
     external: "mở trong tab mới",
     contact: "Kết nối",
+    email: "Email",
+    phone: "Điện thoại",
+    facebook: "Facebook",
+    youtube: "YouTube",
+    socialLinks: "Mạng xã hội",
     primaryNavigation: "Điều hướng chính",
     mobileNavigation: "Điều hướng di động",
     footerNavigation: "Điều hướng chân trang",
@@ -186,14 +196,14 @@ const vi: SiteContent = {
       terms: "Điều khoản & Điều kiện",
     },
     review:
-      "Lưu ý biên tập: nội dung kỹ thuật đã được chuyển cẩn thận từ website cũ. Hãy xác minh hướng dẫn thực hành với người có kinh nghiệm và chuyên gia địa phương phù hợp.",
+      "Hướng dẫn thực hành cần được điều chỉnh theo điều kiện địa phương và xác minh với người có kinh nghiệm khi cần thiết.",
     footer:
       "Ngôi nhà kiến thức sống dành cho đất, cây trồng, vật nuôi và cộng đồng nông nghiệp Việt Nam.",
     footerNote: "Dành cho trao đổi học tập, hợp tác và câu chuyện nông trại.",
     rights: "Natural Farming Vietnam. Kiến thức lớn lên từ quan sát.",
     onThisPage: "Trong trang này",
     brandTagline: "Đất sống · Từ đất, sự sống bắt đầu",
-    legacyReference: "Tư liệu gốc",
+    legacyReference: "Tư liệu tham khảo",
     notFound: {
       eyebrow: "404",
       title: "Lối đi này chưa bén rễ.",
@@ -312,9 +322,9 @@ const vi: SiteContent = {
     eyebrow: "Thông tin website",
     pendingTitle: "Nội dung đang chờ rà soát pháp lý",
     pendingBody:
-      "Website cũ chỉ chứa nội dung mẫu, không phải chính sách hợp lệ. Natural Farming Vietnam đang rà soát nội dung chính thức trước khi xuất bản. Trong thời gian này, vui lòng liên hệ nếu bạn có câu hỏi về quyền riêng tư hoặc việc sử dụng website.",
+      "Natural Farming Vietnam đang rà soát nội dung chính thức trước khi xuất bản. Trong thời gian này, vui lòng liên hệ nếu bạn có câu hỏi về quyền riêng tư hoặc việc sử dụng website.",
     sourceNote:
-      "Thông báo này chủ động thay thế nội dung Lorem Ipsum không hợp lệ trên trang cũ; không có điều khoản pháp lý nào được tự tạo.",
+      "Không có điều khoản pháp lý nào được suy diễn hoặc xuất bản trước khi hoàn tất rà soát chính thức.",
     contactCta: "Liên hệ Natural Farming Vietnam",
   },
 };

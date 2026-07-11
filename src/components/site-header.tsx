@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Arrow } from "@/components/icons";
 import { siteConfig } from "@/config/site";
 import type { CommonDictionary } from "@/content/site-content";
@@ -64,10 +65,11 @@ export function SiteHeader({
       }
     };
     document.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
       previous?.focus();
     };
   }, [open]);
@@ -133,60 +135,66 @@ export function SiteHeader({
           </button>
         </div>
       </div>
-      {open && (
-        <div
-          className="menu-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setOpen(false);
-          }}
-        >
+      {open &&
+        createPortal(
           <div
-            ref={panel}
-            id="mobile-menu"
-            className="mobile-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t.menu}
+            className="menu-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setOpen(false);
+            }}
           >
-            <button className="menu-close" onClick={() => setOpen(false)}>
-              {t.close}
-              <span aria-hidden="true">×</span>
-            </button>
-            <nav aria-label={t.mobileNavigation}>
-              {links.map(([path, label], i) => (
-                <Link key={path} href={localizedPath(locale, path)}>
-                  <small>0{i + 1}</small>
-                  {label}
-                  <Arrow />
-                </Link>
-              ))}
-              <a href={siteConfig.links.store} target="_blank" rel="noreferrer">
-                <small>05</small>
-                {t.nav.store}
-                <Arrow external />
-                <span className="sr-only"> ({t.external})</span>
-              </a>
-            </nav>
-            <div className="mobile-languages" aria-label={t.language}>
-              {alternateLocales.map((targetLocale) => (
-                <Link
-                  key={targetLocale}
-                  href={replacePathLocale(pathname, targetLocale)}
-                  hrefLang={targetLocale}
-                  lang={targetLocale}
-                  className="mobile-language"
+            <div
+              ref={panel}
+              id="mobile-menu"
+              className="mobile-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label={t.menu}
+            >
+              <button className="menu-close" onClick={() => setOpen(false)}>
+                {t.close}
+                <span aria-hidden="true">×</span>
+              </button>
+              <nav aria-label={t.mobileNavigation}>
+                {links.map(([path, label], i) => (
+                  <Link key={path} href={localizedPath(locale, path)}>
+                    <small>0{i + 1}</small>
+                    {label}
+                    <Arrow />
+                  </Link>
+                ))}
+                <a
+                  href={siteConfig.links.store}
+                  target="_blank"
+                  rel="noreferrer"
                 >
-                  <span aria-hidden="true">
-                    {localeConfig[targetLocale].icon}
-                  </span>
-                  {localeConfig[targetLocale].label}
-                </Link>
-              ))}
+                  <small>05</small>
+                  {t.nav.store}
+                  <Arrow external />
+                  <span className="sr-only"> ({t.external})</span>
+                </a>
+              </nav>
+              <div className="mobile-languages" aria-label={t.language}>
+                {alternateLocales.map((targetLocale) => (
+                  <Link
+                    key={targetLocale}
+                    href={replacePathLocale(pathname, targetLocale)}
+                    hrefLang={targetLocale}
+                    lang={targetLocale}
+                    className="mobile-language"
+                  >
+                    <span aria-hidden="true">
+                      {localeConfig[targetLocale].icon}
+                    </span>
+                    {localeConfig[targetLocale].label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </header>
   );
 }

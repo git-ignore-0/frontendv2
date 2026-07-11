@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { ContactLinks } from "@/components/contact-links";
 import { notFound } from "next/navigation";
 import { TextLink } from "@/components/primitives";
-import { contactEmailHref, siteConfig } from "@/config/site";
+import { siteConfig } from "@/config/site";
+import { getDictionary } from "@/content/dictionaries";
 import { getSiteContent } from "@/content/site-content";
 import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
 
@@ -37,6 +39,7 @@ export default async function Home({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const c = getSiteContent(locale).home;
+  const t = getDictionary(locale);
   return (
     <>
       <section className="home-hero">
@@ -170,9 +173,7 @@ export default async function Home({
             <p className="eyebrow">{c.contactEyebrow}</p>
             <h2 className="section-heading">{c.contactTitle}</h2>
             <p className="lede">{c.contactBody}</p>
-            <TextLink href={contactEmailHref}>
-              {siteConfig.contact.email}
-            </TextLink>
+            <ContactLinks dictionary={t} />
           </div>
         </div>
       </section>

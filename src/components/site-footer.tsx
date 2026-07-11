@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ContactLinks } from "@/components/contact-links";
 import { Arrow } from "@/components/icons";
-import { contactEmailHref, siteConfig } from "@/config/site";
+import { siteConfig } from "@/config/site";
 import { getDictionary } from "@/content/dictionaries";
 import { type Locale, localizedPath } from "@/lib/i18n";
 
@@ -16,12 +17,10 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         </div>
         <div>
           <p className="eyebrow">{t.contact}</p>
-          <a className="footer-email" href={contactEmailHref}>
-            {siteConfig.contact.email}
-          </a>
+          <ContactLinks dictionary={t} />
           <p className="footer-note">{t.footerNote}</p>
         </div>
-        <nav aria-label={t.footerNavigation}>
+        <nav className="footer-nav" aria-label={t.footerNavigation}>
           <Link href={localizedPath(locale, "/about")}>{t.nav.about}</Link>
           <Link href={localizedPath(locale, "/plants")}>{t.nav.plants}</Link>
           <Link href={localizedPath(locale, "/animals")}>{t.nav.animals}</Link>

@@ -292,19 +292,24 @@ a:hover .arrow {
 .menu-backdrop {
   position: fixed;
   inset: 0;
-  min-height: 100dvh;
+  z-index: 100;
+  height: 100dvh;
   background: rgba(16, 29, 22, 0.45);
   display: flex;
   justify-content: flex-end;
+  overscroll-behavior: contain;
   animation: backdrop-fade 0.22s var(--ease) both;
 }
 .mobile-panel {
   width: min(90vw, 28rem);
-  min-height: 100dvh;
+  height: 100dvh;
   background: var(--cream);
-  padding: 1rem 1.25rem 2rem;
+  padding: max(1rem, env(safe-area-inset-top)) 1.25rem
+    max(2rem, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   animation: slide-in 0.34s var(--ease-out);
 }
 .menu-close {
@@ -391,16 +396,59 @@ a:hover .arrow {
   color: var(--straw);
   margin: 0 0 0.65rem;
 }
-.footer-email {
+.contact-links {
+  display: grid;
+  gap: 0.9rem;
+  margin: 1.25rem 0 0;
+  font-style: normal;
+}
+.contact-methods {
+  display: grid;
+  gap: 0.45rem;
+}
+.contact-method {
+  display: grid;
+  min-height: 52px;
+  align-content: center;
+  gap: 0.15rem;
+  border-bottom: 1px solid var(--line);
+}
+.contact-method span {
+  color: var(--terra);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.contact-method strong {
+  font-size: clamp(0.95rem, 2.7vw, 1.08rem);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+.social-links a {
   display: inline-flex;
   min-height: 44px;
-  max-width: 100%;
   align-items: center;
-  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
-  font-weight: 650;
-  line-height: 1.4;
-  border-bottom: 1px solid rgba(221, 185, 106, 0.65);
-  overflow-wrap: anywhere;
+  gap: 0.35rem;
+  color: var(--forest);
+  font-weight: 750;
+}
+.footer .contact-links {
+  margin-top: 0.25rem;
+}
+.footer .contact-method {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.footer .contact-method span {
+  color: var(--straw);
+}
+.footer .social-links a {
+  color: #f5f0e5;
 }
 .footer-note {
   color: #cbd5ca;
@@ -409,11 +457,11 @@ a:hover .arrow {
   font-size: 0.9rem;
   line-height: 1.65;
 }
-.footer nav {
+.footer-nav {
   display: grid;
   align-content: start;
 }
-.footer nav a {
+.footer-nav a {
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -725,6 +773,7 @@ a:hover .arrow {
 }
 .feature-figure.wide-reference img {
   aspect-ratio: 16/10;
+  clip-path: none;
 }
 .legacy-figure {
   position: relative;
@@ -815,12 +864,12 @@ tbody th {
 }
 .cards {
   display: grid;
-  gap: 1rem;
-  margin-top: 2.5rem;
+  gap: 0.75rem;
+  margin-top: clamp(2rem, 6vw, 2.5rem);
 }
 .card {
   border-top: 3px solid var(--terra);
-  padding: 1.5rem 0;
+  padding: 1.25rem;
   transition:
     background 0.25s var(--ease),
     box-shadow 0.25s var(--ease),
@@ -830,7 +879,11 @@ tbody th {
 .cards .card {
   border: 1px solid var(--line);
   border-top: 3px solid var(--terra);
+  border-radius: 0.75rem;
   background: color-mix(in srgb, var(--paper) 82%, white);
+}
+.cards .card .eyebrow {
+  margin: 0 0 0.65rem;
 }
 .card:hover {
   border-color: var(--straw);
@@ -840,9 +893,11 @@ tbody th {
 }
 .card h3 {
   color: var(--forest);
-  font-size: 1.6rem;
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.4rem, 6vw, 1.6rem);
 }
 .card p {
+  margin: 0;
   color: var(--muted);
   line-height: 1.7;
 }
@@ -1063,7 +1118,8 @@ tbody th {
 }
 .premium-inputs {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.625rem;
+  margin-top: clamp(1.5rem, 4vw, 2.25rem);
   border-top: 0;
 }
 .premium-inputs details {
@@ -1106,7 +1162,26 @@ tbody th {
 }
 .premium-inputs summary strong {
   color: var(--forest);
-  font-size: 1.85rem;
+  font-size: clamp(1.2rem, 4.5vw, 1.65rem);
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+.premium-inputs summary {
+  grid-template-columns: 3.75rem minmax(0, 1fr) 1.5rem;
+  min-height: 68px;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+}
+.premium-inputs summary:hover {
+  padding-inline: 1rem;
+}
+.premium-inputs summary span {
+  min-width: 0;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.premium-inputs summary i {
+  justify-self: end;
 }
 .input-list summary span {
   color: var(--forest);
@@ -1124,6 +1199,9 @@ tbody th {
   margin: 0;
   padding: 0 2rem 1.5rem 5rem;
   animation: rise-fade 0.24s var(--ease-out) both;
+}
+.premium-inputs details > p {
+  padding: 0.2rem 1rem 1.25rem 5.5rem;
 }
 .safety-panel {
   background: var(--forest);
@@ -1303,5 +1381,18 @@ tbody th {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .section > .shell,
+  .knowledge-section,
+  .footer-grid,
+  .footer-bottom,
+  .principle,
+  .value-grid article,
+  .story-grid article,
+  .card,
+  .input-list details {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
   }
 }

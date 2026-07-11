@@ -41,9 +41,26 @@ export default async function RootLayout({
     requestedLocale && isLocale(requestedLocale)
       ? requestedLocale
       : defaultLocale;
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    email: siteConfig.contact.email,
+    telephone: "+84971519185",
+    sameAs: [siteConfig.links.facebook, siteConfig.links.youtube],
+  };
   return (
     <html lang={locale} className={`${body.variable} ${display.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
+        />
+      </body>
     </html>
   );
 }
