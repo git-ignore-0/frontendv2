@@ -2,7 +2,16 @@ import { chromium } from "@playwright/test";
 import fs from "node:fs/promises";
 
 const baseURL = "http://127.0.0.1:3000";
-const routes = ["/", "/about", "/plants", "/animals"];
+const routes = [
+  "/en",
+  "/en/about",
+  "/en/plants",
+  "/en/animals",
+  "/vi",
+  "/vi/about",
+  "/vi/plants",
+  "/vi/animals",
+];
 const viewports = [
   { name: "mobile-320", width: 320, height: 800 },
   { name: "mobile-375", width: 375, height: 812 },
@@ -80,12 +89,13 @@ for (const viewport of viewports) {
           .map((image) => image.currentSrc || image.src),
       };
     });
-    const slug = route === "/" ? "home" : route.slice(1);
+    const slug = route.slice(1).replaceAll("/", "-");
     const shouldCapture =
       ["mobile-320", "tablet-768", "desktop-1440", "wide-1920"].includes(
         viewport.name,
       ) &&
-      (route === "/" || ["mobile-320", "desktop-1440"].includes(viewport.name));
+      (route === "/en" ||
+        ["mobile-320", "desktop-1440"].includes(viewport.name));
     if (shouldCapture) {
       await page.screenshot({
         path: `artifacts/visual-audit/${slug}-${viewport.name}.png`,

@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-const internalRoutes = ["/", "/about", "/plants", "/animals"];
+const internalRoutes = [
+  "/en",
+  "/en/about",
+  "/en/plants",
+  "/en/animals",
+  "/vi",
+  "/vi/about",
+  "/vi/plants",
+  "/vi/animals",
+];
 
 for (const route of internalRoutes) {
   test(`${route} renders without horizontal overflow`, async ({ page }) => {
@@ -20,8 +29,12 @@ for (const route of internalRoutes) {
   });
 }
 
-test("store link is external and points to Farmbrite", async ({ page }) => {
-  await page.goto("/");
+test("store link is external and points to Farmbrite", async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto("/vi");
+  if (isMobile) await page.getByRole("button", { name: "Menu" }).click();
   const link = page
     .getByRole("link", { name: /Cửa hàng.*mở trong tab mới/i })
     .first();
@@ -37,21 +50,21 @@ test("mobile menu opens, closes with Escape and returns focus", async ({
   isMobile,
 }) => {
   test.skip(!isMobile, "Mobile navigation behavior");
-  await page.goto("/");
-  const trigger = page.getByRole("button", { name: "Mở menu" });
+  await page.goto("/vi");
+  const trigger = page.getByRole("button", { name: "Menu" });
   await trigger.click();
   await expect(
-    page.getByRole("navigation", { name: "Điều hướng di động" }),
+    page.getByRole("navigation", { name: "Mobile navigation" }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
   await expect(
-    page.getByRole("navigation", { name: "Điều hướng di động" }),
+    page.getByRole("navigation", { name: "Mobile navigation" }),
   ).not.toBeVisible();
 });
 
 test("workshop and commerce UI are absent", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/en");
   await expect(page.getByRole("link", { name: /workshop/i })).toHaveCount(0);
   await expect(
     page.getByRole("button", {
@@ -59,4 +72,11 @@ test("workshop and commerce UI are absent", async ({ page }) => {
     }),
   ).toHaveCount(0);
   await expect(page.locator("form")).toHaveCount(0);
+});
+
+test("language switch keeps the corresponding route", async ({ page }) => {
+  await page.goto("/en/plants");
+  await page.getByRole("link", { name: /Language: Tiếng Việt/i }).click();
+  await expect(page).toHaveURL(/\/vi\/plants$/);
+  await expect(page.locator("h1")).toContainText("Nuôi đất");
 });

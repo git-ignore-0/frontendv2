@@ -1,139 +1,116 @@
 import { z } from "zod";
+import type { Locale } from "@/lib/i18n";
 
-const topicSchema = z.object({
-  id: z.string().min(1),
-  shortName: z.string().min(1),
-  name: z.string().min(1),
-  summary: z.string().min(30),
-  note: z.string().min(20),
+const inputSchema = z.object({
+  code: z.string(),
+  en: z.object({ name: z.string(), summary: z.string() }),
+  vi: z.object({ name: z.string(), summary: z.string() }),
 });
-
-const sectionSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  summary: z.string().min(30),
-  points: z.array(z.string().min(15)).min(2),
-});
-
-export type KnowledgeTopic = z.infer<typeof topicSchema>;
-export type KnowledgeSection = z.infer<typeof sectionSchema>;
-
-export const plantInputs = z.array(topicSchema).parse([
+export const plantInputs = z.array(inputSchema).parse([
   {
-    id: "imo",
-    shortName: "IMO",
-    name: "Vi sinh vật bản địa",
-    summary:
-      "Thu thập và nhân nuôi các quần thể vi sinh vật thích nghi với điều kiện địa phương để đưa trở lại đất và vật liệu hữu cơ.",
-    note: "Quy trình cũ mô tả nhiều giai đoạn từ thu thập đến phối trộn. Cần học trực tiếp và kiểm soát vệ sinh thay vì làm theo một công thức tóm tắt.",
+    code: "IMO",
+    en: {
+      name: "Indigenous Microorganisms",
+      summary:
+        "Locally adapted microorganism communities collected and cultured for use with soil and organic matter.",
+    },
+    vi: {
+      name: "Vi sinh vật bản địa",
+      summary:
+        "Quần thể vi sinh vật thích nghi tại chỗ được thu thập và nhân nuôi để dùng với đất và vật liệu hữu cơ.",
+    },
   },
   {
-    id: "lab",
-    shortName: "LAB",
-    name: "Vi khuẩn lactic",
-    summary:
-      "Một nhóm vi khuẩn tạo axit lactic, thường được nhắc đến trong xử lý vật liệu hữu cơ và hệ thống nền chuồng.",
-    note: "Hiệu quả phụ thuộc cách chuẩn bị, nồng độ và bối cảnh sử dụng; nội dung này chỉ giới thiệu khái niệm.",
+    code: "LAB",
+    en: {
+      name: "Lactic Acid Bacteria",
+      summary:
+        "Lactic-acid-producing bacteria discussed in organic material processing and livestock bedding systems.",
+    },
+    vi: {
+      name: "Vi khuẩn lactic",
+      summary:
+        "Nhóm vi khuẩn tạo axit lactic được nhắc đến trong xử lý vật liệu hữu cơ và hệ thống nền chuồng.",
+    },
   },
   {
-    id: "ohn",
-    shortName: "OHN",
-    name: "Dinh dưỡng thảo mộc phương Đông",
-    summary:
-      "Dịch chiết từ một số nguyên liệu thảo mộc, được dùng trong hệ thống Natural Farming như một thành phần chăm sóc cây và vật nuôi.",
-    note: "Không xem OHN là thuốc hoặc thay thế chẩn đoán chuyên môn.",
+    code: "OHN",
+    en: {
+      name: "Oriental Herbal Nutrient",
+      summary:
+        "An herbal extract used as one component in some Natural Farming plant and animal practices.",
+    },
+    vi: {
+      name: "Dinh dưỡng thảo mộc phương Đông",
+      summary:
+        "Dịch chiết thảo mộc được dùng như một thành phần trong một số thực hành cho cây và vật nuôi.",
+    },
   },
   {
-    id: "fpj",
-    shortName: "FPJ",
-    name: "Dịch thực vật lên men",
-    summary:
-      "Được tạo từ mô thực vật non và nguồn đường, nhằm thu nhận một phần hợp chất hòa tan từ nguyên liệu tại chỗ.",
-    note: "Chọn nguyên liệu, thời điểm thu hái và vệ sinh dụng cụ đều ảnh hưởng chất lượng.",
+    code: "FPJ",
+    en: {
+      name: "Fermented Plant Juice",
+      summary:
+        "A fermented input made from actively growing plant tissue and a sugar source.",
+    },
+    vi: {
+      name: "Dịch thực vật lên men",
+      summary:
+        "Đầu vào lên men từ mô thực vật đang sinh trưởng và một nguồn đường.",
+    },
   },
   {
-    id: "ffj",
-    shortName: "FFJ",
-    name: "Dịch trái cây lên men",
-    summary:
-      "Sử dụng trái cây chín làm nguyên liệu lên men; tài liệu cũ đặt chế phẩm này ở giai đoạn cây chuyển sang ra hoa và tạo quả.",
-    note: "Cần hiệu chỉnh theo cây trồng và điều kiện thực tế, không áp dụng đồng loạt.",
+    code: "FFJ",
+    en: {
+      name: "Fermented Fruit Juice",
+      summary:
+        "A fruit-based ferment associated in legacy material with flowering and fruiting stages.",
+    },
+    vi: {
+      name: "Dịch trái cây lên men",
+      summary:
+        "Chế phẩm lên men từ trái cây, được tài liệu cũ liên hệ với giai đoạn ra hoa và tạo quả.",
+    },
   },
   {
-    id: "faa",
-    shortName: "FAA",
-    name: "Amino acid từ cá",
-    summary:
-      "Tận dụng phụ phẩm cá qua quá trình lên men để tạo nguồn dinh dưỡng dạng lỏng cho hệ thống canh tác.",
-    note: "Quá trình phải được quản lý cẩn thận về nguyên liệu, mùi, vệ sinh và liều dùng.",
+    code: "FAA",
+    en: {
+      name: "Fish Amino Acid",
+      summary:
+        "A fermented input that makes use of fish by-products as a liquid nutrient source.",
+    },
+    vi: {
+      name: "Amino acid từ cá",
+      summary:
+        "Đầu vào lên men tận dụng phụ phẩm cá làm nguồn dinh dưỡng dạng lỏng.",
+    },
   },
   {
-    id: "wca",
-    shortName: "WCA",
-    name: "Canxi hòa tan trong nước",
-    summary:
-      "Một dạng đầu vào chứa canxi được Natural Farming sử dụng có chọn lọc theo giai đoạn phát triển của cây.",
-    note: "Nhu cầu canxi cần dựa trên cây, đất và quan sát thực tế.",
+    code: "WCA",
+    en: {
+      name: "Water-soluble Calcium",
+      summary:
+        "A calcium-containing input selectively used according to plant development and observed need.",
+    },
+    vi: {
+      name: "Canxi hòa tan trong nước",
+      summary:
+        "Đầu vào chứa canxi được dùng có chọn lọc theo giai đoạn phát triển và nhu cầu quan sát được của cây.",
+    },
   },
   {
-    id: "wcap",
-    shortName: "WCAP",
-    name: "Canxi phosphate hòa tan",
-    summary:
-      "Chế phẩm chứa canxi và phosphate, thường được giới thiệu trong tài liệu cũ cho giai đoạn chuyển tiếp sinh trưởng.",
-    note: "Cần xác minh quy trình và liều lượng với người hướng dẫn có kinh nghiệm.",
+    code: "WCAP",
+    en: {
+      name: "Water-soluble Calcium Phosphate",
+      summary:
+        "A calcium-and-phosphate preparation associated with transitional growth stages.",
+    },
+    vi: {
+      name: "Canxi phosphate hòa tan",
+      summary:
+        "Chế phẩm canxi và phosphate được liên hệ với các giai đoạn chuyển tiếp sinh trưởng.",
+    },
   },
 ]);
-
-export const animalSections = z.array(sectionSchema).parse([
-  {
-    id: "phuc-loi",
-    title: "Bắt đầu từ tập tính tự nhiên",
-    summary:
-      "Vật nuôi cần không gian để vận động, nghỉ, đào bới hoặc bới tìm thức ăn theo tập tính của loài. Thiết kế nuôi hướng đến việc giảm căng thẳng thay vì chỉ tối ưu mật độ.",
-    points: [
-      "Quan sát hành vi, thể trạng và mức độ thoải mái mỗi ngày.",
-      "Bảo đảm bóng mát, nước sạch, khu nghỉ và khoảng không phù hợp.",
-    ],
-  },
-  {
-    id: "chuong-trai",
-    title: "Chuồng trại thở cùng khí hậu",
-    summary:
-      "Tài liệu cũ ưu tiên hướng nhà, mái cao và khoảng mở để không khí lưu chuyển, nắng có thể tiếp cận nền chuồng và vật liệu lót luôn khô.",
-    points: [
-      "Chọn vị trí cao ráo, tránh ngập và có đường gió tự nhiên.",
-      "Dùng vật liệu địa phương khi phù hợp, nhưng không đánh đổi an toàn kết cấu.",
-    ],
-  },
-  {
-    id: "nen-chuong",
-    title: "Nền chuồng là một hệ sinh thái",
-    summary:
-      "Nền sâu gồm vật liệu giàu carbon và hệ vi sinh được quản lý như một lớp ủ sống, hỗ trợ phân giải chất hữu cơ và tạo bề mặt phù hợp cho vật nuôi.",
-    points: [
-      "Giữ nền tơi, khô và theo dõi mùi như một tín hiệu quản lý.",
-      "Bổ sung vật liệu theo điều kiện thật; không xem nền chuồng là hệ thống tự vận hành.",
-    ],
-  },
-  {
-    id: "thuc-an",
-    title: "Thức ăn từ nguồn lực tại chỗ",
-    summary:
-      "Natural Farming tìm cách phối hợp nguồn thức ăn địa phương, phụ phẩm nông nghiệp và nguyên liệu lên men để tăng tính tự chủ của nông trại.",
-    points: [
-      "Khẩu phần phải phù hợp loài, tuổi, giai đoạn sinh sản và thể trạng.",
-      "Chuyển đổi thức ăn từ từ và theo dõi phản ứng của từng đàn.",
-    ],
-  },
-  {
-    id: "suc-khoe",
-    title: "Phòng ngừa bằng quan sát",
-    summary:
-      "Môi trường sạch, thông thoáng, khẩu phần cân đối và theo dõi sớm là nền tảng. Natural Farming không đồng nghĩa với bỏ tiêm phòng hay trì hoãn điều trị.",
-    points: [
-      "Thiết lập lịch kiểm tra sức khỏe và an toàn sinh học.",
-      "Khi có dấu hiệu bệnh, liên hệ bác sĩ thú y và tuân thủ quy định địa phương.",
-    ],
-  },
-]);
+export const k = (locale: Locale, en: string, vi: string) =>
+  locale === "en" ? en : vi;

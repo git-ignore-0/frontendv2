@@ -1,47 +1,41 @@
-import type { Metadata, Viewport } from "next";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
-import { siteConfig } from "@/lib/site";
+import type { Metadata } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
 
+const body = localFont({
+  src: [
+    { path: "../assets/fonts/NotoSans-Regular.ttf", weight: "400" },
+    { path: "../assets/fonts/NotoSans-SemiBold.ttf", weight: "600" },
+    { path: "../assets/fonts/NotoSans-Bold.ttf", weight: "700" },
+  ],
+  variable: "--font-body",
+  display: "swap",
+});
+const display = localFont({
+  src: [
+    { path: "../assets/fonts/NotoSerif-Regular.ttf", weight: "400" },
+    { path: "../assets/fonts/NotoSerif-SemiBold.ttf", weight: "600" },
+    { path: "../assets/fonts/NotoSerif-Bold.ttf", weight: "700" },
+  ],
+  variable: "--font-display",
+  display: "swap",
+});
 export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
-  title: { default: siteConfig.name, template: `%s | ${siteConfig.name}` },
-  description: siteConfig.description,
-  alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    locale: "vi_VN",
-    siteName: siteConfig.name,
-    title: siteConfig.name,
-    description: siteConfig.description,
-    images: [{ url: "/images/farm-aerial.webp", width: 2560, height: 1440 }],
+  metadataBase: new URL("https://naturalfarmingvietnam.com"),
+  title: {
+    default: "Natural Farming Vietnam",
+    template: "%s · Natural Farming Vietnam",
   },
-  icons: { icon: "/images/logo-mark.png", apple: "/images/logo-mark.png" },
+  description:
+    "Natural farming knowledge rooted in living soil, healthy plants, animals and communities.",
+  icons: { icon: "/images/logo-mark.png" },
 };
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: "#f3eddf",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="vi">
-      <body>
-        <a
-          href="#main-content"
-          className="fixed left-3 top-3 z-[100] -translate-y-24 bg-warm px-4 py-3 font-bold text-forest shadow-soft transition-transform focus:translate-y-0"
-        >
-          Bỏ qua điều hướng
-        </a>
-        <SiteHeader />
-        <main id="main-content">{children}</main>
-        <SiteFooter />
-      </body>
+    <html className={`${body.variable} ${display.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

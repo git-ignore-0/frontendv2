@@ -6,10 +6,13 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      { source: "/about-us", destination: "/about", permanent: true },
-      { source: "/contact-us", destination: "/#contact", permanent: true },
-      { source: "/plant", destination: "/plants", permanent: true },
-      { source: "/animal", destination: "/animals", permanent: true },
+      { source: "/about", destination: "/en/about", permanent: true },
+      { source: "/plants", destination: "/en/plants", permanent: true },
+      { source: "/animals", destination: "/en/animals", permanent: true },
+      { source: "/about-us", destination: "/en/about", permanent: true },
+      { source: "/contact-us", destination: "/en#contact", permanent: true },
+      { source: "/plant", destination: "/en/plants", permanent: true },
+      { source: "/animal", destination: "/en/animals", permanent: true },
       {
         source: "/store",
         destination: "https://store.farmbrite.com/store/nntn",

@@ -1,9 +1,33 @@
-node_modules
-.next
-out
-coverage
-playwright-report
-test-results
+# Dependencies
+/node_modules
+
+# Next.js build output
+/.next/
+/out/
+
+# Test, coverage, and generated audit output
+/coverage/
+/playwright-report/
+/test-results/
+/artifacts/
+
+# TypeScript
 *.tsbuildinfo
+
+# Local environment files
 .env*
 !.env.example
+
+# Debug logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
