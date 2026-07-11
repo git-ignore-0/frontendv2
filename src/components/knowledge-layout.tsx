@@ -17,7 +17,7 @@ export function KnowledgeLayout({
   return (
     <div className="shell section knowledge-layout">
       <aside className="toc">
-        <p>{locale === "en" ? "On this page" : "Trong trang này"}</p>
+        <p>{t.onThisPage}</p>
         {toc.map((x) => (
           <Link href={`#${x.id}`} key={x.id}>
             {x.label}

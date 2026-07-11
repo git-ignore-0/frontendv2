@@ -1,0 +1,181 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { TextLink } from "@/components/primitives";
+import { contactEmailHref, siteConfig } from "@/config/site";
+import { getSiteContent } from "@/content/site-content";
+import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const c = getSiteContent(locale).home;
+  return {
+    title: c.title,
+    description: c.intro,
+    alternates: {
+      canonical: `/${locale}`,
+      languages: languageAlternates(),
+    },
+    openGraph: {
+      title: c.title,
+      description: c.intro,
+      url: `${siteConfig.url}/${locale}`,
+      images: ["/images/farm-aerial.jpg"],
+    },
+  };
+}
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  const c = getSiteContent(locale).home;
+  return (
+    <>
+      <section className="home-hero">
+        <div className="hero-media">
+          <Image
+            src="/images/farm-aerial.jpg"
+            alt={c.heroAlt}
+            fill
+            priority
+            sizes="100vw"
+          />
+        </div>
+        <div className="hero-shade" />
+        <div className="shell hero-copy">
+          <p className="eyebrow">{c.heroEyebrow}</p>
+          <h1>{c.title}</h1>
+          <p>{c.intro}</p>
+          <div className="hero-actions">
+            <TextLink href={localizedPath(locale, "/about")}>
+              {c.primary}
+            </TextLink>
+            <TextLink href={localizedPath(locale, "/plants")}>
+              {c.secondary}
+            </TextLink>
+          </div>
+        </div>
+      </section>
+      <section className="section section-cream">
+        <div className="shell split">
+          <div>
+            <p className="eyebrow">{c.systemsEyebrow}</p>
+            <h2 className="section-heading">{c.what}</h2>
+          </div>
+          <div>
+            <p className="lede">{c.whatBody}</p>
+            <div className="principles">
+              {c.principles.map(([title, body], i) => (
+                <div className="principle" key={title}>
+                  <strong>0{i + 1}</strong>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+      <section className="section">
+        <div className="shell">
+          <p className="eyebrow">{c.pillarsEyebrow}</p>
+          <h2 className="section-heading">{c.pillars}</h2>
+          <div className="story-grid">
+            <article>
+              <div className="story-image">
+                <Image
+                  src="/images/harvest.jpg"
+                  alt=""
+                  fill
+                  sizes="(min-width:760px) 33vw,100vw"
+                />
+              </div>
+              <p className="eyebrow">{c.plantLabel}</p>
+              <h3>{c.plantTitle}</h3>
+              <p>{c.plantBody}</p>
+              <TextLink href={localizedPath(locale, "/plants")}>
+                {c.plantCta}
+              </TextLink>
+            </article>
+            <article>
+              <div className="story-image tall">
+                <Image
+                  src="/images/piglets.png"
+                  alt=""
+                  fill
+                  sizes="(min-width:760px) 33vw,100vw"
+                />
+              </div>
+              <p className="eyebrow">{c.animalLabel}</p>
+              <h3>{c.animalTitle}</h3>
+              <p>{c.animalBody}</p>
+              <TextLink href={localizedPath(locale, "/animals")}>
+                {c.animalCta}
+              </TextLink>
+            </article>
+            <article>
+              <div className="story-image">
+                <Image
+                  src="/images/family-field.jpg"
+                  alt=""
+                  fill
+                  sizes="(min-width:760px) 33vw,100vw"
+                />
+              </div>
+              <p className="eyebrow">{c.communityLabel}</p>
+              <h3>{c.peopleTitle}</h3>
+              <p>{c.peopleBody}</p>
+              <TextLink href={localizedPath(locale, "/about")}>
+                {c.peopleCta}
+              </TextLink>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section className="section section-forest">
+        <div className="shell split">
+          <div>
+            <p className="eyebrow">{c.storeEyebrow}</p>
+            <h2 className="section-heading">{c.storeTitle}</h2>
+          </div>
+          <div>
+            <p className="lede store-lede">{c.storeBody}</p>
+            <TextLink href={siteConfig.links.store} external>
+              {c.storeCta}
+            </TextLink>
+          </div>
+        </div>
+      </section>
+      <section className="section contact-band">
+        <div className="shell split">
+          <div className="contact-image">
+            <Image
+              src="/images/microscope.png"
+              alt=""
+              fill
+              sizes="(min-width:760px) 45vw,100vw"
+            />
+          </div>
+          <div>
+            <p className="eyebrow">{c.contactEyebrow}</p>
+            <h2 className="section-heading">{c.contactTitle}</h2>
+            <p className="lede">{c.contactBody}</p>
+            <TextLink href={contactEmailHref}>
+              {siteConfig.contact.email}
+            </TextLink>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

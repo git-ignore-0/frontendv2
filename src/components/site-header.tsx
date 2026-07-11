@@ -6,7 +6,14 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Arrow } from "@/components/icons";
 import { getDictionary } from "@/content/dictionaries";
-import { type Locale, localizedPath, storeUrl } from "@/lib/i18n";
+import { siteConfig } from "@/config/site";
+import {
+  type Locale,
+  localeConfig,
+  locales,
+  localizedPath,
+  replacePathLocale,
+} from "@/lib/i18n";
 
 export function SiteHeader({ locale }: { locale: Locale }) {
   const t = getDictionary(locale);
@@ -14,8 +21,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
-  const other = locale === "en" ? "vi" : "en";
-  const otherPath = pathname.replace(/^\/(en|vi)(?=\/|$)/, `/${other}`);
+  const alternateLocales = locales.filter((item) => item !== locale);
   const links = [
     ["", t.nav.home],
     ["/about", t.nav.about],
@@ -67,17 +73,17 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         <Link
           href={localizedPath(locale)}
           className="brand"
-          aria-label="Natural Farming Vietnam home"
+          aria-label={t.homeLabel}
         >
           <Image
             src="/images/logo-horizontal.png"
-            alt="Natural Farming Vietnam"
+            alt={siteConfig.name}
             width={151}
             height={40}
             priority
           />
         </Link>
-        <nav className="desktop-nav" aria-label="Primary navigation">
+        <nav className="desktop-nav" aria-label={t.primaryNavigation}>
           {links.map(([path, label]) => {
             const href = localizedPath(locale, path);
             const active = pathname === href;
@@ -91,21 +97,24 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               </Link>
             );
           })}
-          <a href={storeUrl} target="_blank" rel="noreferrer">
+          <a href={siteConfig.links.store} target="_blank" rel="noreferrer">
             {t.nav.store} <Arrow external />
             <span className="sr-only"> ({t.external})</span>
           </a>
         </nav>
         <div className="header-tools">
-          <Link
-            href={otherPath}
-            className="language"
-            hrefLang={other}
-            lang={other}
-            aria-label={`${t.language}: ${other === "en" ? "English" : "Tiếng Việt"}`}
-          >
-            {other.toUpperCase()}
-          </Link>
+          {alternateLocales.map((targetLocale) => (
+            <Link
+              key={targetLocale}
+              href={replacePathLocale(pathname, targetLocale)}
+              className="language"
+              hrefLang={targetLocale}
+              lang={targetLocale}
+              aria-label={`${t.language}: ${localeConfig[targetLocale].label}`}
+            >
+              {localeConfig[targetLocale].shortLabel}
+            </Link>
+          ))}
           <button
             ref={trigger}
             className="menu-button"
@@ -138,7 +147,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               {t.close}
               <span aria-hidden="true">×</span>
             </button>
-            <nav aria-label="Mobile navigation">
+            <nav aria-label={t.mobileNavigation}>
               {links.map(([path, label], i) => (
                 <Link key={path} href={localizedPath(locale, path)}>
                   <small>0{i + 1}</small>
@@ -146,23 +155,26 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   <Arrow />
                 </Link>
               ))}
-              <a href={storeUrl} target="_blank" rel="noreferrer">
+              <a href={siteConfig.links.store} target="_blank" rel="noreferrer">
                 <small>05</small>
                 {t.nav.store}
                 <Arrow external />
                 <span className="sr-only"> ({t.external})</span>
               </a>
             </nav>
-            <Link
-              href={otherPath}
-              hrefLang={other}
-              lang={other}
-              className="mobile-language"
-            >
-              {other === "en"
-                ? "Continue in English"
-                : "Tiếp tục bằng Tiếng Việt"}
-            </Link>
+            <div className="mobile-languages" aria-label={t.language}>
+              {alternateLocales.map((targetLocale) => (
+                <Link
+                  key={targetLocale}
+                  href={replacePathLocale(pathname, targetLocale)}
+                  hrefLang={targetLocale}
+                  lang={targetLocale}
+                  className="mobile-language"
+                >
+                  {localeConfig[targetLocale].label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}

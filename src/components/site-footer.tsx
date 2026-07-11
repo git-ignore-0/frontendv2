@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Arrow } from "@/components/icons";
+import { contactEmailHref, siteConfig } from "@/config/site";
 import { getDictionary } from "@/content/dictionaries";
-import { type Locale, localizedPath, storeUrl } from "@/lib/i18n";
+import { type Locale, localizedPath } from "@/lib/i18n";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const t = getDictionary(locale);
@@ -15,23 +16,22 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         </div>
         <div>
           <p className="eyebrow">{t.contact}</p>
-          <a
-            className="footer-email"
-            href="mailto:info@naturalfarmingvietnam.com"
-          >
-            info@naturalfarmingvietnam.com
+          <a className="footer-email" href={contactEmailHref}>
+            {siteConfig.contact.email}
           </a>
-          <p className="footer-note">
-            {locale === "en"
-              ? "For learning, collaboration and farm conversations."
-              : "Dành cho trao đổi học tập, hợp tác và câu chuyện nông trại."}
-          </p>
+          <p className="footer-note">{t.footerNote}</p>
         </div>
-        <nav aria-label="Footer navigation">
+        <nav aria-label={t.footerNavigation}>
           <Link href={localizedPath(locale, "/about")}>{t.nav.about}</Link>
           <Link href={localizedPath(locale, "/plants")}>{t.nav.plants}</Link>
           <Link href={localizedPath(locale, "/animals")}>{t.nav.animals}</Link>
-          <a href={storeUrl} target="_blank" rel="noreferrer">
+          <Link href={localizedPath(locale, "/privacy-policy")}>
+            {t.nav.privacy}
+          </Link>
+          <Link href={localizedPath(locale, "/term-conditions")}>
+            {t.nav.terms}
+          </Link>
+          <a href={siteConfig.links.store} target="_blank" rel="noreferrer">
             {t.nav.store} <Arrow external />
           </a>
         </nav>
@@ -40,7 +40,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         <span>
           © {new Date().getFullYear()} {t.rights}
         </span>
-        <span>Living Soil · Đất sống</span>
+        <span>{t.brandTagline}</span>
       </div>
     </footer>
   );

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { siteConfig } from "./src/config/site";
 
 const nextConfig: NextConfig = {
   images: {
@@ -14,8 +15,18 @@ const nextConfig: NextConfig = {
       { source: "/plant", destination: "/en/plants", permanent: true },
       { source: "/animal", destination: "/en/animals", permanent: true },
       {
+        source: "/privacy-policy",
+        destination: "/en/privacy-policy",
+        permanent: true,
+      },
+      {
+        source: "/term-conditions",
+        destination: "/en/term-conditions",
+        permanent: true,
+      },
+      {
         source: "/store",
-        destination: "https://store.farmbrite.com/store/nntn",
+        destination: siteConfig.links.store,
         permanent: false,
       },
     ];

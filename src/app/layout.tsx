@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { siteConfig } from "@/config/site";
 import "./globals.css";
 
 const body = localFont({
@@ -21,7 +22,7 @@ const display = localFont({
   display: "swap",
 });
 export const metadata: Metadata = {
-  metadataBase: new URL("https://naturalfarmingvietnam.com"),
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: "Natural Farming Vietnam",
     template: "%s · Natural Farming Vietnam",

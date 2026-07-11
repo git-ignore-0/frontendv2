@@ -1,10 +1,16 @@
 import { z } from "zod";
-import type { Locale } from "@/lib/i18n";
+import { locales, type Locale } from "@/lib/i18n";
 
+const inputTranslationSchema = z.object({
+  name: z.string(),
+  summary: z.string(),
+});
+const localizedInputShape = Object.fromEntries(
+  locales.map((locale) => [locale, inputTranslationSchema]),
+) as Record<Locale, typeof inputTranslationSchema>;
 const inputSchema = z.object({
   code: z.string(),
-  en: z.object({ name: z.string(), summary: z.string() }),
-  vi: z.object({ name: z.string(), summary: z.string() }),
+  ...localizedInputShape,
 });
 export const plantInputs = z.array(inputSchema).parse([
   {
@@ -112,5 +118,3 @@ export const plantInputs = z.array(inputSchema).parse([
     },
   },
 ]);
-export const k = (locale: Locale, en: string, vi: string) =>
-  locale === "en" ? en : vi;
