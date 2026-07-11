@@ -38,20 +38,40 @@ export default async function About({
         eyebrow={c.heroEyebrow}
         title={c.title}
         intro={c.intro}
-        image="/images/farmer-field.jpg"
+        image="/images/people-on-soil.webp"
         alt={c.heroAlt}
-        position="center 38%"
+        position="center 44%"
       />
-      <section className="section">
+      <section className="section about-mission">
         <div className="shell split">
           <div>
             <p className="eyebrow">{c.purposeEyebrow}</p>
             <h2 className="section-heading">{c.mission}</h2>
           </div>
-          <div className="prose">
-            {c.body.map((p) => (
-              <p key={p}>{p}</p>
-            ))}
+          <div>
+            <div className="prose mission-copy">
+              {c.body.map((p) => (
+                <p key={p}>{p}</p>
+              ))}
+            </div>
+            <div className="field-photo-row" aria-hidden="true">
+              <div className="field-photo small">
+                <Image
+                  src="/images/harvest-leaves.webp"
+                  alt=""
+                  fill
+                  sizes="18rem"
+                />
+              </div>
+              <div className="field-photo wide">
+                <Image
+                  src="/images/farm-landscape.webp"
+                  alt=""
+                  fill
+                  sizes="26rem"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -59,7 +79,7 @@ export default async function About({
         <div className="shell">
           <p className="eyebrow">{c.valuesEyebrow}</p>
           <h2 className="section-heading">{c.values}</h2>
-          <div className="value-grid">
+          <div className="value-grid elevated-grid">
             {c.cards.map(([title, body], i) => (
               <article key={title}>
                 <span>0{i + 1}</span>
@@ -72,15 +92,16 @@ export default async function About({
       </section>
       <section className="section">
         <div className="shell split">
-          <div className="about-image">
+          <div className="about-image editorial-image">
             <Image
-              src="/images/farm-garden.jpeg"
+              src="/images/farmer-field.jpg"
               alt={c.gardenAlt}
               fill
               sizes="(min-width:760px) 48vw,100vw"
+              style={{ objectPosition: "center 38%" }}
             />
           </div>
-          <div>
+          <div className="closing-panel">
             <p className="eyebrow">{c.storyEyebrow}</p>
             <h2 className="section-heading">{c.truth}</h2>
             <p className="lede">{c.truthBody}</p>

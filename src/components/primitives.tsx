@@ -86,3 +86,21 @@ export function TableWrap({
     </div>
   );
 }
+
+export function LegacyFigure({
+  label,
+  caption,
+  children,
+}: {
+  label: string;
+  caption?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <figure className="legacy-figure">
+      <span>{label}</span>
+      {children}
+      {caption ? <figcaption>{caption}</figcaption> : null}
+    </figure>
+  );
+}

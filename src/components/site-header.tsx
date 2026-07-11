@@ -34,6 +34,11 @@ export function SiteHeader({
     ["/animals", t.nav.animals],
   ] as const;
 
+  const localeFlags: Record<Locale, string> = {
+    en: "🇬🇧",
+    vi: "🇻🇳",
+  };
+
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
@@ -117,6 +122,7 @@ export function SiteHeader({
               lang={targetLocale}
               aria-label={`${t.language}: ${localeConfig[targetLocale].label}`}
             >
+              <span aria-hidden="true">{localeFlags[targetLocale]}</span>
               {localeConfig[targetLocale].shortLabel}
             </Link>
           ))}
@@ -176,6 +182,7 @@ export function SiteHeader({
                   lang={targetLocale}
                   className="mobile-language"
                 >
+                  <span aria-hidden="true">{localeFlags[targetLocale]}</span>
                   {localeConfig[targetLocale].label}
                 </Link>
               ))}

@@ -5,7 +5,7 @@ import {
   KnowledgeLayout,
   KnowledgeSection,
 } from "@/components/knowledge-layout";
-import { PageHero, TableWrap } from "@/components/primitives";
+import { LegacyFigure, PageHero, TableWrap } from "@/components/primitives";
 import { siteConfig } from "@/config/site";
 import { getKnowledgeText } from "@/content/locales/knowledge-pages";
 import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
@@ -36,6 +36,7 @@ export default async function Animals({
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const legacyLabel = locale === "vi" ? "Tư liệu gốc" : "Legacy reference";
   const toc = [
     {
       id: "philosophy",
@@ -59,7 +60,7 @@ export default async function Animals({
           locale,
           "animals.housing.bedding.feed.and.daily.care.are.shaped",
         )}
-        image="/images/piglets.png"
+        image="/images/piglets-straw.webp"
         alt={getKnowledgeText(
           locale,
           "animals.healthy.piglets.resting.on.straw.bedding",
@@ -138,7 +139,21 @@ export default async function Animals({
               "animals.legacy.pig.and.chicken.designs.use.an.east",
             )}
           </p>
-          <figure>
+          <figure className="feature-figure wide-reference">
+            <Image
+              src="/images/chicken-house.webp"
+              alt=""
+              width={1100}
+              height={720}
+            />
+          </figure>
+          <LegacyFigure
+            label={legacyLabel}
+            caption={getKnowledgeText(
+              locale,
+              "animals.technical.diagram.from.the.legacy.knowledge.library",
+            )}
+          >
             <Image
               src="/images/legacy/pig-house-design.png"
               alt={getKnowledgeText(
@@ -148,13 +163,7 @@ export default async function Animals({
               width={1000}
               height={600}
             />
-            <figcaption>
-              {getKnowledgeText(
-                locale,
-                "animals.technical.diagram.from.the.legacy.knowledge.library",
-              )}
-            </figcaption>
-          </figure>
+          </LegacyFigure>
           <ul>
             <li>
               {getKnowledgeText(
@@ -175,7 +184,7 @@ export default async function Animals({
               )}
             </li>
           </ul>
-          <figure>
+          <LegacyFigure label={legacyLabel}>
             <Image
               src="/images/legacy/sample-pig-house.png"
               alt={getKnowledgeText(
@@ -185,7 +194,7 @@ export default async function Animals({
               width={1100}
               height={650}
             />
-          </figure>
+          </LegacyFigure>
         </KnowledgeSection>
         <KnowledgeSection
           id="bedding"
@@ -289,8 +298,14 @@ export default async function Animals({
               "animals.legacy.material.covers.selecting.healthy.piglets.estimating.weight",
             )}
           </p>
-          <div className="media-prose">
-            <figure>
+          <div className="media-prose feature-prose">
+            <LegacyFigure
+              label={legacyLabel}
+              caption={getKnowledgeText(
+                locale,
+                "animals.historical.phase.out.diagram.adapt.with.a.qualified",
+              )}
+            >
               <Image
                 src="/images/legacy/feed-process.png"
                 alt={getKnowledgeText(
@@ -300,13 +315,7 @@ export default async function Animals({
                 width={760}
                 height={500}
               />
-              <figcaption>
-                {getKnowledgeText(
-                  locale,
-                  "animals.historical.phase.out.diagram.adapt.with.a.qualified",
-                )}
-              </figcaption>
-            </figure>
+            </LegacyFigure>
             <div>
               <h3>
                 {getKnowledgeText(
@@ -349,8 +358,8 @@ export default async function Animals({
             "animals.dry.footing.fresh.air.and.room.to.scratch",
           )}
         >
-          <div className="media-prose">
-            <figure>
+          <div className="media-prose feature-prose">
+            <figure className="feature-figure portrait">
               <Image
                 src="/images/chickens.png"
                 alt={getKnowledgeText(
@@ -376,7 +385,7 @@ export default async function Animals({
               </p>
             </div>
           </div>
-          <figure>
+          <LegacyFigure label={legacyLabel}>
             <Image
               src="/images/legacy/brooder-crib.jpg"
               alt={getKnowledgeText(
@@ -386,7 +395,7 @@ export default async function Animals({
               width={900}
               height={600}
             />
-          </figure>
+          </LegacyFigure>
           <TableWrap
             label={getKnowledgeText(
               locale,

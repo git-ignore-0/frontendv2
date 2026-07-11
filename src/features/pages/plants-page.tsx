@@ -5,7 +5,12 @@ import {
   KnowledgeLayout,
   KnowledgeSection,
 } from "@/components/knowledge-layout";
-import { PageHero, TableWrap, TextLink } from "@/components/primitives";
+import {
+  LegacyFigure,
+  PageHero,
+  TableWrap,
+  TextLink,
+} from "@/components/primitives";
 import { siteConfig } from "@/config/site";
 import { plantInputs } from "@/content/knowledge";
 import { getKnowledgeText } from "@/content/locales/knowledge-pages";
@@ -37,6 +42,7 @@ export default async function Plants({
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
+  const legacyLabel = locale === "vi" ? "Tư liệu gốc" : "Legacy reference";
   const toc = [
     {
       id: "context",
@@ -66,11 +72,12 @@ export default async function Plants({
           locale,
           "plants.natural.farming.sees.plant.health.as.the.result",
         )}
-        image="/images/plants-hero.jpg"
+        image="/images/green-beans.webp"
         alt={getKnowledgeText(
           locale,
           "plants.fresh.green.plants.growing.in.rich.soil",
         )}
+        position="center 48%"
       />
       <KnowledgeLayout locale={locale} toc={toc}>
         <KnowledgeSection
@@ -182,10 +189,10 @@ export default async function Plants({
           index={getKnowledgeText(locale, "plants.03.foundation")}
           title={getKnowledgeText(locale, "plants.soil.is.a.place.of.exchange")}
         >
-          <div className="media-prose">
-            <figure>
+          <div className="media-prose feature-prose">
+            <figure className="feature-figure">
               <Image
-                src="/images/microscope.png"
+                src="/images/microscope.webp"
                 alt={getKnowledgeText(
                   locale,
                   "plants.a.person.observing.a.sample.through.a.microscope",
@@ -230,7 +237,13 @@ export default async function Plants({
               "plants.legacy.material.organizes.plant.development.into.vegetative.growth",
             )}
           </p>
-          <figure>
+          <LegacyFigure
+            label={legacyLabel}
+            caption={getKnowledgeText(
+              locale,
+              "plants.legacy.diagram.retained.for.knowledge.parity.terminology.and",
+            )}
+          >
             <Image
               src="/images/legacy/potato-cycle.png"
               alt={getKnowledgeText(
@@ -240,13 +253,7 @@ export default async function Plants({
               width={900}
               height={520}
             />
-            <figcaption>
-              {getKnowledgeText(
-                locale,
-                "plants.legacy.diagram.retained.for.knowledge.parity.terminology.and",
-              )}
-            </figcaption>
-          </figure>
+          </LegacyFigure>
         </KnowledgeSection>
         <KnowledgeSection
           id="inputs"
@@ -262,7 +269,7 @@ export default async function Plants({
               "plants.this.is.a.concept.map.not.a.recipe",
             )}
           </p>
-          <div className="input-list">
+          <div className="input-list premium-inputs">
             {plantInputs.map((input) => (
               <details key={input.code}>
                 <summary>
