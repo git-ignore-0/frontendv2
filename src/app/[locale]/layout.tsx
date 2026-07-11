@@ -18,13 +18,13 @@ export default async function LocaleLayout({
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
   return (
-    <>
+    <div lang={locale} data-locale-shell>
       <a className="skip-link" href="#main">
         {t.skip}
       </a>
-      <SiteHeader locale={locale} />
+      <SiteHeader locale={locale} dictionary={t} />
       <main id="main">{children}</main>
       <SiteFooter locale={locale} />
-    </>
+    </div>
   );
 }

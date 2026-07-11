@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Arrow } from "@/components/icons";
-import { getDictionary } from "@/content/dictionaries";
 import { siteConfig } from "@/config/site";
+import type { CommonDictionary } from "@/content/site-content";
 import {
   type Locale,
   localeConfig,
@@ -15,8 +15,13 @@ import {
   replacePathLocale,
 } from "@/lib/i18n";
 
-export function SiteHeader({ locale }: { locale: Locale }) {
-  const t = getDictionary(locale);
+export function SiteHeader({
+  locale,
+  dictionary: t,
+}: {
+  locale: Locale;
+  dictionary: CommonDictionary;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { siteConfig } from "@/config/site";
+import { defaultLocale } from "@/lib/i18n";
 import "./globals.css";
 
 const body = localFont({
@@ -35,7 +36,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html className={`${body.variable} ${display.variable}`}>
+    <html lang={defaultLocale} className={`${body.variable} ${display.variable}`}>
       <body>{children}</body>
     </html>
   );

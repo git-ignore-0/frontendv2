@@ -161,6 +161,7 @@ type LocalizedShape<T> = T extends string
     : { [Key in keyof T]: LocalizedShape<T[Key]> };
 
 export type SiteContent = LocalizedShape<typeof en>;
+export type CommonDictionary = SiteContent["common"];
 
 const vi: SiteContent = {
   common: {

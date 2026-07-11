@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const port = Number(process.env.PORT ?? 3000);
+const baseURL = `http://127.0.0.1:${port}`;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -7,12 +10,12 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: "html",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL,
     trace: "on-first-retry",
   },
   webServer: {
-    command: "./node_modules/.bin/next dev",
-    url: "http://127.0.0.1:3000",
+    command: `./node_modules/.bin/next dev --port ${port}`,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
   },
   projects: [

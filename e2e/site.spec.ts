@@ -54,12 +54,16 @@ test("mobile menu opens, closes with Escape and returns focus", async ({
   const trigger = page.getByRole("button", { name: "Menu" });
   await trigger.click();
   await expect(
-    page.getByRole("navigation", { name: "Mobile navigation" }),
+    page.getByRole("navigation", {
+      name: /Mobile navigation|Điều hướng di động/i,
+    }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
   await expect(
-    page.getByRole("navigation", { name: "Mobile navigation" }),
+    page.getByRole("navigation", {
+      name: /Mobile navigation|Điều hướng di động/i,
+    }),
   ).not.toBeVisible();
 });
 
@@ -79,4 +83,12 @@ test("language switch keeps the corresponding route", async ({ page }) => {
   await page.getByRole("link", { name: /Language: Tiếng Việt/i }).click();
   await expect(page).toHaveURL(/\/vi\/plants$/);
   await expect(page.locator("h1")).toContainText("Nuôi đất");
+});
+
+test("localized shell exposes the active language", async ({ page }) => {
+  await page.goto("/vi/about");
+  await expect(page.locator("[data-locale-shell]")).toHaveAttribute(
+    "lang",
+    "vi",
+  );
 });

@@ -5,30 +5,29 @@ export default {
   theme: {
     extend: {
       colors: {
+        cream: "var(--cream)",
+        paper: "var(--paper)",
         forest: "var(--forest)",
-        "forest-deep": "var(--forest-deep)",
-        leaf: "var(--leaf)",
-        young: "var(--young-leaf)",
+        moss: "var(--moss)",
         soil: "var(--soil)",
-        terra: "var(--terracotta)",
-        rice: "var(--rice-paper)",
-        warm: "var(--warm-white)",
-        charcoal: "var(--charcoal)",
+        terra: "var(--terra)",
         straw: "var(--straw)",
+        ink: "var(--ink)",
+        muted: "var(--muted)",
       },
       fontFamily: {
         display: ["var(--font-display)"],
-        sans: ["var(--font-sans)"],
+        sans: ["var(--font-body)"],
       },
       maxWidth: {
         site: "80rem",
         prose: "72ch",
       },
       boxShadow: {
-        soft: "var(--shadow-soft)",
+        soft: "var(--shadow)",
       },
       transitionTimingFunction: {
-        natural: "var(--ease-natural)",
+        natural: "var(--ease)",
       },
     },
   },
