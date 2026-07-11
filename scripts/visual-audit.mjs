@@ -4,13 +4,13 @@ import fs from "node:fs/promises";
 const baseURL = "http://127.0.0.1:3000";
 const routes = [
   "/en",
-  "/en/about",
-  "/en/plants",
-  "/en/animals",
+  "/about/en",
+  "/plants/en",
+  "/animals/en",
   "/vi",
-  "/vi/about",
-  "/vi/plants",
-  "/vi/animals",
+  "/about/vi",
+  "/plants/vi",
+  "/animals/vi",
 ];
 const viewports = [
   { name: "mobile-320", width: 320, height: 800 },

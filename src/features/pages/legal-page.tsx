@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { TextLink } from "@/components/primitives";
 import { contactEmailHref } from "@/config/site";
 import { getSiteContent } from "@/content/site-content";
-import { isLocale, languageAlternates, type Locale } from "@/lib/i18n";
+import {
+  isLocale,
+  languageAlternates,
+  localizedPath,
+  type Locale,
+} from "@/lib/i18n";
 
 export type LegalPageKind = "privacy" | "terms";
 
@@ -17,7 +22,7 @@ export function getLegalMetadata(
     title: item.title,
     description: item.description,
     alternates: {
-      canonical: `/${locale}/${slug}`,
+      canonical: localizedPath(locale, `/${slug}`),
       languages: languageAlternates(`/${slug}`),
     },
     robots: { index: false, follow: true },

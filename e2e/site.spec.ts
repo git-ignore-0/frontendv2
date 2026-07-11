@@ -2,13 +2,13 @@ import { expect, test } from "@playwright/test";
 
 const internalRoutes = [
   "/en",
-  "/en/about",
-  "/en/plants",
-  "/en/animals",
+  "/about/en",
+  "/plants/en",
+  "/animals/en",
   "/vi",
-  "/vi/about",
-  "/vi/plants",
-  "/vi/animals",
+  "/about/vi",
+  "/plants/vi",
+  "/animals/vi",
 ];
 
 for (const route of internalRoutes) {
@@ -79,16 +79,23 @@ test("workshop and commerce UI are absent", async ({ page }) => {
 });
 
 test("language switch keeps the corresponding route", async ({ page }) => {
-  await page.goto("/en/plants");
+  await page.goto("/plants/en");
   await page.getByRole("link", { name: /Language: Tiếng Việt/i }).click();
-  await expect(page).toHaveURL(/\/vi\/plants$/);
+  await expect(page).toHaveURL(/\/plants\/vi$/);
   await expect(page.locator("h1")).toContainText("Nuôi đất");
 });
 
 test("localized shell exposes the active language", async ({ page }) => {
-  await page.goto("/vi/about");
+  await page.goto("/about/vi");
   await expect(page.locator("[data-locale-shell]")).toHaveAttribute(
     "lang",
     "vi",
   );
+});
+
+test("legacy locale-prefix routes redirect to locale suffix routes", async ({
+  page,
+}) => {
+  await page.goto("/en/animals");
+  await expect(page).toHaveURL(/\/animals\/en$/);
 });

@@ -25,7 +25,7 @@ export async function generateMetadata({
       "plants.living.soil.farming.systems.and.an.index.of",
     ),
     alternates: {
-      canonical: `/${locale}/plants`,
+      canonical: localizedPath(locale, "/plants"),
       languages: languageAlternates("/plants"),
     },
   };

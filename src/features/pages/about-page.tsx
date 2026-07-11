@@ -5,7 +5,7 @@ import { PageHero, ReviewNote, TextLink } from "@/components/primitives";
 import { contactEmailHref } from "@/config/site";
 import { getDictionary } from "@/content/dictionaries";
 import { getSiteContent } from "@/content/site-content";
-import { isLocale, languageAlternates } from "@/lib/i18n";
+import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
 export async function generateMetadata({
   params,
 }: {
@@ -18,7 +18,7 @@ export async function generateMetadata({
     title: c.metadataTitle,
     description: c.intro,
     alternates: {
-      canonical: `/${locale}/about`,
+      canonical: localizedPath(locale, "/about"),
       languages: languageAlternates("/about"),
     },
   };

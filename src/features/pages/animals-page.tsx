@@ -8,7 +8,7 @@ import {
 import { PageHero, TableWrap } from "@/components/primitives";
 import { siteConfig } from "@/config/site";
 import { getKnowledgeText } from "@/content/locales/knowledge-pages";
-import { isLocale, languageAlternates } from "@/lib/i18n";
+import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
 
 export async function generateMetadata({
   params,
@@ -24,7 +24,7 @@ export async function generateMetadata({
       "animals.natural.behavior.housing.deep.bedding.feed.cycles.and",
     ),
     alternates: {
-      canonical: `/${locale}/animals`,
+      canonical: localizedPath(locale, "/animals"),
       languages: languageAlternates("/animals"),
     },
   };

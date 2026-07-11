@@ -15,14 +15,26 @@ export function isLocale(value: string): value is Locale {
 }
 
 export function localizedPath(locale: Locale, path = "") {
-  return `/${locale}${path === "/" ? "" : path}`;
+  if (!path || path === "/") return `/${locale}`;
+  return `${path}/${locale}`;
 }
 
 export function replacePathLocale(pathname: string, locale: Locale) {
-  const localePattern = new RegExp(`^/(${locales.join("|")})(?=/|$)`);
-  return localePattern.test(pathname)
-    ? pathname.replace(localePattern, `/${locale}`)
-    : localizedPath(locale, pathname);
+  const localePattern = locales.join("|");
+  const prefixPattern = new RegExp(`^/(${localePattern})(?=/|$)`);
+  const suffixPattern = new RegExp(`/(?:${localePattern})$`);
+
+  if (prefixPattern.test(pathname)) {
+    const path = pathname.replace(prefixPattern, "") || "/";
+    return localizedPath(locale, path);
+  }
+
+  if (suffixPattern.test(pathname)) {
+    const path = pathname.replace(suffixPattern, "") || "/";
+    return localizedPath(locale, path);
+  }
+
+  return localizedPath(locale, pathname);
 }
 
 export function languageAlternates(path = "") {
