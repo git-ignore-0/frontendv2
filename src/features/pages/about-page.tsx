@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { ContactLinks } from "@/components/contact-links";
 import { notFound } from "next/navigation";
-import { PageHero, ReviewNote } from "@/components/primitives";
+import { PageHero } from "@/components/primitives";
 import { getDictionary } from "@/content/dictionaries";
 import { getSiteContent } from "@/content/site-content";
 import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
@@ -105,7 +105,6 @@ export default async function About({
             <p className="eyebrow">{c.storyEyebrow}</p>
             <h2 className="section-heading">{c.truth}</h2>
             <p className="lede">{c.truthBody}</p>
-            <ReviewNote>{t.review}</ReviewNote>
             <ContactLinks dictionary={t} showSocials={false} />
           </div>
         </div>

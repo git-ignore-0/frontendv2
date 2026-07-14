@@ -26,8 +26,6 @@ const en = {
       privacy: "Privacy Policy",
       terms: "Terms & Conditions",
     },
-    review:
-      "Practical guidance should be adapted to local conditions and verified with experienced practitioners when needed.",
     footer:
       "A living knowledge home for soil, plants, animals and farming communities in Vietnam.",
     footerNote: "For learning, collaboration and farm conversations.",
@@ -195,8 +193,6 @@ const vi: SiteContent = {
       privacy: "Chính sách quyền riêng tư",
       terms: "Điều khoản & Điều kiện",
     },
-    review:
-      "Hướng dẫn thực hành cần được điều chỉnh theo điều kiện địa phương và xác minh với người có kinh nghiệm khi cần thiết.",
     footer:
       "Ngôi nhà kiến thức sống dành cho đất, cây trồng, vật nuôi và cộng đồng nông nghiệp Việt Nam.",
     footerNote: "Dành cho trao đổi học tập, hợp tác và câu chuyện nông trại.",

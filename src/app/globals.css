@@ -654,30 +654,6 @@ a:hover .arrow {
   color: var(--muted);
   line-height: 1.65;
 }
-.review-note {
-  display: grid;
-  grid-template-columns: 2.5rem 1fr;
-  gap: 1rem;
-  border: 1px solid var(--line);
-  padding: 1rem;
-  background: #fffaf0;
-  margin-bottom: 3rem;
-  animation: rise-fade 0.65s var(--ease-out) both;
-}
-.review-note strong {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--straw);
-  font-family: serif;
-}
-.review-note p {
-  margin: 0;
-  color: var(--soil);
-  line-height: 1.6;
-}
 .toc {
   position: sticky;
   top: 6.5rem;
@@ -1118,11 +1094,16 @@ tbody th {
 }
 .premium-inputs {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  align-items: stretch;
   gap: 0.625rem;
   margin-top: clamp(1.5rem, 4vw, 2.25rem);
   border-top: 0;
 }
 .premium-inputs details {
+  min-width: 0;
+  display: grid;
+  align-content: start;
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--paper) 86%, white);
   transition:
@@ -1161,27 +1142,39 @@ tbody th {
   font-size: 1.5rem;
 }
 .premium-inputs summary strong {
+  display: inline-grid;
+  width: 4.75rem;
+  min-height: 2.5rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--forest) 18%, var(--line));
+  background: color-mix(in srgb, var(--leaf) 10%, transparent);
   color: var(--forest);
-  font-size: clamp(1.2rem, 4.5vw, 1.65rem);
-  letter-spacing: -0.035em;
-  white-space: nowrap;
+  font-size: 1rem;
+  letter-spacing: 0;
+  line-height: 1;
+  overflow-wrap: normal;
 }
 .premium-inputs summary {
-  grid-template-columns: 3.75rem minmax(0, 1fr) 1.5rem;
-  min-height: 68px;
-  gap: 0.75rem;
-  padding: 0.8rem 1rem;
+  grid-template-columns: 4.75rem minmax(0, 1fr) 1.5rem;
+  min-height: 88px;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
 }
 .premium-inputs summary:hover {
-  padding-inline: 1rem;
+  padding-inline: 1.1rem;
 }
 .premium-inputs summary span {
   min-width: 0;
-  line-height: 1.4;
+  align-self: center;
+  line-height: 1.35;
+  hyphens: auto;
   overflow-wrap: anywhere;
 }
 .premium-inputs summary i {
+  align-self: center;
   justify-self: end;
+  min-width: 1.5rem;
+  text-align: right;
 }
 .input-list summary span {
   color: var(--forest);
@@ -1201,7 +1194,7 @@ tbody th {
   animation: rise-fade 0.24s var(--ease-out) both;
 }
 .premium-inputs details > p {
-  padding: 0.2rem 1rem 1.25rem 5.5rem;
+  padding: 0 1.1rem 1.25rem;
 }
 .safety-panel {
   background: var(--forest);

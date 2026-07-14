@@ -65,8 +65,7 @@ export const knowledgePageText = {
       "Legacy material organizes plant development into vegetative growth, transition, flowering and fruiting. Its potato diagram is retained below as a historical teaching aid; crop stage, soil and local conditions must guide actual decisions.",
     "plants.legacy.potato.growth.and.nutritive.cycle.diagram":
       "Legacy potato growth and nutritive-cycle diagram",
-    "plants.legacy.diagram.retained.for.knowledge.parity.terminology.and":
-      "Legacy diagram retained for knowledge parity; terminology and application require practitioner review.",
+    "plants.legacy.diagram.retained.for.knowledge.parity.terminology.and": "",
     "plants.eight.names.commonly.encountered":
       "Eight names commonly encountered.",
     "plants.this.is.a.concept.map.not.a.recipe":
@@ -113,8 +112,7 @@ export const knowledgePageText = {
       "Legacy pig and chicken designs use an east–west building length, a high offset roof and open sides to move hot, moist air upward while sunlight reaches the floor. The site should be open to wind, free from flooding and practical to access.",
     "animals.legacy.airflow.diagram.for.a.natural.farming.pig":
       "Legacy airflow diagram for a Natural Farming pig house",
-    "animals.technical.diagram.from.the.legacy.knowledge.library":
-      "Technical diagram from the legacy knowledge library.",
+    "animals.technical.diagram.from.the.legacy.knowledge.library": "",
     "animals.roof.overlap.protects.the.bedding.from.rain.while":
       "Roof overlap protects the bedding from rain while leaving a high outlet for hot air.",
     "animals.open.or.curtained.sides.allow.seasonal.control.without":
@@ -285,8 +283,7 @@ export const knowledgePageText = {
       "Tài liệu cũ tổ chức sự phát triển của cây theo sinh trưởng, chuyển tiếp, ra hoa và tạo quả. Sơ đồ khoai tây được giữ dưới đây như tư liệu giảng dạy lịch sử; giai đoạn cây, đất và điều kiện địa phương phải dẫn dắt quyết định thực tế.",
     "plants.legacy.potato.growth.and.nutritive.cycle.diagram":
       "Sơ đồ cũ về sinh trưởng và chu kỳ dinh dưỡng của khoai tây",
-    "plants.legacy.diagram.retained.for.knowledge.parity.terminology.and":
-      "Sơ đồ cũ được giữ để bảo toàn kiến thức; thuật ngữ và ứng dụng cần người thực hành rà soát.",
+    "plants.legacy.diagram.retained.for.knowledge.parity.terminology.and": "",
     "plants.eight.names.commonly.encountered": "Tám tên gọi thường gặp.",
     "plants.this.is.a.concept.map.not.a.recipe":
       "Đây là bản đồ khái niệm, không phải bộ công thức. Cách chuẩn bị, pha loãng, giai đoạn cây, vệ sinh và quy định địa phương đều quan trọng.",
@@ -332,8 +329,7 @@ export const knowledgePageText = {
       "Thiết kế chuồng heo và gà cũ dùng trục dài đông–tây, mái cao lệch và cạnh mở để đưa khí nóng ẩm lên trên trong khi nắng tiếp cận nền. Vị trí cần đón gió, không ngập và thuận tiện tiếp cận.",
     "animals.legacy.airflow.diagram.for.a.natural.farming.pig":
       "Sơ đồ luồng khí cũ cho chuồng heo Natural Farming",
-    "animals.technical.diagram.from.the.legacy.knowledge.library":
-      "Sơ đồ kỹ thuật từ thư viện kiến thức cũ.",
+    "animals.technical.diagram.from.the.legacy.knowledge.library": "",
     "animals.roof.overlap.protects.the.bedding.from.rain.while":
       "Phần mái chồng bảo vệ nền khỏi mưa đồng thời để lại lối thoát cao cho khí nóng.",
     "animals.open.or.curtained.sides.allow.seasonal.control.without":

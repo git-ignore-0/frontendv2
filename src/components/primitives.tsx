@@ -64,15 +64,6 @@ export function TextLink({
   );
 }
 
-export function ReviewNote({ children }: { children: ReactNode }) {
-  return (
-    <aside className="review-note">
-      <strong aria-hidden="true">i</strong>
-      <p>{children}</p>
-    </aside>
-  );
-}
-
 export function TableWrap({
   children,
   label,

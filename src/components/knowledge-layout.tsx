@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ReviewNote } from "@/components/primitives";
 import { getDictionary } from "@/content/dictionaries";
 import type { Locale } from "@/lib/i18n";
 
@@ -25,7 +24,6 @@ export function KnowledgeLayout({
         ))}
       </aside>
       <article className="knowledge-body">
-        <ReviewNote>{t.review}</ReviewNote>
         {children}
       </article>
     </div>
