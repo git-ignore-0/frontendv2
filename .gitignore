@@ -10,6 +10,8 @@
 /playwright-report/
 /test-results/
 /artifacts/
+/cpanel-deploy/
+/cpanel-deploy-passenger.zip
 
 # TypeScript
 *.tsbuildinfo

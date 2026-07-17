@@ -108,6 +108,10 @@ export function SiteHeader({
             {t.nav.store} <Arrow external />
             <span className="sr-only"> ({t.external})</span>
           </a>
+          <a href={siteConfig.links.forum} target="_blank" rel="noreferrer">
+            {t.nav.forum} <Arrow external />
+            <span className="sr-only"> ({t.external})</span>
+          </a>
         </nav>
         <div className="header-tools">
           {alternateLocales.map((targetLocale) => (
@@ -171,6 +175,16 @@ export function SiteHeader({
                 >
                   <small>05</small>
                   {t.nav.store}
+                  <Arrow external />
+                  <span className="sr-only"> ({t.external})</span>
+                </a>
+                <a
+                  href={siteConfig.links.forum}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <small>06</small>
+                  {t.nav.forum}
                   <Arrow external />
                   <span className="sr-only"> ({t.external})</span>
                 </a>

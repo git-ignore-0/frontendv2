@@ -45,6 +45,31 @@ test("store link is external and points to Farmbrite", async ({
   await expect(link).toHaveAttribute("target", "_blank");
 });
 
+test("forum follows store and opens the NFV forum in a new tab", async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto("/vi");
+  if (isMobile) await page.getByRole("button", { name: "Menu" }).click();
+
+  const navigation = page.getByRole("navigation", {
+    name: isMobile ? "Điều hướng di động" : "Điều hướng chính",
+  });
+  const store = navigation.getByRole("link", { name: /Cửa hàng/i });
+  const forum = navigation.getByRole("link", { name: /Diễn đàn/i });
+
+  await expect(forum).toHaveAttribute(
+    "href",
+    "https://forum.naturalfarmingvietnam.com/",
+  );
+  await expect(forum).toHaveAttribute("target", "_blank");
+  await expect(store).toHaveAttribute("target", "_blank");
+  const labels = await navigation.getByRole("link").allTextContents();
+  const storeIndex = labels.findIndex((label) => label.includes("Cửa hàng"));
+  const forumIndex = labels.findIndex((label) => label.includes("Diễn đàn"));
+  expect(forumIndex).toBe(storeIndex + 1);
+});
+
 test("contact details and official social links are actionable", async ({
   page,
 }) => {

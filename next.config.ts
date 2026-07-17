@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { siteConfig } from "./src/config/site";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     formats: ["image/avif", "image/webp"],
   },

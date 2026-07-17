@@ -8,6 +8,7 @@ export const siteConfig = {
   },
   links: {
     store: "https://store.farmbrite.com/store/nntn",
+    forum: "https://forum.naturalfarmingvietnam.com/",
     facebook: "https://www.facebook.com/naturalfarmingvn/",
     youtube: "https://www.youtube.com/@naturalfarmingvietnam",
   },

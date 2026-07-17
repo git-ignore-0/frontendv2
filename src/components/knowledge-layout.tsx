@@ -23,9 +23,7 @@ export function KnowledgeLayout({
           </Link>
         ))}
       </aside>
-      <article className="knowledge-body">
-        {children}
-      </article>
+      <article className="knowledge-body">{children}</article>
     </div>
   );
 }

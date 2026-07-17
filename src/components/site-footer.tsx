@@ -33,6 +33,9 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <a href={siteConfig.links.store} target="_blank" rel="noreferrer">
             {t.nav.store} <Arrow external />
           </a>
+          <a href={siteConfig.links.forum} target="_blank" rel="noreferrer">
+            {t.nav.forum} <Arrow external />
+          </a>
         </nav>
       </div>
       <div className="shell footer-bottom">
