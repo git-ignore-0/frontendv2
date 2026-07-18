@@ -7,6 +7,9 @@ import { siteConfig } from "@/config/site";
 import { getDictionary } from "@/content/dictionaries";
 import { getSiteContent } from "@/content/site-content";
 import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
+import { getSiteSettings, getWorkshops } from "@/lib/content-api";
+import { WorkshopCard } from "@/features/workshops/workshop-card";
+import { workshopCopy } from "@/features/workshops/copy";
 
 export async function generateMetadata({
   params,
@@ -40,6 +43,12 @@ export default async function Home({
   if (!isLocale(locale)) notFound();
   const c = getSiteContent(locale).home;
   const t = getDictionary(locale);
+  const [settings, workshops] = await Promise.all([
+    getSiteSettings(locale),
+    getWorkshops(locale, "upcoming"),
+  ]);
+  const workshopText = workshopCopy[locale];
+  const store = settings.links.find((item) => item.kind === "store")?.url;
   return (
     <>
       <section className="home-hero">
@@ -145,20 +154,46 @@ export default async function Home({
           </div>
         </div>
       </section>
-      <section className="section section-forest">
-        <div className="shell split">
-          <div>
-            <p className="eyebrow">{c.storeEyebrow}</p>
-            <h2 className="section-heading">{c.storeTitle}</h2>
+      {workshops.length > 0 && (
+        <section className="section section-cream home-workshops">
+          <div className="shell">
+            <div className="home-workshop-heading">
+              <div>
+                <p className="eyebrow">{workshopText.homeEyebrow}</p>
+                <h2 className="section-heading">{workshopText.homeTitle}</h2>
+              </div>
+              <TextLink href={localizedPath(locale, "/workshops")}>
+                {workshopText.homeCta}
+              </TextLink>
+            </div>
+            <div className="workshop-grid">
+              {workshops.slice(0, 3).map((workshop) => (
+                <WorkshopCard
+                  key={workshop.id}
+                  workshop={workshop}
+                  locale={locale}
+                />
+              ))}
+            </div>
           </div>
-          <div>
-            <p className="lede store-lede">{c.storeBody}</p>
-            <TextLink href={siteConfig.links.store} external>
-              {c.storeCta}
-            </TextLink>
+        </section>
+      )}
+      {store && (
+        <section className="section section-forest">
+          <div className="shell split">
+            <div>
+              <p className="eyebrow">{c.storeEyebrow}</p>
+              <h2 className="section-heading">{c.storeTitle}</h2>
+            </div>
+            <div>
+              <p className="lede store-lede">{c.storeBody}</p>
+              <TextLink href={store} external>
+                {c.storeCta}
+              </TextLink>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       <section className="section contact-band">
         <div className="shell split">
           <div className="contact-image">
@@ -173,7 +208,7 @@ export default async function Home({
             <p className="eyebrow">{c.contactEyebrow}</p>
             <h2 className="section-heading">{c.contactTitle}</h2>
             <p className="lede">{c.contactBody}</p>
-            <ContactLinks dictionary={t} />
+            <ContactLinks dictionary={t} settings={settings} />
           </div>
         </div>
       </section>

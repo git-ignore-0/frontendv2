@@ -5,7 +5,12 @@ import { defineConfig } from "vitest/config";
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  resolve: { alias: { "@": path.resolve(currentDirectory, "src") } },
+  resolve: {
+    alias: {
+      "@": path.resolve(currentDirectory, "src"),
+      "server-only": path.resolve(currentDirectory, "src/test/server-only.ts"),
+    },
+  },
   esbuild: { jsx: "automatic" },
   test: {
     environment: "jsdom",

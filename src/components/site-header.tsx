@@ -19,9 +19,11 @@ import {
 export function SiteHeader({
   locale,
   dictionary: t,
+  externalLinks,
 }: {
   locale: Locale;
   dictionary: CommonDictionary;
+  externalLinks: { store?: string; forum?: string };
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -33,6 +35,7 @@ export function SiteHeader({
     ["/about", t.nav.about],
     ["/plants", t.nav.plants],
     ["/animals", t.nav.animals],
+    ["/workshops", t.nav.workshops],
   ] as const;
 
   useEffect(() => {
@@ -104,14 +107,18 @@ export function SiteHeader({
               </Link>
             );
           })}
-          <a href={siteConfig.links.store} target="_blank" rel="noreferrer">
-            {t.nav.store} <Arrow external />
-            <span className="sr-only"> ({t.external})</span>
-          </a>
-          <a href={siteConfig.links.forum} target="_blank" rel="noreferrer">
-            {t.nav.forum} <Arrow external />
-            <span className="sr-only"> ({t.external})</span>
-          </a>
+          {externalLinks.store && (
+            <a href={externalLinks.store} target="_blank" rel="noreferrer">
+              {t.nav.store} <Arrow external />
+              <span className="sr-only"> ({t.external})</span>
+            </a>
+          )}
+          {externalLinks.forum && (
+            <a href={externalLinks.forum} target="_blank" rel="noreferrer">
+              {t.nav.forum} <Arrow external />
+              <span className="sr-only"> ({t.external})</span>
+            </a>
+          )}
         </nav>
         <div className="header-tools">
           {alternateLocales.map((targetLocale) => (
@@ -168,26 +175,30 @@ export function SiteHeader({
                     <Arrow />
                   </Link>
                 ))}
-                <a
-                  href={siteConfig.links.store}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <small>05</small>
-                  {t.nav.store}
-                  <Arrow external />
-                  <span className="sr-only"> ({t.external})</span>
-                </a>
-                <a
-                  href={siteConfig.links.forum}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <small>06</small>
-                  {t.nav.forum}
-                  <Arrow external />
-                  <span className="sr-only"> ({t.external})</span>
-                </a>
+                {externalLinks.store && (
+                  <a
+                    href={externalLinks.store}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <small>06</small>
+                    {t.nav.store}
+                    <Arrow external />
+                    <span className="sr-only"> ({t.external})</span>
+                  </a>
+                )}
+                {externalLinks.forum && (
+                  <a
+                    href={externalLinks.forum}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <small>{externalLinks.store ? "07" : "06"}</small>
+                    {t.nav.forum}
+                    <Arrow external />
+                    <span className="sr-only"> ({t.external})</span>
+                  </a>
+                )}
               </nav>
               <div className="mobile-languages" aria-label={t.language}>
                 {alternateLocales.map((targetLocale) => (

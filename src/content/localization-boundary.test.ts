@@ -3,6 +3,8 @@ import { extname, join, resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
+import { workshopCopy } from "@/features/workshops/copy";
+
 const roots = ["src/app", "src/components", "src/features"];
 const translatedAttributeNames = new Set([
   "alt",
@@ -72,6 +74,12 @@ function inlineCopy(file: string) {
 }
 
 describe("localization boundary", () => {
+  it("keeps the English and Vietnamese workshop dictionaries in sync", () => {
+    expect(Object.keys(workshopCopy.en).sort()).toEqual(
+      Object.keys(workshopCopy.vi).sort(),
+    );
+  });
+
   it("keeps translated copy out of every presentation file", () => {
     for (const file of roots.flatMap(findTsxFiles)) {
       const result = inlineCopy(file);

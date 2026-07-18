@@ -4,15 +4,12 @@ export const siteConfig = {
   contact: {
     email: "naturalfarming@vietnam.com",
     phone: "+84 97 151 91 85",
-    address: null,
   },
   links: {
     store: "https://store.farmbrite.com/store/nntn",
-    forum: "https://forum.naturalfarmingvietnam.com/",
     facebook: "https://www.facebook.com/naturalfarmingvn/",
     youtube: "https://www.youtube.com/@naturalfarmingvietnam",
   },
 } as const;
 
 export const contactEmailHref = `mailto:${siteConfig.contact.email}`;
-export const contactPhoneHref = "tel:+84971519185";

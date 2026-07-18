@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { PageHero } from "@/components/primitives";
 import { getDictionary } from "@/content/dictionaries";
 import { getSiteContent } from "@/content/site-content";
+import { getSiteSettings } from "@/lib/content-api";
 import { isLocale, languageAlternates, localizedPath } from "@/lib/i18n";
 export async function generateMetadata({
   params,
@@ -32,6 +33,7 @@ export default async function About({
   if (!isLocale(locale)) notFound();
   const c = getSiteContent(locale).about;
   const t = getDictionary(locale);
+  const settings = await getSiteSettings(locale);
   return (
     <>
       <PageHero
@@ -105,7 +107,11 @@ export default async function About({
             <p className="eyebrow">{c.storyEyebrow}</p>
             <h2 className="section-heading">{c.truth}</h2>
             <p className="lede">{c.truthBody}</p>
-            <ContactLinks dictionary={t} showSocials={false} />
+            <ContactLinks
+              dictionary={t}
+              settings={settings}
+              showSocials={false}
+            />
           </div>
         </div>
       </section>

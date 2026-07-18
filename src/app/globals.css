@@ -447,6 +447,10 @@ a:hover .arrow {
 .footer .contact-method span {
   color: var(--straw);
 }
+.footer-organization {
+  display: block;
+  margin-top: 0.75rem;
+}
 .footer .social-links a {
   color: #f5f0e5;
 }
@@ -1271,6 +1275,199 @@ tbody th {
   clip-path: polygon(0 0, 94% 4%, 100% 100%, 6% 94%);
   box-shadow: var(--shadow);
 }
+.workshop-list-hero {
+  padding: clamp(4rem, 8vw, 6.5rem) 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.workshop-list-hero h1 {
+  max-width: 16ch;
+  margin: 0.65rem 0 1rem;
+  color: var(--forest);
+  font-size: clamp(2.6rem, 6vw, 4.8rem);
+}
+.workshop-section-title {
+  margin: 0 0 1.5rem;
+  color: var(--forest);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+.workshop-grid {
+  display: grid;
+  max-width: 62rem;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+.workshop-card {
+  min-width: 0;
+  border-bottom: 1px solid var(--line);
+  transition: background-color 0.2s var(--ease);
+}
+.workshop-card:hover {
+  background: color-mix(in srgb, var(--cream) 42%, transparent);
+}
+.workshop-card-copy {
+  padding: clamp(1.5rem, 4vw, 2.25rem) 0;
+}
+.workshop-card-copy h3 {
+  margin: 0.65rem 0 0.5rem;
+  color: var(--forest);
+  font-size: clamp(1.45rem, 3vw, 1.95rem);
+}
+.workshop-card-copy > p {
+  color: var(--muted);
+  line-height: 1.65;
+}
+.workshop-card-meta {
+  display: flex;
+  align-items: center;
+}
+.workshop-card-meta time {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.fallback-note {
+  padding-left: 0.8rem;
+  border-left: 2px solid var(--terra);
+  font-size: 0.85rem;
+}
+.workshop-empty {
+  padding: 2rem;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+}
+.home-workshop-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+.workshop-detail-hero {
+  color: var(--forest);
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.workshop-detail-heading {
+  padding-block: clamp(5.5rem, 10vw, 8rem) clamp(3rem, 6vw, 4.5rem);
+}
+.workshop-detail-heading h1 {
+  max-width: 18ch;
+  margin: 0 0 1rem;
+  color: var(--forest);
+  font-size: clamp(2.6rem, 6vw, 4.8rem);
+}
+.workshop-detail-heading > p {
+  max-width: 48rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  line-height: 1.65;
+}
+.fallback-banner {
+  margin-top: 2rem;
+  padding: 1.1rem 1.3rem;
+  border-left: 3px solid var(--terra);
+  background: var(--cream);
+}
+.fallback-banner p {
+  margin-top: 0;
+}
+.workshop-detail-layout {
+  display: grid;
+  gap: 3rem;
+  padding-block: clamp(3rem, 7vw, 5.5rem);
+}
+.workshop-main {
+  min-width: 0;
+}
+.workshop-prose {
+  max-width: 100%;
+  min-width: 0;
+  color: #343b35;
+  font-size: clamp(1.04rem, 1.6vw, 1.17rem);
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.workshop-prose h2,
+.workshop-prose h3,
+.workshop-prose h4 {
+  max-width: 100%;
+  margin: 2.2em 0 0.65em;
+  color: var(--forest);
+  text-wrap: wrap;
+}
+.workshop-prose h2 {
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+}
+.workshop-prose h3 {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+.workshop-prose a {
+  max-width: 100%;
+  color: var(--terra);
+  border-bottom: 1px solid currentColor;
+  overflow-wrap: anywhere;
+}
+.workshop-prose blockquote {
+  margin: 2rem 0;
+  padding: 1rem 1.5rem;
+  border-left: 3px solid var(--straw);
+  background: var(--cream);
+}
+.workshop-inline-image {
+  width: 100%;
+  height: auto;
+  margin: 2rem 0;
+}
+.workshop-facts {
+  align-self: start;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+}
+.workshop-facts dl,
+.workshop-facts dd {
+  margin: 0;
+}
+.workshop-facts dl > div {
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.workshop-facts dt {
+  margin-bottom: 0.4rem;
+  color: var(--terra);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.workshop-facts dd {
+  display: grid;
+  gap: 0.25rem;
+  line-height: 1.55;
+}
+.workshop-register {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 52px;
+  margin-top: 1.3rem;
+  padding: 0.75rem 1.2rem;
+  color: white;
+  background: var(--terra);
+  font-weight: 800;
+}
+.preview-banner {
+  position: sticky;
+  top: 76px;
+  z-index: 45;
+  padding: 0.7rem 1rem;
+  color: white;
+  background: var(--terra);
+  text-align: center;
+  font-weight: 800;
+}
 @media (min-width: 800px) {
   .shell {
     width: min(100% - 4rem, 78rem);
@@ -1305,6 +1502,15 @@ tbody th {
   }
   .card {
     padding: 1.5rem;
+  }
+  .workshop-detail-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 23rem);
+    gap: clamp(3rem, 7vw, 6rem);
+  }
+  .workshop-facts {
+    padding: 0 0 0 clamp(1.5rem, 4vw, 3rem);
+    border-top: 0;
+    border-left: 1px solid var(--line);
   }
 }
 @media (min-width: 800px) {
@@ -1345,6 +1551,15 @@ tbody th {
   }
   .toc {
     display: block;
+  }
+}
+@media (max-width: 620px) {
+  .home-workshop-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+  .workshop-detail-heading {
+    padding-bottom: 2.5rem;
   }
 }
 @supports (animation-timeline: view()) {

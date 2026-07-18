@@ -3,6 +3,9 @@ import { headers } from "next/headers";
 import localFont from "next/font/local";
 import { siteConfig } from "@/config/site";
 import { defaultLocale, isLocale } from "@/lib/i18n";
+import { getSiteSettings } from "@/lib/content-api";
+import { normalizePhoneNumber } from "@/lib/contact";
+import { serializeJsonLd } from "@/lib/json-ld";
 import "./globals.css";
 
 const body = localFont({
@@ -41,14 +44,22 @@ export default async function RootLayout({
     requestedLocale && isLocale(requestedLocale)
       ? requestedLocale
       : defaultLocale;
+  const settings = await getSiteSettings(locale);
+  const telephone = settings.is_phone_enabled
+    ? normalizePhoneNumber(settings.phone_display)
+    : "";
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: siteConfig.name,
     url: siteConfig.url,
-    email: siteConfig.contact.email,
-    telephone: "+84971519185",
-    sameAs: [siteConfig.links.facebook, siteConfig.links.youtube],
+    ...(settings.is_email_enabled && settings.email
+      ? { email: settings.email }
+      : {}),
+    ...(telephone ? { telephone } : {}),
+    sameAs: settings.links
+      .filter((item) => ["facebook", "youtube"].includes(item.kind))
+      .map((item) => item.url),
   };
   return (
     <html lang={locale} className={`${body.variable} ${display.variable}`}>
@@ -57,7 +68,7 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd),
+            __html: serializeJsonLd(organizationJsonLd),
           }}
         />
       </body>

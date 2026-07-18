@@ -4,6 +4,7 @@
 # Next.js build output
 /.next/
 /out/
+/.vercel/
 
 # Test, coverage, and generated audit output
 /coverage/
