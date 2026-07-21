@@ -7,6 +7,7 @@ import type { Locale } from "@/lib/i18n";
 import { localizedPath } from "@/lib/i18n";
 
 import { workshopCopy } from "./copy";
+import { WorkshopStatus } from "./workshop-status";
 
 export function WorkshopCard({
   workshop,
@@ -20,6 +21,7 @@ export function WorkshopCard({
     <article className="workshop-card">
       <div className="workshop-card-copy">
         <div className="workshop-card-meta">
+          <WorkshopStatus status={workshop.status} locale={locale} />
           <time dateTime={workshop.start_at}>
             {formatWorkshopDate(
               workshop.start_at,

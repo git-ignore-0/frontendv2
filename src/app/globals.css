@@ -1320,11 +1320,39 @@ tbody th {
 .workshop-card-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
 }
 .workshop-card-meta time {
   color: var(--muted);
   font-size: 0.85rem;
   line-height: 1.5;
+}
+.workshop-status {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.55rem;
+  color: var(--forest);
+  border: 1px solid color-mix(in srgb, var(--forest) 25%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cream) 72%, transparent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.workshop-status-ongoing {
+  color: var(--terra);
+  border-color: color-mix(in srgb, var(--terra) 35%, transparent);
+  background: color-mix(in srgb, var(--straw) 22%, var(--paper));
+}
+.workshop-status-completed {
+  color: var(--muted);
+  border-color: var(--line);
+  background: transparent;
 }
 .fallback-note {
   padding-left: 0.8rem;

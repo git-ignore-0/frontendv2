@@ -69,5 +69,24 @@ describe("workshop registration action", () => {
     expect(
       within(container).queryByRole("link", { name: /đăng ký/i }),
     ).not.toBeInTheDocument();
+    expect(within(container).getByText("Đã diễn ra")).toBeInTheDocument();
+  });
+
+  it("shows ongoing status and closes registration after the workshop starts", () => {
+    const { container } = render(
+      <WorkshopDetail
+        workshop={{
+          ...workshop("https://forms.example.com/register"),
+          status: "ongoing",
+        }}
+        locale="vi"
+        preview
+      />,
+    );
+
+    expect(within(container).getByText("Đang diễn ra")).toBeInTheDocument();
+    expect(
+      within(container).queryByRole("link", { name: /đăng ký/i }),
+    ).not.toBeInTheDocument();
   });
 });

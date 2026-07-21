@@ -11,6 +11,8 @@ const routes = [
   "/about/vi",
   "/plants/vi",
   "/animals/vi",
+  "/workshops/en",
+  "/workshops/vi",
 ];
 const viewports = [
   { name: "mobile-320", width: 320, height: 800 },

@@ -27,7 +27,7 @@ export type PublicWorkshop = {
   start_at: string;
   end_at: string;
   event_timezone: string;
-  status: "upcoming" | "completed";
+  status: "upcoming" | "ongoing" | "completed";
   registration_url: string | null;
   title: string;
   summary: string;

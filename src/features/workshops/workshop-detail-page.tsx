@@ -6,12 +6,14 @@ import { Arrow } from "@/components/icons";
 import { workshopCopy } from "@/features/workshops/copy";
 import { formatWorkshopDate } from "@/features/workshops/format";
 import { RichText } from "@/features/workshops/rich-text";
+import { WorkshopStatus } from "@/features/workshops/workshop-status";
 import { getWorkshop, type PublicWorkshop } from "@/lib/content-api";
 import { isLocale, localizedPath } from "@/lib/i18n";
 import { serializeJsonLd } from "@/lib/json-ld";
 
 const schemaEventStatus = {
   upcoming: "https://schema.org/EventScheduled",
+  ongoing: "https://schema.org/EventScheduled",
   completed: "https://schema.org/EventCompleted",
 } as const;
 
@@ -116,6 +118,12 @@ function Detail({
           </main>
           <aside className="workshop-facts">
             <dl>
+              <div>
+                <dt>{t.statusLabel}</dt>
+                <dd>
+                  <WorkshopStatus status={workshop.status} locale={locale} />
+                </dd>
+              </div>
               <div>
                 <dt>{t.date}</dt>
                 <dd>
