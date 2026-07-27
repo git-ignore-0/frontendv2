@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { Arrow } from "@/components/icons";
 import { siteConfig } from "@/config/site";
 import type { CommonDictionary } from "@/content/site-content";
+import type { CoreUser } from "@/lib/auth/schemas";
 import {
   type Locale,
   localeConfig,
@@ -20,13 +21,16 @@ export function SiteHeader({
   locale,
   dictionary: t,
   externalLinks,
+  initialUser,
 }: {
   locale: Locale;
   dictionary: CommonDictionary;
   externalLinks: { store?: string; forum?: string };
+  initialUser: CoreUser | null;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(initialUser);
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const alternateLocales = locales.filter((item) => item !== locale);
@@ -40,6 +44,25 @@ export function SiteHeader({
 
   useEffect(() => {
     setOpen(false);
+  }, [pathname]);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then(async (response) => {
+        if (!active) return;
+        if (!response.ok) {
+          setUser(null);
+          return;
+        }
+        const payload = (await response.json()) as {
+          data?: { user?: CoreUser };
+        };
+        setUser(payload.data?.user ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
   }, [pathname]);
   useEffect(() => {
     if (!open) return;
@@ -121,6 +144,42 @@ export function SiteHeader({
           )}
         </nav>
         <div className="header-tools">
+          <div className="desktop-account-actions">
+            {user ? (
+              <>
+                <Link
+                  href="/api/auth/account"
+                  className="account-link"
+                  aria-label={t.nav.account}
+                >
+                  {user.name}
+                </Link>
+                <form
+                  action={`/api/auth/logout?locale=${locale}`}
+                  method="post"
+                >
+                  <button className="header-logout" type="submit">
+                    {t.nav.signOut}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <a
+                  className="header-register"
+                  href={`/api/auth/register?locale=${locale}&returnTo=${encodeURIComponent(pathname)}`}
+                >
+                  {t.nav.register}
+                </a>
+                <a
+                  className="header-login"
+                  href={`/api/auth/login?locale=${locale}&returnTo=${encodeURIComponent(pathname)}`}
+                >
+                  {t.nav.signIn}
+                </a>
+              </>
+            )}
+          </div>
           {alternateLocales.map((targetLocale) => (
             <Link
               key={targetLocale}
@@ -199,6 +258,49 @@ export function SiteHeader({
                     <span className="sr-only"> ({t.external})</span>
                   </a>
                 )}
+                <div className="mobile-account-actions">
+                  {user ? (
+                    <>
+                      <Link href="/api/auth/account">
+                        <small>
+                          {externalLinks.store && externalLinks.forum
+                            ? "08"
+                            : "07"}
+                        </small>
+                        {t.nav.account}
+                        <Arrow />
+                      </Link>
+                      <form
+                        className="mobile-account-logout"
+                        action={`/api/auth/logout?locale=${locale}`}
+                        method="post"
+                      >
+                        <button type="submit">
+                          <small>→</small>
+                          {t.nav.signOut}
+                          <Arrow />
+                        </button>
+                      </form>
+                    </>
+                  ) : (
+                    <>
+                      <a
+                        href={`/api/auth/register?locale=${locale}&returnTo=${encodeURIComponent(pathname)}`}
+                      >
+                        <small>+</small>
+                        {t.nav.register}
+                        <Arrow />
+                      </a>
+                      <a
+                        href={`/api/auth/login?locale=${locale}&returnTo=${encodeURIComponent(pathname)}`}
+                      >
+                        <small>→</small>
+                        {t.nav.signIn}
+                        <Arrow />
+                      </a>
+                    </>
+                  )}
+                </div>
               </nav>
               <div className="mobile-languages" aria-label={t.language}>
                 {alternateLocales.map((targetLocale) => (

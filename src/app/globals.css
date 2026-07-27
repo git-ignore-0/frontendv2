@@ -249,6 +249,42 @@ a:hover .arrow {
   align-items: center;
   gap: 0.5rem;
 }
+.desktop-account-actions {
+  display: none;
+  align-items: center;
+  gap: 0.45rem;
+}
+.desktop-account-actions a,
+.desktop-account-actions button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.85rem;
+  border: 1px solid var(--line);
+  color: var(--forest);
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.desktop-account-actions form {
+  margin: 0;
+}
+.desktop-account-actions button {
+  background: transparent;
+  cursor: pointer;
+}
+.desktop-account-actions .header-login,
+.desktop-account-actions .account-link {
+  color: white;
+  border-color: var(--forest);
+  background: var(--forest);
+}
+.desktop-account-actions .account-link {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .language,
 .menu-button {
   min-width: 44px;
@@ -356,6 +392,25 @@ a:hover .arrow {
   color: var(--terra);
   font-size: 0.65rem;
   font-weight: 800;
+}
+.mobile-account-actions {
+  display: contents;
+}
+.mobile-account-logout button {
+  width: 100%;
+  min-height: 70px;
+  display: grid;
+  grid-template-columns: 2.6rem 1fr auto;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--forest);
+  background: transparent;
+  font-family: var(--font-display), serif;
+  font-size: 1.7rem;
+  text-align: left;
+  cursor: pointer;
 }
 .mobile-languages {
   margin-top: auto;
@@ -1573,12 +1628,23 @@ tbody th {
   .menu-button {
     display: none;
   }
+  .desktop-account-actions {
+    display: flex;
+  }
+  .header-register {
+    display: none !important;
+  }
   .knowledge-layout {
     grid-template-columns: 13rem minmax(0, 1fr);
     gap: 4rem;
   }
   .toc {
     display: block;
+  }
+}
+@media (min-width: 1180px) {
+  .header-register {
+    display: inline-flex !important;
   }
 }
 @media (max-width: 620px) {
