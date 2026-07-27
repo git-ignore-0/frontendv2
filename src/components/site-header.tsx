@@ -29,6 +29,7 @@ export function SiteHeader({
   initialUser: CoreUser | null;
 }) {
   const pathname = usePathname();
+  const accountHref = `/api/auth/account?returnTo=${encodeURIComponent(pathname)}`;
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(initialUser);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -148,7 +149,7 @@ export function SiteHeader({
             {user ? (
               <>
                 <Link
-                  href="/api/auth/account"
+                  href={accountHref}
                   className="account-link"
                   aria-label={t.nav.account}
                 >
@@ -261,7 +262,7 @@ export function SiteHeader({
                 <div className="mobile-account-actions">
                   {user ? (
                     <>
-                      <Link href="/api/auth/account">
+                      <Link href={accountHref}>
                         <small>
                           {externalLinks.store && externalLinks.forum
                             ? "08"
