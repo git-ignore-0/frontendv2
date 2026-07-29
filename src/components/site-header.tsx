@@ -29,7 +29,7 @@ export function SiteHeader({
   initialUser: CoreUser | null;
 }) {
   const pathname = usePathname();
-  const accountHref = `/api/auth/account?returnTo=${encodeURIComponent(pathname)}`;
+  const accountHref = localizedPath(locale, "/account");
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(initialUser);
   const trigger = useRef<HTMLButtonElement>(null);

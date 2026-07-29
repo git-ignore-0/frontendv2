@@ -1285,6 +1285,415 @@ tbody th {
   color: var(--forest);
   font-size: clamp(2.7rem, 7vw, 5.5rem);
 }
+
+.account-page,
+.account-list-page {
+  max-width: 68rem;
+  padding-block: clamp(2.5rem, 7vw, 6rem);
+}
+.account-overview-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: clamp(2rem, 5vw, 3.5rem);
+}
+.account-overview-header h1 {
+  margin: 0;
+  color: var(--forest);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+}
+.account-profile-action,
+.account-detail-link,
+.account-back-link {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--forest);
+  font-weight: 850;
+}
+.account-profile-action {
+  min-height: 48px;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--forest);
+  border-radius: 999px;
+}
+.account-profile-action:hover {
+  background: var(--forest);
+  color: white;
+}
+.account-profile-action svg,
+.account-detail-link svg,
+.account-back-link svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  transition: transform 0.18s var(--ease);
+}
+.account-profile-action:hover svg,
+.account-detail-link:hover svg {
+  transform: translateX(0.2rem);
+}
+.account-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: white;
+  box-shadow: 0 16px 45px rgba(23, 63, 52, 0.07);
+  overflow: hidden;
+}
+.account-metric {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  padding: clamp(1.5rem, 4vw, 2.6rem);
+}
+.account-metric + .account-metric {
+  border-left: 1px solid var(--line);
+}
+.account-metric p {
+  margin: 0 0 0.7rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.account-metric > strong {
+  margin-bottom: 1.25rem;
+  color: var(--forest);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 500;
+  line-height: 0.95;
+}
+.account-metric strong small {
+  color: var(--muted);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.account-detail-link {
+  margin-top: auto;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--forest) 35%, transparent);
+}
+.account-detail-link:hover {
+  color: var(--terra);
+  border-color: currentcolor;
+}
+.account-referral {
+  padding: clamp(1.5rem, 4vw, 2.6rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--cream) 62%, white);
+}
+.account-referral-heading h2 {
+  margin: 0.35rem 0 1.4rem;
+  color: var(--forest);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+}
+.account-pagination button,
+.referral-code button,
+.referral-entry button,
+.account-state button,
+.account-inline-state button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 0.65rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.account-empty {
+  padding: 1.5rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.8rem;
+  background: var(--paper);
+  color: var(--muted);
+  text-align: center;
+}
+.referral-code {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.9rem;
+  background: var(--cream);
+}
+.referral-code code {
+  flex: 1;
+  color: var(--forest);
+  font-size: clamp(1.25rem, 4vw, 2rem);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+.referral-code button,
+.referral-entry button,
+.account-state button,
+.account-inline-state button {
+  padding-inline: 1rem;
+  background: var(--forest);
+  color: white;
+}
+.referral-code button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  transition:
+    background-color 0.18s var(--ease),
+    transform 0.18s var(--ease);
+}
+.referral-code button.is-copied {
+  background: #2f7d55;
+}
+.referral-code button.is-copied svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  animation: copy-confirmation 0.22s var(--ease);
+}
+.copy-status-error {
+  margin: 0.75rem 0 0;
+  color: var(--terra);
+  font-weight: 700;
+}
+@keyframes copy-confirmation {
+  from {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .referral-code button,
+  .referral-code button.is-copied svg {
+    transition: none;
+    animation: none;
+  }
+}
+.referrer-status {
+  margin: 1rem 0 0;
+  color: var(--forest);
+  font-weight: 700;
+}
+.referral-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.referral-entry label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--forest);
+  font-weight: 800;
+}
+.referral-entry input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  font: inherit;
+  text-transform: uppercase;
+}
+.referral-entry p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--terra);
+}
+.account-list-page {
+  max-width: 56rem;
+}
+.account-back-link {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--muted);
+}
+.account-back-link:hover {
+  border-color: var(--forest);
+  color: var(--forest);
+}
+.account-back-link:hover svg {
+  transform: translateX(-0.2rem);
+}
+.account-list-heading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.account-list-heading h1 {
+  margin: 0;
+  color: var(--forest);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+}
+.account-list-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--straw);
+  background: color-mix(in srgb, var(--cream) 60%, white);
+}
+.account-list-summary span,
+.account-list-summary small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.account-list-summary strong {
+  margin-left: auto;
+  color: var(--forest);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 2.2rem;
+}
+.account-history-list,
+.account-invited-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+.account-history-list li,
+.account-invited-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.account-history-list time,
+.account-invited-list time {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.account-history-list b {
+  flex: 0 0 auto;
+  font-size: 1.12rem;
+}
+.account-history-list .credit {
+  color: var(--forest);
+}
+.account-history-list .debit {
+  color: var(--terra);
+}
+.account-invited-list li span {
+  flex: 1;
+  color: var(--forest);
+  font-weight: 850;
+}
+.account-invited-list li time {
+  margin: 0;
+}
+.account-inline-state {
+  padding: 1.5rem;
+  border: 1px dashed var(--line);
+  background: var(--paper);
+  color: var(--muted);
+}
+.account-inline-state p {
+  margin-top: 0;
+}
+.account-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.account-pagination button {
+  padding-inline: 0.9rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--forest);
+}
+.account-pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.account-state {
+  min-height: 55vh;
+  display: grid;
+  place-content: center;
+  justify-items: start;
+  padding-block: 4rem;
+}
+.account-state h1 {
+  margin-bottom: 0.5rem;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+}
+
+@media (max-width: 760px) {
+  .account-overview-header,
+  .account-metrics {
+    grid-template-columns: 1fr;
+  }
+  .account-profile-action {
+    justify-self: start;
+  }
+  .referral-code {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .account-metric + .account-metric {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+  .referral-entry {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .account-pagination {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    text-align: center;
+  }
+  .account-pagination span {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .account-history-list li,
+  .account-invited-list li {
+    align-items: flex-start;
+  }
+  .account-invited-list li {
+    flex-wrap: wrap;
+  }
+  .account-invited-list li time {
+    width: 100%;
+  }
+}
 .legal-notice {
   max-width: 46rem;
   padding: clamp(1.5rem, 5vw, 3rem);

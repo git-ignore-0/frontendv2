@@ -293,6 +293,31 @@ test("localized shell exposes the active language", async ({ page }) => {
   );
 });
 
+test("account has a usable unauthenticated state without overflow", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  await page.goto("/account/vi");
+  const heading = page.getByRole("heading", {
+    name: "Đăng nhập để xem tài khoản",
+  });
+  await expect(heading).toBeVisible();
+  const signIn = page.locator("#main").getByRole("link", { name: "Đăng nhập" });
+  await expect(signIn).toHaveAttribute("href", /returnTo=%2Faccount%2Fvi/);
+  await signIn.focus();
+  await expect(signIn).toBeFocused();
+  const overflow = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth >
+      document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(false);
+  expect(errors).toEqual([]);
+});
+
 test("legacy locale-prefix routes redirect to locale suffix routes", async ({
   page,
 }) => {
