@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { getSiteContent } from "@/content/site-content";
-import { InvitedPeoplePage } from "@/features/account/account-list-pages";
-import { AccountRouteGate } from "@/features/account/account-route-gate";
+import { ReferralProgramPage } from "@/features/account/referral-program-page";
 import { isLocale } from "@/lib/i18n";
 
 export async function generateMetadata({
@@ -12,10 +11,12 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getSiteContent(locale).account.invited };
+  return {
+    title: getSiteContent(locale).account.referralProgramMetadataTitle,
+  };
 }
 
-export default async function AccountInvitedRoute({
+export default async function AccountReferralRoute({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -23,10 +24,5 @@ export default async function AccountInvitedRoute({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const copy = getSiteContent(locale).account;
-  const returnPath = `/account/${locale}/invited`;
-  return (
-    <AccountRouteGate locale={locale} returnPath={returnPath}>
-      <InvitedPeoplePage locale={locale} copy={copy} />
-    </AccountRouteGate>
-  );
+  return <ReferralProgramPage locale={locale} copy={copy} />;
 }

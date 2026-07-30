@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { getSiteContent } from "@/content/site-content";
-import { SignedOutAccount } from "@/features/account/account-page";
 import { PointHistoryPage } from "@/features/account/account-list-pages";
-import { readSession } from "@/lib/auth/session";
+import { AccountRouteGate } from "@/features/account/account-route-gate";
 import { isLocale } from "@/lib/i18n";
 
 export async function generateMetadata({
@@ -24,11 +23,10 @@ export default async function AccountPointsRoute({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const copy = getSiteContent(locale).account;
-  const session = await readSession();
   const returnPath = `/account/${locale}/points`;
-  return session ? (
-    <PointHistoryPage locale={locale} copy={copy} />
-  ) : (
-    <SignedOutAccount locale={locale} copy={copy} returnPath={returnPath} />
+  return (
+    <AccountRouteGate locale={locale} returnPath={returnPath}>
+      <PointHistoryPage locale={locale} copy={copy} />
+    </AccountRouteGate>
   );
 }

@@ -13,7 +13,8 @@ import {
   PointHistoryPage,
 } from "@/features/account/account-list-pages";
 import { AccountPage, SignedOutAccount } from "@/features/account/account-page";
-import { accountApi } from "@/features/account/api";
+import { AccountApiError, accountApi } from "@/features/account/api";
+import { ReferralProgramPage } from "@/features/account/referral-program-page";
 
 vi.mock("@/features/account/api", async (importOriginal) => {
   const actual =
@@ -73,7 +74,7 @@ function mockAccount() {
 }
 
 describe("public account", () => {
-  it("renders a concise summary without duplicate navigation or logout", async () => {
+  it("keeps the account overview concise and routes each summary to its detail page", async () => {
     mockAccount();
     render(<AccountPage locale="en" copy={getSiteContent("en").account} />);
     expect(await screen.findByText("NFV1234567")).toBeInTheDocument();
@@ -88,12 +89,21 @@ describe("public account", () => {
       screen.getByRole("link", { name: "View invited people" }),
     ).toHaveAttribute("href", "/account/en/invited");
     expect(
+      screen.getByRole("link", { name: /Invite friends, earn rewards/i }),
+    ).toHaveAttribute("href", "/account/en/referral");
+    expect(
+      screen.queryByRole("link", { name: "Redeem rewards" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Redemption history" }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.queryByRole("button", { name: "Sign out" }),
     ).not.toBeInTheDocument();
     expect(accountApi).toHaveBeenCalledTimes(1);
   });
 
-  it("copies the code and replaces delayed code entry after success", async () => {
+  it("copies the referral code from the compact account overview", async () => {
     mockAccount();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
@@ -105,6 +115,41 @@ describe("public account", () => {
     expect(
       await screen.findByText("Referral code copied."),
     ).toBeInTheDocument();
+  });
+
+  it("keeps program guidance, referral entry and reward navigation on one detail page", async () => {
+    mockAccount();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(
+      <ReferralProgramPage locale="en" copy={getSiteContent("en").account} />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "How it works" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "They place their first order",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Conditions for earning points" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("100")).toBeInTheDocument();
+    expect(screen.getByText("+50")).toBeInTheDocument();
+    expect(
+      screen.getByText(/paid, delivered and worth at least 300,000₫/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Redeem rewards" }),
+    ).toHaveAttribute("href", "/account/en/rewards");
+    expect(
+      screen.getByRole("link", { name: "Redemption history" }),
+    ).toHaveAttribute("href", "/account/en/redemptions");
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy code" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("NFV1234567"));
 
     fireEvent.change(screen.getByLabelText("Enter a referral code"), {
       target: { value: "REFCODE123" },
@@ -116,6 +161,26 @@ describe("public account", () => {
     expect(
       screen.queryByLabelText("Enter a referral code"),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps program guidance public while protecting the personal code", async () => {
+    vi.mocked(accountApi).mockRejectedValueOnce(
+      new AccountApiError("session_expired", 401),
+    );
+    render(
+      <ReferralProgramPage locale="en" copy={getSiteContent("en").account} />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Invite friends, earn rewards" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "How it works" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "Sign in to get your code" }),
+    ).toHaveAttribute("href", expect.stringContaining("returnTo"));
+    expect(screen.queryByText("NFV1234567")).not.toBeInTheDocument();
   });
 
   it("explains how to recover when copying the code is unavailable", async () => {

@@ -1,4 +1,9 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from "@playwright/test";
 
 type SiteSettings = {
   email: string;
@@ -19,6 +24,52 @@ async function getSiteSettings(request: APIRequestContext) {
 function phoneHref(value: string) {
   const digits = value.replace(/\D/g, "");
   return value.trim().startsWith("+") ? `tel:+${digits}` : `tel:${digits}`;
+}
+
+const reward = {
+  id: "11111111-1111-4111-8111-111111111111",
+  point_cost: 100,
+  image: {
+    id: "22222222-2222-4222-8222-222222222222",
+    url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='360'/%3E",
+    width: 480,
+    height: 360,
+    variants: [],
+  },
+  position: 1,
+  requested_locale: "vi",
+  content_locale: "vi",
+  is_fallback: false,
+  name: "Rau theo mùa",
+  short_description: "Rau đang có tại nông trại.",
+};
+
+async function mockRewardCatalog(page: Page, signedIn: boolean) {
+  await page.route("**/api/account/account", (route) =>
+    route.fulfill(
+      signedIn
+        ? {
+            json: {
+              data: {
+                referral_code: "NFV1234567",
+                referrer: null,
+                can_submit_referral_code: true,
+                points_balance: 120,
+                invited_count: 1,
+              },
+            },
+          }
+        : { status: 401, json: { error: "unauthorized" } },
+    ),
+  );
+  await page.route("**/api/account/rewards?**", (route) =>
+    route.fulfill({
+      json: {
+        data: [reward],
+        meta: { page: 1, page_size: 30, total: 1 },
+      },
+    }),
+  );
 }
 
 const internalRoutes = [
@@ -51,6 +102,134 @@ for (const route of internalRoutes) {
     expect(errors).toEqual([]);
   });
 }
+
+test("nested account routes keep their shape when switching language", async ({
+  page,
+}) => {
+  await page.goto("/account/vi/rewards");
+  await expect(
+    page.getByRole("link", { name: /Ngôn ngữ: English/i }),
+  ).toHaveAttribute("href", "/account/en/rewards");
+  await page.goto("/account/vi/referral");
+  await expect(
+    page.getByRole("link", { name: /Ngôn ngữ: English/i }),
+  ).toHaveAttribute("href", "/account/en/referral");
+});
+
+test("referral action is available outside account and hidden inside it", async ({
+  page,
+}) => {
+  await page.goto("/vi");
+  await expect(
+    page.getByRole("link", { name: "Giới thiệu bạn, nhận quà" }),
+  ).toHaveAttribute("href", "/account/vi/referral");
+
+  await page.goto("/account/vi/referral");
+  await expect(
+    page.getByRole("heading", { name: "Giới thiệu bạn, nhận quà" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Chương trình hoạt động thế nào?",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Điều kiện nhận điểm" }),
+  ).toBeVisible();
+  await expect(page.getByText("100", { exact: true })).toBeVisible();
+  await expect(page.getByText("+50", { exact: true })).toBeVisible();
+  await expect(page.getByText(/giá trị từ 300\.000₫/i)).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Giới thiệu bạn, nhận quà" }),
+  ).toHaveCount(0);
+});
+
+test("anonymous visitors can browse the reward catalog without program copy", async ({
+  page,
+}) => {
+  await mockRewardCatalog(page, false);
+  await page.goto("/account/vi/rewards");
+
+  await expect(
+    page.getByRole("heading", { name: "Danh sách quà" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Chương trình hoạt động thế nào?" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Rau theo mùa" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Đăng nhập để đổi Rau theo mùa" }),
+  ).toHaveAttribute("href", /returnTo=%2Faccount%2Fvi%2Frewards/);
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+});
+
+test("reward confirmation stays open and submits only once during a rapid click", async ({
+  page,
+}) => {
+  await mockRewardCatalog(page, true);
+  let releasePost: (() => void) | undefined;
+  const postGate = new Promise<void>((resolve) => {
+    releasePost = resolve;
+  });
+  let postCount = 0;
+  await page.route("**/api/account/redemptions", async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    postCount += 1;
+    await postGate;
+    await route.fulfill({
+      status: 201,
+      json: {
+        data: {
+          redemption: {
+            id: "33333333-3333-4333-8333-333333333333",
+            reward_id: reward.id,
+            reward_name_vi_snapshot: reward.name,
+            reward_name_en_snapshot: "Seasonal vegetables",
+            reward_name: reward.name,
+            point_cost_snapshot: reward.point_cost,
+            status: "pending",
+            rejection_message: "",
+            created_at: "2026-07-30T00:00:00Z",
+            contacted_at: null,
+            completed_at: null,
+            rejected_at: null,
+            updated_at: "2026-07-30T00:00:00Z",
+          },
+          balance: 20,
+          idempotent_replay: false,
+        },
+      },
+    });
+  });
+
+  await page.goto("/account/vi/rewards");
+  await page.getByRole("button", { name: "Đổi Rau theo mùa" }).click();
+  const dialog = page.getByRole("dialog", { name: "Xác nhận đổi quà" });
+  const confirm = dialog.getByRole("button", { name: "Xác nhận đổi quà" });
+  await confirm.evaluate((button: HTMLButtonElement) => {
+    button.click();
+    button.click();
+  });
+  await expect.poll(() => postCount).toBe(1);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Đang gửi…" }),
+  ).toBeDisabled();
+
+  releasePost?.();
+  await expect(page.getByText("Đã nhận yêu cầu đổi quà")).toBeVisible();
+  await expect(dialog).toHaveCount(0);
+  expect(postCount).toBe(1);
+});
 
 test("store link follows the public site settings", async ({
   page,

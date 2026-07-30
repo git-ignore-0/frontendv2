@@ -336,6 +336,54 @@ a:hover .arrow {
   overscroll-behavior: contain;
   animation: backdrop-fade 0.22s var(--ease) both;
 }
+.referral-floating-action {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 40;
+  max-width: calc(100vw - 2rem);
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.45rem 1rem 0.45rem 0.45rem;
+  border: 1px solid color-mix(in srgb, white 18%, var(--forest));
+  border-radius: 999px;
+  background: var(--forest);
+  box-shadow: 0 12px 32px rgba(23, 63, 52, 0.24);
+  color: white;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.25;
+  transition:
+    transform 0.2s var(--ease),
+    box-shadow 0.2s var(--ease),
+    background-color 0.2s var(--ease);
+}
+.referral-floating-action:hover {
+  background: color-mix(in srgb, var(--forest) 92%, black);
+  box-shadow: 0 16px 38px rgba(23, 63, 52, 0.3);
+  transform: translateY(-2px);
+}
+.referral-floating-action-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--straw);
+  color: var(--forest);
+}
+.referral-floating-action svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
 .mobile-panel {
   width: min(90vw, 28rem);
   height: 100dvh;
@@ -1287,7 +1335,8 @@ tbody th {
 }
 
 .account-page,
-.account-list-page {
+.account-list-page,
+.rewards-page {
   max-width: 68rem;
   padding-block: clamp(2.5rem, 7vw, 6rem);
 }
@@ -1301,8 +1350,8 @@ tbody th {
 .account-overview-header h1 {
   margin: 0;
   color: var(--forest);
-  font-size: clamp(2rem, 4vw, 3.25rem);
-  line-height: 1.05;
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  line-height: 1.1;
 }
 .account-profile-action,
 .account-detail-link,
@@ -1347,7 +1396,6 @@ tbody th {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: white;
-  box-shadow: 0 16px 45px rgba(23, 63, 52, 0.07);
   overflow: hidden;
 }
 .account-metric {
@@ -1368,10 +1416,10 @@ tbody th {
   text-transform: uppercase;
 }
 .account-metric > strong {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   color: var(--forest);
   font-family: var(--font-display), Georgia, serif;
-  font-size: clamp(3rem, 8vw, 5rem);
+  font-size: clamp(2.35rem, 6vw, 3.5rem);
   font-weight: 500;
   line-height: 0.95;
 }
@@ -1393,19 +1441,21 @@ tbody th {
   border-color: currentcolor;
 }
 .account-referral {
-  padding: clamp(1.5rem, 4vw, 2.6rem);
+  margin-bottom: 1rem;
+  padding: clamp(1.1rem, 3vw, 1.6rem);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--cream) 62%, white);
+  background: white;
 }
 .account-referral-heading h2 {
-  margin: 0.35rem 0 1.4rem;
+  margin: 0 0 0.8rem;
   color: var(--forest);
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-size: 1rem;
 }
 .account-pagination button,
-.referral-code button,
+.referral-code-control button,
 .referral-entry button,
+.referral-personal-state button,
 .account-state button,
 .account-inline-state button {
   min-height: 44px;
@@ -1422,43 +1472,58 @@ tbody th {
   color: var(--muted);
   text-align: center;
 }
-.referral-code {
+.referral-code-control button {
+  width: 100%;
+  min-height: 52px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-radius: 0.9rem;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
   background: var(--cream);
-}
-.referral-code code {
-  flex: 1;
   color: var(--forest);
-  font-size: clamp(1.25rem, 4vw, 2rem);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.18s var(--ease),
+    background-color 0.18s var(--ease);
 }
-.referral-code button,
+.referral-code-control code {
+  color: var(--forest);
+  font-size: clamp(1.05rem, 3vw, 1.35rem);
+  font-weight: 800;
+  letter-spacing: 0.09em;
+}
+.referral-code-control button > span,
 .referral-entry button,
+.referral-personal-state button,
 .account-state button,
 .account-inline-state button {
   padding-inline: 1rem;
   background: var(--forest);
   color: white;
 }
-.referral-code button {
+.referral-code-control button > span {
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  transition:
-    background-color 0.18s var(--ease),
-    transform 0.18s var(--ease);
+  padding-block: 0.4rem;
+  border-radius: 0.55rem;
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.8rem;
+  font-weight: 850;
 }
-.referral-code button.is-copied {
+.referral-code-control button:hover,
+.referral-code-control button.is-copied {
+  border-color: var(--forest);
+}
+.referral-code-control button.is-copied > span {
   background: #2f7d55;
 }
-.referral-code button.is-copied svg {
+.referral-code-control button.is-copied svg {
   width: 1rem;
   height: 1rem;
   fill: none;
@@ -1480,11 +1545,58 @@ tbody th {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .referral-code button,
-  .referral-code button.is-copied svg {
+  .referral-code-control button,
+  .referral-code-control button.is-copied svg {
     transition: none;
     animation: none;
   }
+}
+.account-program-link {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--forest);
+}
+.account-program-link:hover {
+  border-color: var(--forest);
+  background: color-mix(in srgb, var(--cream) 55%, white);
+}
+.account-program-link small,
+.account-program-link strong {
+  display: block;
+}
+.account-program-link small {
+  margin-bottom: 0.2rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.account-program-link strong {
+  font-size: 1.05rem;
+}
+.account-program-link-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.account-program-link-action svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 .referrer-status {
   margin: 1rem 0 0;
@@ -1513,10 +1625,241 @@ tbody th {
   font: inherit;
   text-transform: uppercase;
 }
+.referral-entry button {
+  min-height: 48px;
+}
 .referral-entry p {
   grid-column: 1 / -1;
   margin: 0;
   color: var(--terra);
+}
+.referral-program-page {
+  padding-bottom: clamp(3.5rem, 8vw, 6.5rem);
+}
+.referral-program-hero {
+  padding-block: clamp(2.8rem, 7vw, 5.2rem);
+  background: var(--forest);
+  color: white;
+}
+.referral-program-hero .shell {
+  max-width: 76rem;
+}
+.referral-program-hero .eyebrow {
+  margin: 0 0 1rem;
+  color: var(--straw);
+}
+.referral-program-hero h1 {
+  max-width: 15ch;
+  margin: 0;
+  color: white;
+  font-size: clamp(2.25rem, 5.5vw, 4rem);
+}
+.referral-program-hero strong {
+  display: block;
+  margin-top: 1rem;
+  color: var(--straw);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+}
+.referral-program-hero p:last-child {
+  max-width: 48rem;
+  margin: 0.75rem 0 0;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.65;
+}
+.referral-program-layout {
+  max-width: 76rem;
+  display: grid;
+  gap: clamp(2rem, 5vw, 4rem);
+  padding-top: clamp(2.25rem, 6vw, 4.5rem);
+}
+.referral-program-personal {
+  min-width: 0;
+  align-self: start;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--straw);
+  border-radius: var(--radius);
+  background: white;
+  box-shadow: 0 16px 44px rgba(40, 35, 24, 0.08);
+}
+.referral-program-personal > .eyebrow {
+  margin: 0 0 0.55rem;
+}
+.referral-program-personal h2,
+.referral-personal-state h2 {
+  margin: 0 0 0.8rem;
+  color: var(--forest);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+.referral-personal-state > p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.referral-personal-state button,
+.referral-sign-in {
+  width: fit-content;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-inline: 1rem;
+  border-radius: 0.65rem;
+  background: var(--forest);
+  color: white;
+  font-weight: 800;
+}
+.referral-sign-in svg,
+.referral-personal-actions svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+.referral-entry-panel {
+  margin-top: 1.4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.referral-entry-panel h3,
+.referral-personal-actions h3 {
+  margin: 0;
+  color: var(--forest);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.85rem;
+  font-weight: 850;
+}
+.referral-personal-actions {
+  margin-top: 1.4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.referral-personal-actions nav {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.65rem;
+}
+.referral-personal-actions a {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--forest);
+  font-weight: 800;
+}
+.referral-personal-actions a:hover {
+  color: var(--terra);
+}
+.referral-section-heading h2 {
+  margin: 0;
+  color: var(--forest);
+  font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+}
+.referral-section-heading p {
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.referral-program-steps {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+.referral-program-steps li {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.referral-program-steps li > span {
+  padding-top: 0.15rem;
+  color: var(--terra);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+}
+.referral-program-steps h3 {
+  margin: 0 0 0.35rem;
+  color: var(--forest);
+  font-family: var(--font-body), sans-serif;
+  font-size: 1rem;
+}
+.referral-program-steps p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.referral-program-earnings {
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+}
+.referral-program-earnings > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--cream);
+  overflow: hidden;
+}
+.referral-program-earnings article {
+  min-width: 0;
+  margin: 0;
+  padding: 1.25rem;
+}
+.referral-program-earnings article + article {
+  border-left: 1px solid var(--line);
+}
+.referral-program-earnings strong {
+  display: block;
+  color: var(--forest);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  line-height: 1;
+}
+.referral-program-earnings article p {
+  margin-top: 0.45rem;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.referral-program-eligibility {
+  margin-top: clamp(2rem, 5vw, 3.25rem);
+}
+.referral-program-eligibility h2 {
+  margin: 0;
+  color: var(--forest);
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+}
+.referral-program-eligibility ul {
+  margin: 1rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+.referral-program-eligibility li {
+  position: relative;
+  padding: 0.85rem 0 0.85rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  line-height: 1.55;
+}
+.referral-program-eligibility li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--terra);
+  font-weight: 850;
 }
 .account-list-page {
   max-width: 56rem;
@@ -1546,8 +1889,8 @@ tbody th {
 .account-list-heading h1 {
   margin: 0;
   color: var(--forest);
-  font-size: clamp(2rem, 4vw, 3.25rem);
-  line-height: 1.05;
+  font-size: clamp(1.7rem, 3.5vw, 2.4rem);
+  line-height: 1.1;
 }
 .account-list-summary {
   display: flex;
@@ -1571,12 +1914,15 @@ tbody th {
   font-family: var(--font-display), Georgia, serif;
   font-size: 2.2rem;
 }
-.account-history-list,
-.account-invited-list {
+.account-record-list {
   margin: 0;
   padding: 0;
   border-top: 1px solid var(--line);
   list-style: none;
+  transition: opacity 0.18s var(--ease);
+}
+.account-record-list[aria-busy="true"] {
+  opacity: 0.55;
 }
 .account-history-list li,
 .account-invited-list li {
@@ -1652,17 +1998,428 @@ tbody th {
   font-size: clamp(2.2rem, 5vw, 4rem);
 }
 
+.rewards-page {
+  max-width: 76rem;
+}
+.rewards-page > .account-list-heading {
+  max-width: 62rem;
+}
+.reward-catalog-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+.reward-catalog-heading > p {
+  max-width: 42rem;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.reward-balance {
+  min-width: 11rem;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--straw);
+  background: var(--cream);
+  text-align: right;
+}
+.reward-balance span,
+.reward-balance small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.reward-balance strong {
+  display: block;
+  color: var(--forest);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 2.5rem;
+  font-weight: 500;
+  line-height: 1;
+}
+.reward-balance a {
+  width: fit-content;
+  display: inline-flex;
+  margin-top: 0.7rem;
+  color: var(--forest);
+  font-weight: 850;
+}
+.reward-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  transition: opacity 0.18s var(--ease);
+}
+.reward-grid[aria-busy="true"] {
+  opacity: 0.55;
+}
+.reward-card {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: white;
+  box-shadow: 0 15px 40px rgba(23, 63, 52, 0.07);
+}
+.reward-card-image {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--cream);
+}
+.reward-card-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.5s var(--ease-out);
+}
+.reward-card:hover .reward-card-image img {
+  transform: scale(1.025);
+}
+.reward-card-body {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  align-content: start;
+  padding: 1.25rem;
+}
+.reward-card h3 {
+  margin: 0 0 0.6rem;
+  color: var(--forest);
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+.reward-card p {
+  margin: 0 0 1.25rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.reward-card-body > strong {
+  margin-bottom: 0.8rem;
+  color: var(--soil);
+  font-size: 1.05rem;
+}
+.reward-card-action {
+  width: 100%;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.7rem;
+  background: var(--forest);
+  color: white;
+  font-weight: 850;
+  text-align: center;
+  cursor: pointer;
+}
+.reward-card-action:hover:not(:disabled) {
+  background: var(--terra);
+}
+.reward-card-action:disabled {
+  background: color-mix(in srgb, var(--muted) 18%, white);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.redemption-confirmation {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--moss) 40%, transparent);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--moss) 10%, white);
+}
+.redemption-confirmation strong {
+  color: var(--forest);
+}
+.redemption-confirmation p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+}
+.redemption-confirmation a,
+.redemption-list-actions a,
+.redemption-list > li > a,
+.redemption-detail-rewards-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--forest);
+  font-weight: 850;
+}
+.redemption-confirmation svg,
+.redemption-list-actions svg,
+.redemption-list > li > a svg,
+.redemption-detail-rewards-link svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+.redemption-confirmation > button {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.redemption-dialog-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgba(12, 31, 26, 0.72);
+  backdrop-filter: blur(5px);
+}
+.redemption-dialog {
+  width: min(100%, 35rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: clamp(1.4rem, 5vw, 2.4rem);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.3);
+}
+.redemption-dialog h2 {
+  margin: 0.3rem 0 0.7rem;
+  color: var(--forest);
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+}
+.redemption-dialog-intro {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.redemption-dialog-summary {
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.redemption-dialog-summary div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.redemption-dialog-summary dt {
+  color: var(--muted);
+}
+.redemption-dialog-summary dd {
+  margin: 0;
+  color: var(--forest);
+  font-weight: 850;
+  text-align: right;
+}
+.redemption-dialog-error {
+  margin: 0.8rem 0 0;
+  padding: 0.75rem;
+  border-left: 3px solid var(--terra);
+  background: color-mix(in srgb, var(--terra) 8%, white);
+  color: var(--soil);
+  line-height: 1.45;
+}
+.redemption-dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+.redemption-dialog-actions button {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: white;
+  color: var(--forest);
+  font-weight: 850;
+  cursor: pointer;
+}
+.redemption-dialog-actions button.primary {
+  border-color: var(--forest);
+  background: var(--forest);
+  color: white;
+}
+.redemption-dialog-actions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.redemption-list-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: -1rem 0 1.5rem;
+}
+.redemption-list-actions a {
+  min-height: 44px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--forest);
+  border-radius: 999px;
+}
+.redemption-list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.redemption-list h2 {
+  margin: 0.5rem 0 0.35rem;
+  color: var(--forest);
+  font-size: 1.35rem;
+}
+.redemption-list-main > p {
+  margin: 0;
+  color: var(--muted);
+}
+.redemption-list time {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.redemption-status {
+  width: fit-content;
+  display: inline-flex;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--soil);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.redemption-status.is-contacted {
+  background: #e8eff4;
+  color: #315b73;
+}
+.redemption-status.is-completed {
+  background: #e4f0e7;
+  color: #25613d;
+}
+.redemption-status.is-rejected {
+  background: #f5e5df;
+  color: #8b3d25;
+}
+.redemption-list-main .redemption-rejection {
+  margin-top: 0.8rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid var(--terra);
+  color: var(--soil);
+  line-height: 1.45;
+}
+.redemption-detail-card {
+  padding: clamp(1.4rem, 5vw, 2.5rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: white;
+  box-shadow: 0 16px 45px rgba(23, 63, 52, 0.07);
+}
+.redemption-detail-heading {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.redemption-detail-heading h2 {
+  margin: 0.65rem 0 0;
+  color: var(--forest);
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+}
+.redemption-detail-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+.redemption-detail-card dl div {
+  min-width: 0;
+  padding: 1.2rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.redemption-detail-card dl div:nth-child(odd) {
+  padding-right: 1rem;
+}
+.redemption-detail-card dl div:nth-child(even) {
+  padding-left: 1rem;
+  border-left: 1px solid var(--line);
+}
+.redemption-detail-card dt {
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.redemption-detail-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--forest);
+  font-weight: 750;
+}
+.redemption-detail-rejection {
+  margin-top: 1.5rem;
+  padding: 1rem 1.2rem;
+  border-left: 3px solid var(--terra);
+  background: color-mix(in srgb, var(--terra) 8%, white);
+}
+.redemption-detail-rejection h3,
+.redemption-detail-rejection p {
+  margin: 0;
+}
+.redemption-detail-rejection h3 {
+  margin-bottom: 0.4rem;
+  color: var(--soil);
+  font-size: 0.9rem;
+}
+.redemption-detail-rejection p {
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.redemption-detail-rewards-link {
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .referral-program-layout {
+    grid-template-areas: "guide personal";
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+  }
+  .referral-program-guide {
+    grid-area: guide;
+  }
+  .referral-program-personal {
+    position: sticky;
+    top: 6.5rem;
+    grid-area: personal;
+  }
+}
+
 @media (max-width: 760px) {
+  [data-locale-shell]:has(.referral-floating-action) .footer {
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom));
+  }
   .account-overview-header,
   .account-metrics {
     grid-template-columns: 1fr;
   }
   .account-profile-action {
     justify-self: start;
-  }
-  .referral-code {
-    align-items: stretch;
-    flex-direction: column;
   }
   .account-metric + .account-metric {
     border-top: 1px solid var(--line);
@@ -1671,9 +2428,44 @@ tbody th {
   .referral-entry {
     grid-template-columns: 1fr;
   }
+  .reward-catalog-heading {
+    grid-template-columns: 1fr;
+  }
+  .reward-balance {
+    width: 100%;
+    text-align: left;
+  }
+  .reward-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 420px) {
+  .referral-floating-action {
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 1.5rem);
+    font-size: 0.78rem;
+  }
+  .referral-program-earnings > div {
+    grid-template-columns: 1fr;
+  }
+  .referral-program-earnings article + article {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+  .account-program-link {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .referral-code-control button {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .referral-code-control code {
+    padding: 0.25rem;
+    text-align: center;
+  }
   .account-pagination {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1692,6 +2484,39 @@ tbody th {
   }
   .account-invited-list li time {
     width: 100%;
+  }
+  .reward-grid,
+  .redemption-detail-card dl {
+    grid-template-columns: 1fr;
+  }
+  .redemption-confirmation,
+  .redemption-list > li {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .redemption-confirmation > button {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.55rem;
+  }
+  .redemption-confirmation > div {
+    padding-right: 2rem;
+  }
+  .redemption-dialog-actions {
+    grid-template-columns: 1fr;
+  }
+  .redemption-dialog-actions button.primary {
+    grid-row: 1;
+  }
+  .redemption-detail-card dl div:nth-child(odd),
+  .redemption-detail-card dl div:nth-child(even) {
+    padding-inline: 0;
+    border-left: 0;
+  }
+}
+@media print {
+  .referral-floating-action {
+    display: none;
   }
 }
 .legal-notice {

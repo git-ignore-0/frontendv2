@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import type { SiteContent } from "@/content/site-content";
-import { accountApi, accountDateLocale } from "@/features/account/api";
+import { AccountBackIcon } from "@/features/account/account-icons";
+import { SignedOutAccount } from "@/features/account/account-page";
+import {
+  accountApi,
+  accountDateLocale,
+  isAccountSessionError,
+} from "@/features/account/api";
 import type {
   InvitedUser,
   PaginationMeta,
@@ -15,7 +21,7 @@ import type { Locale } from "@/lib/i18n";
 
 type Copy = SiteContent["account"];
 
-function AccountListHeading({
+export function AccountListHeading({
   locale,
   copy,
   title,
@@ -31,16 +37,14 @@ function AccountListHeading({
         className="account-back-link"
         href={`/account/${locale}`}
       >
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="M19 12H5m6-6-6 6 6 6" />
-        </svg>
+        <AccountBackIcon />
       </Link>
       <h1>{title}</h1>
     </header>
   );
 }
 
-function Pager({
+export function Pager({
   meta,
   loading,
   onPage,
@@ -88,6 +92,7 @@ export function PointHistoryPage({
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,8 +103,9 @@ export function PointHistoryPage({
       );
       setItems(payload.data);
       setMeta(payload.meta ?? null);
-    } catch {
-      setError(copy.error);
+    } catch (caught) {
+      if (isAccountSessionError(caught)) setSessionExpired(true);
+      else setError(copy.error);
     } finally {
       setLoading(false);
     }
@@ -114,8 +120,17 @@ export function PointHistoryPage({
     timeStyle: "short",
   });
 
+  if (sessionExpired)
+    return (
+      <SignedOutAccount
+        locale={locale}
+        copy={copy}
+        returnPath={`/account/${locale}/points`}
+      />
+    );
+
   return (
-    <main className="account-list-page shell">
+    <div className="account-list-page shell">
       <AccountListHeading locale={locale} copy={copy} title={copy.history} />
       <div className="account-list-summary">
         <span>{copy.balance}</span>
@@ -132,7 +147,10 @@ export function PointHistoryPage({
       ) : items.length === 0 ? (
         <p className="account-empty">{copy.historyEmpty}</p>
       ) : (
-        <ul className="account-history-list">
+        <ul
+          aria-busy={loading}
+          className="account-record-list account-history-list"
+        >
           {items.map((item) => (
             <li key={item.id}>
               <span>
@@ -152,7 +170,7 @@ export function PointHistoryPage({
       {meta && (
         <Pager meta={meta} loading={loading} onPage={setPage} copy={copy} />
       )}
-    </main>
+    </div>
   );
 }
 
@@ -168,6 +186,7 @@ export function InvitedPeoplePage({
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -178,8 +197,9 @@ export function InvitedPeoplePage({
       );
       setItems(payload.data);
       setMeta(payload.meta ?? null);
-    } catch {
-      setError(copy.error);
+    } catch (caught) {
+      if (isAccountSessionError(caught)) setSessionExpired(true);
+      else setError(copy.error);
     } finally {
       setLoading(false);
     }
@@ -193,8 +213,17 @@ export function InvitedPeoplePage({
     dateStyle: "medium",
   });
 
+  if (sessionExpired)
+    return (
+      <SignedOutAccount
+        locale={locale}
+        copy={copy}
+        returnPath={`/account/${locale}/invited`}
+      />
+    );
+
   return (
-    <main className="account-list-page shell">
+    <div className="account-list-page shell">
       <AccountListHeading locale={locale} copy={copy} title={copy.invited} />
       {error ? (
         <div className="account-inline-state" role="alert">
@@ -207,7 +236,8 @@ export function InvitedPeoplePage({
         <p className="account-empty">{copy.invitedEmpty}</p>
       ) : (
         <ol
-          className="account-invited-list"
+          aria-busy={loading}
+          className="account-record-list account-invited-list"
           start={meta ? (meta.page - 1) * meta.page_size + 1 : 1}
         >
           {items.map((person) => (
@@ -223,6 +253,6 @@ export function InvitedPeoplePage({
       {meta && (
         <Pager meta={meta} loading={loading} onPage={setPage} copy={copy} />
       )}
-    </main>
+    </div>
   );
 }

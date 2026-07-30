@@ -1,3 +1,13 @@
+export class AccountApiError extends Error {
+  constructor(
+    readonly code: string,
+    readonly status: number,
+  ) {
+    super(code);
+    this.name = "AccountApiError";
+  }
+}
+
 export async function accountApi<T, M = Record<string, unknown>>(
   path: string,
   init?: RequestInit,
@@ -14,13 +24,16 @@ export async function accountApi<T, M = Record<string, unknown>>(
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const error = new Error(
+    throw new AccountApiError(
       payload?.errors?.[0]?.code || payload?.error || "request_failed",
+      response.status,
     );
-    Object.assign(error, { status: response.status });
-    throw error;
   }
   return payload;
+}
+
+export function isAccountSessionError(error: unknown) {
+  return error instanceof AccountApiError && error.status === 401;
 }
 
 export function accountDateLocale(locale: "vi" | "en") {
@@ -32,4 +45,12 @@ export function referralErrorKey(message: string) {
   if (message === "self_referral") return "selfReferral";
   if (message === "referrer_already_assigned") return "alreadyReferred";
   return "error";
+}
+
+export function redemptionErrorKey(message: string) {
+  if (message === "insufficient_points") return "redemptionInsufficient";
+  if (message === "reward_inactive") return "redemptionInactive";
+  if (message === "reward_not_found") return "redemptionUnavailable";
+  if (message === "idempotency_conflict") return "redemptionConflict";
+  return "redemptionError";
 }

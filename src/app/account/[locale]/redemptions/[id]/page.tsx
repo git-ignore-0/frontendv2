@@ -1,32 +1,32 @@
 import { notFound } from "next/navigation";
 
 import { getSiteContent } from "@/content/site-content";
-import { InvitedPeoplePage } from "@/features/account/account-list-pages";
 import { AccountRouteGate } from "@/features/account/account-route-gate";
+import { RedemptionDetailPage } from "@/features/account/redemption-pages";
 import { isLocale } from "@/lib/i18n";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; id: string }>;
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getSiteContent(locale).account.invited };
+  return { title: getSiteContent(locale).account.redemptionDetailTitle };
 }
 
-export default async function AccountInvitedRoute({
+export default async function AccountRedemptionDetailRoute({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { locale } = await params;
+  const { locale, id } = await params;
   if (!isLocale(locale)) notFound();
   const copy = getSiteContent(locale).account;
-  const returnPath = `/account/${locale}/invited`;
+  const returnPath = `/account/${locale}/redemptions/${id}`;
   return (
     <AccountRouteGate locale={locale} returnPath={returnPath}>
-      <InvitedPeoplePage locale={locale} copy={copy} />
+      <RedemptionDetailPage locale={locale} redemptionId={id} copy={copy} />
     </AccountRouteGate>
   );
 }

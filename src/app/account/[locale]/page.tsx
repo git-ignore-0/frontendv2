@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { getSiteContent } from "@/content/site-content";
-import { AccountPage, SignedOutAccount } from "@/features/account/account-page";
-import { readSession } from "@/lib/auth/session";
+import { AccountPage } from "@/features/account/account-page";
+import { AccountRouteGate } from "@/features/account/account-route-gate";
 import { isLocale } from "@/lib/i18n";
 
 export async function generateMetadata({
@@ -23,10 +23,9 @@ export default async function AccountRoute({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const copy = getSiteContent(locale).account;
-  const session = await readSession();
-  return session ? (
-    <AccountPage locale={locale} copy={copy} />
-  ) : (
-    <SignedOutAccount locale={locale} copy={copy} />
+  return (
+    <AccountRouteGate locale={locale} returnPath={`/account/${locale}`}>
+      <AccountPage locale={locale} copy={copy} />
+    </AccountRouteGate>
   );
 }

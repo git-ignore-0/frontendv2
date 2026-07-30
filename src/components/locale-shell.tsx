@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ReferralFloatingAction } from "@/components/referral-floating-action";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getDictionary } from "@/content/dictionaries";
@@ -35,6 +36,7 @@ export async function LocaleShell({
         initialUser={session?.user ?? null}
       />
       <main id="main">{children}</main>
+      <ReferralFloatingAction locale={locale} label={t.referralFab} />
       <SiteFooter locale={locale} settings={settings} />
     </div>
   );
