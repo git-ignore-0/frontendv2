@@ -130,14 +130,14 @@ const requestStatusByFlow = {
 } as const;
 
 function publicLoad(path: string) {
-  if (path === "membership-packages?page=1") {
+  if (path.startsWith("membership-packages?page=1")) {
     return { data: [packageItem], meta: { page: 1, page_size: 30, total: 1 } };
   }
   if (path === "membership-payment-availability") {
     return { data: { direct_transfer_enabled: true } };
   }
-  if (path === "memberships/requests") return { data: null };
-  if (path === "memberships/current") return { data: null };
+  if (path.startsWith("memberships/requests?locale=")) return { data: null };
+  if (path.startsWith("memberships/current?locale=")) return { data: null };
   throw new Error(`Unexpected request: ${path}`);
 }
 
@@ -166,6 +166,10 @@ describe("public CSA Membership", () => {
       level: 3,
       name: "Six month CSA",
     });
+    expect(accountApi).toHaveBeenCalledWith(
+      "membership-packages?page=1&locale=vi",
+      { signal: expect.any(AbortSignal) },
+    );
     const packageLedger = packageHeading.closest("article");
     expect(packageLedger).not.toBeNull();
     expect(
@@ -185,6 +189,81 @@ describe("public CSA Membership", () => {
         "Số lượng chưa dùng không cộng sang tháng sau",
       ),
     ).toBeVisible();
+  });
+
+  it("keeps the English catalog when a stale Vietnamese response finishes later", async () => {
+    let resolveVietnamese!: (value: {
+      data: MembershipPackage[];
+      meta: { page: number; page_size: number; total: number };
+    }) => void;
+    let resolveEnglish!: typeof resolveVietnamese;
+    const vietnamesePackage = { ...packageItem, name: "Gói tiếng Việt cũ" };
+    const englishPackage = { ...packageItem, name: "Current English package" };
+    vi.mocked(accountApi).mockImplementation(async (path) => {
+      if (path === "membership-packages?page=1&locale=vi") {
+        return await new Promise((resolve) => {
+          resolveVietnamese = resolve;
+        });
+      }
+      if (path === "membership-packages?page=1&locale=en") {
+        return await new Promise((resolve) => {
+          resolveEnglish = resolve;
+        });
+      }
+      if (path === "membership-payment-availability") {
+        return { data: { direct_transfer_enabled: true } };
+      }
+      if (path.startsWith("memberships/requests")) return { data: null };
+      if (path.startsWith("memberships/current")) return { data: null };
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    const view = render(
+      <CsaPage copy={getSiteContent("vi").csa} locale="vi" />,
+    );
+    await waitFor(() => expect(resolveVietnamese).toBeTypeOf("function"));
+
+    view.rerender(<CsaPage copy={getSiteContent("en").csa} locale="en" />);
+    await waitFor(() => expect(resolveEnglish).toBeTypeOf("function"));
+    await act(async () => {
+      resolveEnglish({
+        data: [englishPackage],
+        meta: { page: 1, page_size: 30, total: 1 },
+      });
+    });
+    expect(
+      await screen.findByText("Current English package"),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      resolveVietnamese({
+        data: [vietnamesePackage],
+        meta: { page: 1, page_size: 30, total: 1 },
+      });
+    });
+    expect(screen.getByText("Current English package")).toBeInTheDocument();
+    expect(screen.queryByText("Gói tiếng Việt cũ")).not.toBeInTheDocument();
+  });
+
+  it("aborts the pending catalog request on unmount", async () => {
+    let packageSignal: AbortSignal | null | undefined;
+    vi.mocked(accountApi).mockImplementation(async (path, init) => {
+      if (path.startsWith("membership-packages")) {
+        packageSignal = init?.signal;
+        return await new Promise(() => undefined);
+      }
+      if (path === "membership-payment-availability") {
+        return { data: { direct_transfer_enabled: true } };
+      }
+      if (path.startsWith("memberships/requests")) return { data: null };
+      if (path.startsWith("memberships/current")) return { data: null };
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    const { unmount } = render(
+      <CsaPage copy={getSiteContent("en").csa} locale="en" />,
+    );
+    await waitFor(() => expect(packageSignal).toBeInstanceOf(AbortSignal));
+    unmount();
+    expect(packageSignal?.aborted).toBe(true);
   });
 
   it("keeps package discovery public and sends signed-out visitors to login", async () => {
@@ -212,12 +291,14 @@ describe("public CSA Membership", () => {
     returnedRequest.return_reason =
       "Không tìm thấy đúng nội dung chuyển khoản.";
     vi.mocked(accountApi).mockImplementation(async (path) => {
-      if (path === "membership-packages?page=1") return publicLoad(path);
+      if (path.startsWith("membership-packages?page=1"))
+        return publicLoad(path);
       if (path === "membership-payment-availability") {
         return { data: { direct_transfer_enabled: true } };
       }
-      if (path === "memberships/requests") return { data: returnedRequest };
-      if (path === "memberships/current") return { data: null };
+      if (path === "memberships/requests?locale=vi")
+        return { data: returnedRequest };
+      if (path === "memberships/current?locale=vi") return { data: null };
       throw new Error(`Unexpected request: ${path}`);
     });
     render(<CsaPage copy={getSiteContent("vi").csa} locale="vi" />);
@@ -283,7 +364,7 @@ describe("public CSA Membership", () => {
   ] as const)("sends the exact %s request payload", async (action, flow) => {
     vi.mocked(accountApi).mockImplementation(async (path, init) => {
       if (init?.method !== "POST") return publicLoad(path);
-      if (path === "memberships/requests") {
+      if (path === "memberships/requests?locale=en") {
         return {
           data: membershipRequest(requestStatusByFlow[flow]),
         };
@@ -306,7 +387,7 @@ describe("public CSA Membership", () => {
 
     await waitFor(() =>
       expect(accountApi).toHaveBeenCalledWith(
-        "memberships/requests",
+        "memberships/requests?locale=en",
         expect.objectContaining({ method: "POST" }),
       ),
     );
@@ -314,7 +395,7 @@ describe("public CSA Membership", () => {
       .mocked(accountApi)
       .mock.calls.find(
         ([path, init]) =>
-          path === "memberships/requests" && init?.method === "POST",
+          path === "memberships/requests?locale=en" && init?.method === "POST",
       );
     expect(JSON.parse(String(call?.[1]?.body))).toEqual({
       package_id: packageItem.id,
@@ -346,7 +427,8 @@ describe("public CSA Membership", () => {
         .mocked(accountApi)
         .mock.calls.filter(
           ([path, init]) =>
-            path === "memberships/requests" && init?.method === "POST",
+            path === "memberships/requests?locale=en" &&
+            init?.method === "POST",
         ),
     ).toHaveLength(0);
   });
@@ -359,10 +441,10 @@ describe("public CSA Membership", () => {
     }));
     const pageTwo = [{ ...packageItem, name: "CSA package 31" }];
     vi.mocked(accountApi).mockImplementation(async (path) => {
-      if (path === "membership-packages?page=1") {
+      if (path.startsWith("membership-packages?page=1")) {
         return { data: pageOne, meta: { page: 1, page_size: 30, total: 31 } };
       }
-      if (path === "membership-packages?page=2") {
+      if (path.startsWith("membership-packages?page=2")) {
         return { data: pageTwo, meta: { page: 2, page_size: 30, total: 31 } };
       }
       return publicLoad(path);
@@ -388,15 +470,22 @@ describe("public CSA Membership", () => {
     });
     let attempts = 0;
     vi.mocked(accountApi).mockImplementation(async (path, init) => {
-      if (path === "membership-packages?page=1") return publicLoad(path);
+      if (path.startsWith("membership-packages?page=1"))
+        return publicLoad(path);
       if (path === "membership-payment-availability") {
         return { data: { direct_transfer_enabled: false } };
       }
-      if (path === "memberships/requests" && init?.method !== "POST") {
+      if (
+        path === "memberships/requests?locale=en" &&
+        init?.method !== "POST"
+      ) {
         return { data: membershipRequest("payment_pending") };
       }
-      if (path === "memberships/current") return { data: null };
-      if (path.endsWith("/payment-submitted") && init?.method === "POST") {
+      if (path === "memberships/current?locale=en") return { data: null };
+      if (
+        path.endsWith("/payment-submitted?locale=en") &&
+        init?.method === "POST"
+      ) {
         attempts += 1;
         if (attempts === 1) return firstAttempt as never;
         return { data: membershipRequest("payment_submitted") };
@@ -425,7 +514,9 @@ describe("public CSA Membership", () => {
     expect(
       vi
         .mocked(accountApi)
-        .mock.calls.filter(([path]) => path.endsWith("/payment-submitted")),
+        .mock.calls.filter(([path]) =>
+          path.endsWith("/payment-submitted?locale=en"),
+        ),
     ).toHaveLength(0);
 
     const confirm = within(dialog).getByRole("button", {
@@ -436,7 +527,9 @@ describe("public CSA Membership", () => {
     expect(
       vi
         .mocked(accountApi)
-        .mock.calls.filter(([path]) => path.endsWith("/payment-submitted")),
+        .mock.calls.filter(([path]) =>
+          path.endsWith("/payment-submitted?locale=en"),
+        ),
     ).toHaveLength(1);
     expect(
       within(dialog).getByRole("button", { name: "Confirming…" }),
@@ -466,7 +559,9 @@ describe("public CSA Membership", () => {
     expect(
       vi
         .mocked(accountApi)
-        .mock.calls.filter(([path]) => path.endsWith("/payment-submitted")),
+        .mock.calls.filter(([path]) =>
+          path.endsWith("/payment-submitted?locale=en"),
+        ),
     ).toHaveLength(2);
   });
 
@@ -479,12 +574,14 @@ describe("public CSA Membership", () => {
       bank_code: "VCB",
     };
     vi.mocked(accountApi).mockImplementation(async (path) => {
-      if (path === "membership-packages?page=1") return publicLoad(path);
+      if (path.startsWith("membership-packages?page=1"))
+        return publicLoad(path);
       if (path === "membership-payment-availability") {
         return { data: { direct_transfer_enabled: false } };
       }
-      if (path === "memberships/requests") return { data: legacyRequest };
-      if (path === "memberships/current") return { data: null };
+      if (path === "memberships/requests?locale=en")
+        return { data: legacyRequest };
+      if (path === "memberships/current?locale=en") return { data: null };
       throw new Error(`Unexpected request: ${path}`);
     });
 
@@ -501,7 +598,7 @@ describe("public CSA Membership", () => {
   it("handles a backend direct-transfer disable race without getting stuck", async () => {
     vi.mocked(accountApi).mockImplementation(async (path, init) => {
       if (init?.method !== "POST") return publicLoad(path);
-      if (path === "memberships/requests") {
+      if (path === "memberships/requests?locale=en") {
         throw new AccountApiError("direct_transfer_disabled", 409);
       }
       throw new Error(`Unexpected request: ${path}`);
@@ -541,14 +638,14 @@ describe("public CSA Membership", () => {
         name: currentMembership.package_name,
       };
       vi.mocked(accountApi).mockImplementation(async (path) => {
-        if (path === "membership-packages?page=1") {
+        if (path.startsWith("membership-packages?page=1")) {
           return {
             data: [packageItem, otherPackage],
             meta: { page: 1, page_size: 30, total: 2 },
           };
         }
-        if (path === "memberships/requests") return { data: null };
-        if (path === "memberships/current") {
+        if (path === "memberships/requests?locale=en") return { data: null };
+        if (path === "memberships/current?locale=en") {
           return { data: { ...currentMembership, status } };
         }
         throw new Error(`Unexpected request: ${path}`);
@@ -575,14 +672,15 @@ describe("public CSA Membership", () => {
       name: currentMembership.package_name,
     };
     vi.mocked(accountApi).mockImplementation(async (path) => {
-      if (path === "membership-packages?page=1") {
+      if (path.startsWith("membership-packages?page=1")) {
         return {
           data: [unmatchedPackage],
           meta: { page: 1, page_size: 30, total: 1 },
         };
       }
-      if (path === "memberships/requests") return { data: null };
-      if (path === "memberships/current") return { data: currentMembership };
+      if (path === "memberships/requests?locale=en") return { data: null };
+      if (path === "memberships/current?locale=en")
+        return { data: currentMembership };
       return publicLoad(path);
     });
     render(<CsaPage copy={getSiteContent("en").csa} locale="en" />);
@@ -597,7 +695,7 @@ describe("public CSA Membership", () => {
 
   it("allows a new package request when a legacy ended Membership is returned", async () => {
     vi.mocked(accountApi).mockImplementation(async (path) => {
-      if (path === "memberships/current") {
+      if (path === "memberships/current?locale=en") {
         return { data: { ...currentMembership, status: "ended" } };
       }
       return publicLoad(path);
@@ -615,9 +713,10 @@ describe("public CSA Membership", () => {
   it("blocks registration when Membership context fails and enables it after retry", async () => {
     let requestAttempts = 0;
     vi.mocked(accountApi).mockImplementation(async (path) => {
-      if (path === "membership-packages?page=1") return publicLoad(path);
-      if (path === "memberships/current") return { data: null };
-      if (path === "memberships/requests") {
+      if (path.startsWith("membership-packages?page=1"))
+        return publicLoad(path);
+      if (path === "memberships/current?locale=en") return { data: null };
+      if (path === "memberships/requests?locale=en") {
         requestAttempts += 1;
         if (requestAttempts === 1) throw new Error("upstream_unavailable");
         return { data: null };
@@ -640,7 +739,7 @@ describe("public CSA Membership", () => {
     const initialSignal = vi
       .mocked(accountApi)
       .mock.calls.find(
-        ([path]) => path === "memberships/requests",
+        ([path]) => path === "memberships/requests?locale=en",
       )?.[1]?.signal;
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -655,19 +754,19 @@ describe("public CSA Membership", () => {
     let rejectOlderCurrent!: (reason: unknown) => void;
     let requestAttempts = 0;
     vi.mocked(accountApi).mockImplementation((path) => {
-      if (path === "membership-packages?page=1") {
+      if (path.startsWith("membership-packages?page=1")) {
         return Promise.resolve(publicLoad(path));
       }
       if (path === "membership-payment-availability") {
         return Promise.resolve(publicLoad(path));
       }
-      if (path === "memberships/requests") {
+      if (path === "memberships/requests?locale=en") {
         requestAttempts += 1;
         return requestAttempts === 1
           ? Promise.reject(new Error("initial failure"))
           : Promise.resolve({ data: null });
       }
-      if (path === "memberships/current") {
+      if (path === "memberships/current?locale=en") {
         return requestAttempts === 1
           ? new Promise((_, reject) => {
               rejectOlderCurrent = reject;
@@ -699,13 +798,13 @@ describe("public CSA Membership", () => {
     let requestCalls = 0;
     let currentCalls = 0;
     vi.mocked(accountApi).mockImplementation((path) => {
-      if (path === "membership-packages?page=1") {
+      if (path.startsWith("membership-packages?page=1")) {
         return Promise.resolve(publicLoad(path));
       }
       if (path === "membership-payment-availability") {
         return Promise.resolve(publicLoad(path));
       }
-      if (path === "memberships/requests") {
+      if (path === "memberships/requests?locale=en") {
         requestCalls += 1;
         return requestCalls === 1
           ? new Promise<{ data: null }>((resolve) => {
@@ -713,7 +812,7 @@ describe("public CSA Membership", () => {
             })
           : new Promise(() => undefined);
       }
-      if (path === "memberships/current") {
+      if (path === "memberships/current?locale=en") {
         currentCalls += 1;
         return currentCalls === 1
           ? new Promise<{ data: null }>((resolve) => {
@@ -744,13 +843,16 @@ describe("public CSA Membership", () => {
 
   it("passes one abort signal to both context requests and aborts it on unmount", () => {
     vi.mocked(accountApi).mockImplementation((path) => {
-      if (path === "membership-packages?page=1") {
+      if (path.startsWith("membership-packages?page=1")) {
         return Promise.resolve(publicLoad(path));
       }
       if (path === "membership-payment-availability") {
         return Promise.resolve(publicLoad(path));
       }
-      if (path === "memberships/requests" || path === "memberships/current") {
+      if (
+        path === "memberships/requests?locale=en" ||
+        path === "memberships/current?locale=en"
+      ) {
         return new Promise(() => undefined);
       }
       throw new Error(`Unexpected request: ${path}`);
@@ -792,7 +894,7 @@ describe("Account Membership", () => {
     expect(screen.getByText("August 15, 2026")).toBeInTheDocument();
     expect(screen.getByText("February 15, 2027")).toBeInTheDocument();
     expect(vi.mocked(accountApi).mock.calls.map(([path]) => path)).toEqual([
-      "memberships/current",
+      "memberships/current?locale=en",
     ]);
     expect(
       screen.getByText(
@@ -811,8 +913,9 @@ describe("Account Membership", () => {
 
   it("loads active quota and multiplies integer units by decimal unit size exactly", async () => {
     vi.mocked(accountApi).mockImplementation(async (path) => {
-      if (path === "memberships/current") return { data: currentMembership };
-      if (path === "memberships/quota") return { data: quota };
+      if (path === "memberships/current?locale=en")
+        return { data: currentMembership };
+      if (path === "memberships/quota?locale=en") return { data: quota };
       throw new Error(`Unexpected request: ${path}`);
     });
     render(
@@ -830,7 +933,7 @@ describe("Account Membership", () => {
       screen.getByRole("link", { name: "Product collection history" }),
     ).toHaveAttribute("href", "/account/en/membership/usage");
     expect(accountApi).toHaveBeenCalledWith(
-      "memberships/quota",
+      "memberships/quota?locale=en",
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });
@@ -945,8 +1048,8 @@ describe("Account Membership", () => {
     await act(async () => resolveOlder({ data: currentMembership }));
 
     expect(vi.mocked(accountApi).mock.calls.map(([path]) => path)).toEqual([
-      "memberships/current",
-      "memberships/current",
+      "memberships/current?locale=en",
+      "memberships/current?locale=en",
     ]);
   });
 
@@ -961,7 +1064,7 @@ describe("Account Membership", () => {
     expect(await screen.findByText("Ended")).toBeInTheDocument();
     expect(screen.queryByText("Active")).not.toBeInTheDocument();
     expect(vi.mocked(accountApi).mock.calls.map(([path]) => path)).toEqual([
-      "memberships/current",
+      "memberships/current?locale=en",
     ]);
     expect(
       screen.queryByRole("link", { name: "Product collection history" }),
@@ -1036,6 +1139,133 @@ describe("Account Membership", () => {
     expect(screen.queryByText("Reversal reason")).not.toBeInTheDocument();
   });
 
+  it("keeps English usage when a stale Vietnamese response resolves later", async () => {
+    let resolveVietnamese!: (value: {
+      data: MembershipUsage[];
+      meta: { page: number; page_size: number; total: number };
+    }) => void;
+    let resolveEnglish!: typeof resolveVietnamese;
+    let vietnameseSignal: AbortSignal | null | undefined;
+    const vietnameseUsage = {
+      id: "usage-vi",
+      membership_id: currentMembership.id,
+      status: "applied" as const,
+      note: "",
+      created_at: "2026-08-20T02:00:00Z",
+      reversed_at: null,
+      lines: [
+        {
+          product_id: packageItem.items[0].product_id,
+          product_name: "Sản phẩm tiếng Việt cũ",
+          unit_size: "1.000",
+          unit_label_vi: "phần",
+          unit_label_en: "portion",
+          units: 1,
+        },
+      ],
+    };
+    const englishUsage = {
+      ...vietnameseUsage,
+      id: "usage-en",
+      lines: [{ ...vietnameseUsage.lines[0], product_name: "Current English product" }],
+    };
+    vi.mocked(accountApi).mockImplementation((path, init) => {
+      if (path === "memberships/usage?page=1&locale=vi") {
+        vietnameseSignal = init?.signal;
+        return new Promise((resolve) => {
+          resolveVietnamese = resolve;
+        });
+      }
+      if (path === "memberships/usage?page=1&locale=en") {
+        return new Promise((resolve) => {
+          resolveEnglish = resolve;
+        });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    const { rerender } = render(
+      <MembershipUsagePage copy={getSiteContent("vi").account} locale="vi" />,
+    );
+    await waitFor(() => expect(resolveVietnamese).toBeTypeOf("function"));
+
+    rerender(
+      <MembershipUsagePage copy={getSiteContent("en").account} locale="en" />,
+    );
+    await waitFor(() => expect(resolveEnglish).toBeTypeOf("function"));
+    expect(vietnameseSignal?.aborted).toBe(true);
+
+    await act(async () => {
+      resolveEnglish({
+        data: [englishUsage],
+        meta: { page: 1, page_size: 30, total: 1 },
+      });
+    });
+    expect(await screen.findByText("Current English product")).toBeInTheDocument();
+
+    await act(async () => {
+      resolveVietnamese({
+        data: [vietnameseUsage],
+        meta: { page: 1, page_size: 30, total: 1 },
+      });
+    });
+    expect(screen.getByText("Current English product")).toBeInTheDocument();
+    expect(screen.queryByText("Sản phẩm tiếng Việt cũ")).not.toBeInTheDocument();
+  });
+
+  it("aborts pending usage on unmount without showing an error", async () => {
+    let rejectUsage!: (reason: unknown) => void;
+    let usageSignal: AbortSignal | null | undefined;
+    vi.mocked(accountApi).mockImplementation((_path, init) => {
+      usageSignal = init?.signal;
+      return new Promise((_, reject) => {
+        rejectUsage = reject;
+      });
+    });
+    const { unmount } = render(
+      <MembershipUsagePage copy={getSiteContent("en").account} locale="en" />,
+    );
+    await waitFor(() => expect(usageSignal).toBeInstanceOf(AbortSignal));
+
+    unmount();
+    expect(usageSignal?.aborted).toBe(true);
+    await act(async () => rejectUsage(new Error("late failure")));
+  });
+
+  it("keeps the newest page response after a page change", async () => {
+    const firstPage = {
+      id: "usage-page-one",
+      membership_id: currentMembership.id,
+      status: "applied" as const,
+      note: "",
+      created_at: "2026-08-20T02:00:00Z",
+      reversed_at: null,
+      lines: [],
+    };
+    const secondPage = { ...firstPage, id: "usage-page-two" };
+    vi.mocked(accountApi).mockImplementation(async (path) => {
+      if (path === "memberships/usage?page=1&locale=en") {
+        return { data: [firstPage], meta: { page: 1, page_size: 30, total: 31 } };
+      }
+      if (path === "memberships/usage?page=2&locale=en") {
+        return { data: [secondPage], meta: { page: 2, page_size: 30, total: 31 } };
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    render(
+      <MembershipUsagePage copy={getSiteContent("en").account} locale="en" />,
+    );
+
+    await screen.findByText("Page 1 of 2");
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    await waitFor(() =>
+      expect(accountApi).toHaveBeenCalledWith(
+        "memberships/usage?page=2&locale=en",
+        { signal: expect.any(AbortSignal) },
+      ),
+    );
+    expect(screen.getByText("Page 2 of 2")).toBeInTheDocument();
+  });
+
   it("paginates usage at the backend page size and marks reversed records", async () => {
     const longNote =
       "Weekly delivery note with enough detail to wrap across multiple lines on a narrow mobile viewport without overflowing.";
@@ -1094,10 +1324,13 @@ describe("Account Membership", () => {
     expect(navigation.replace).toHaveBeenCalledWith("/account/en/membership");
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     await waitFor(() =>
-      expect(accountApi).toHaveBeenCalledWith("memberships/usage?page=2"),
+      expect(accountApi).toHaveBeenCalledWith(
+        "memberships/usage?page=2&locale=en",
+        { signal: expect.any(AbortSignal) },
+      ),
     );
     expect(vi.mocked(accountApi).mock.calls[0][0]).toBe(
-      "memberships/usage?page=1",
+      "memberships/usage?page=1&locale=en",
     );
   });
 });

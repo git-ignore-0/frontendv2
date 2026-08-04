@@ -61,6 +61,11 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
   const [paymentError, setPaymentError] = useState("");
   const creatingRef = useRef(false);
   const payingRef = useRef(false);
+  const packagesRequestSequence = useRef(0);
+  const activePackagesRequest = useRef<{
+    controller: AbortController;
+    sequence: number;
+  } | null>(null);
   const membershipContextRequestSequence = useRef(0);
   const activeMembershipContextRequest = useRef<{
     controller: AbortController;
@@ -68,20 +73,33 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
   } | null>(null);
 
   const loadPackages = useCallback(async () => {
+    activePackagesRequest.current?.controller.abort();
+    const controller = new AbortController();
+    const sequence = ++packagesRequestSequence.current;
+    activePackagesRequest.current = { controller, sequence };
+    const isCurrentRequest = () =>
+      activePackagesRequest.current?.sequence === sequence &&
+      !controller.signal.aborted;
+
     setPackagesLoading(true);
     setPackagesError("");
     try {
       const payload = await accountApi<MembershipPackage[], PaginationMeta>(
-        `membership-packages?page=${packagesPage}`,
+        `membership-packages?page=${packagesPage}&locale=${locale}`,
+        { signal: controller.signal },
       );
+      if (!isCurrentRequest()) return;
       setPackages(payload.data);
       setPackagesMeta(payload.meta ?? null);
-    } catch {
+    } catch (caught) {
+      if (!isCurrentRequest() || isAbortError(caught)) return;
       setPackagesError(copy.packagesError);
     } finally {
+      if (!isCurrentRequest()) return;
+      activePackagesRequest.current = null;
       setPackagesLoading(false);
     }
-  }, [copy.packagesError, packagesPage]);
+  }, [copy.packagesError, locale, packagesPage]);
 
   const loadMembershipContext = useCallback(async () => {
     activeMembershipContextRequest.current?.controller.abort();
@@ -97,12 +115,18 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
     setCurrentMembership(null);
     try {
       const [requestPayload, membershipPayload] = await Promise.all([
-        accountApi<MembershipRequest | null>("memberships/requests", {
-          signal: controller.signal,
-        }),
-        accountApi<CurrentMembership | null>("memberships/current", {
-          signal: controller.signal,
-        }),
+        accountApi<MembershipRequest | null>(
+          `memberships/requests?locale=${locale}`,
+          {
+            signal: controller.signal,
+          },
+        ),
+        accountApi<CurrentMembership | null>(
+          `memberships/current?locale=${locale}`,
+          {
+            signal: controller.signal,
+          },
+        ),
       ]);
       if (!isCurrentRequest()) return;
       setRequest(requestPayload.data);
@@ -123,7 +147,7 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
         activeMembershipContextRequest.current = null;
       }
     }
-  }, []);
+  }, [locale]);
 
   const loadPaymentAvailability = useCallback(async () => {
     setPaymentAvailabilityLoading(true);
@@ -148,6 +172,9 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
 
   useEffect(() => {
     return () => {
+      packagesRequestSequence.current += 1;
+      activePackagesRequest.current?.controller.abort();
+      activePackagesRequest.current = null;
       membershipContextRequestSequence.current += 1;
       activeMembershipContextRequest.current?.controller.abort();
       activeMembershipContextRequest.current = null;
@@ -182,7 +209,7 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
     setPhoneError("");
     try {
       const payload = await accountApi<MembershipRequest>(
-        "memberships/requests",
+        `memberships/requests?locale=${locale}`,
         {
           method: "POST",
           body: JSON.stringify({
@@ -232,7 +259,7 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
     setPaymentError("");
     try {
       const payload = await accountApi<MembershipRequest>(
-        `memberships/requests/${request.id}/payment-submitted`,
+        `memberships/requests/${request.id}/payment-submitted?locale=${locale}`,
         { method: "POST", body: JSON.stringify({}) },
       );
       setRequest(payload.data);

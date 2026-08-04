@@ -46,7 +46,10 @@ describe("workshop card", () => {
 
   it("keeps the fallback note visible", () => {
     render(
-      <WorkshopCard workshop={{ ...workshop, is_fallback: true }} locale="vi" />,
+      <WorkshopCard
+        workshop={{ ...workshop, is_fallback: true }}
+        locale="vi"
+      />,
     );
 
     expect(
@@ -56,12 +59,7 @@ describe("workshop card", () => {
 
   it("renders the responsive calendar row without changing the detail href", () => {
     const { container } = render(
-      <WorkshopCard
-        workshop={workshop}
-        locale="vi"
-        titleTag="h4"
-        calendar
-      />,
+      <WorkshopCard workshop={workshop} locale="vi" titleTag="h4" calendar />,
     );
 
     expect(container.querySelector("article")).toHaveClass(
@@ -80,10 +78,9 @@ describe("workshop card", () => {
     );
     const title = within(container).getByRole("heading", { level: 4 });
     expect(title).toHaveTextContent("Đất sống");
-    expect(within(title).getByRole("link", { name: "Đất sống" })).toHaveAttribute(
-      "href",
-      "/workshops/living-soil/vi",
-    );
+    expect(
+      within(title).getByRole("link", { name: "Đất sống" }),
+    ).toHaveAttribute("href", "/workshops/living-soil/vi");
     expect(
       within(container).getByRole("link", { name: "Xem chi tiết" }),
     ).toHaveAttribute("href", "/workshops/living-soil/vi");

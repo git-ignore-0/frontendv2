@@ -14,11 +14,7 @@ import { WorkshopStatus } from "./workshop-status";
 
 function WorkshopClockIcon() {
   return (
-    <svg
-      aria-hidden="true"
-      className="workshop-time-icon"
-      viewBox="0 0 24 24"
-    >
+    <svg aria-hidden="true" className="workshop-time-icon" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
     </svg>
@@ -60,11 +56,7 @@ export function WorkshopCard({
             <span className="workshop-date-day">{dateTile.day}</span>
           </time>
           <span className="workshop-date-status">
-            <WorkshopStatus
-              status={workshop.status}
-              locale={locale}
-              showDot
-            />
+            <WorkshopStatus status={workshop.status} locale={locale} showDot />
           </span>
         </div>
       ) : (

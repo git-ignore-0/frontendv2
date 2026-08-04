@@ -31,7 +31,7 @@ export function useHeaderMembershipDestination({
     setState("loading");
     try {
       const payload = await accountApi<CurrentMembership | null>(
-        "memberships/current",
+        `memberships/current?locale=${locale}`,
         { signal: controller.signal },
       );
       if (request.current !== controller) return;

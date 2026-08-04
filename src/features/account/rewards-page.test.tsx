@@ -421,7 +421,10 @@ describe("redemption history", () => {
       "Points used: 100 points",
     );
     expect(screen.queryByRole("link", { name: /view details/i })).toBeNull();
-    expect(accountApi).toHaveBeenCalledWith("redemptions?locale=en&page=1", expect.anything());
+    expect(accountApi).toHaveBeenCalledWith(
+      "redemptions?locale=en&page=1",
+      expect.anything(),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Back to rewards" }));
     expect(navigation.replace).toHaveBeenCalledWith("/account/en/rewards");
   });
@@ -430,19 +433,48 @@ describe("redemption history", () => {
     let resolveFirst!: (value: { data: unknown[]; meta: unknown }) => void;
     let callCount = 0;
     vi.mocked(accountApi).mockImplementation((path) => {
-      if (path === "account") return Promise.resolve({ data: { referral_code: "X", referrer: null, can_submit_referral_code: true, points_balance: 120, invited_count: 0 } });
+      if (path === "account")
+        return Promise.resolve({
+          data: {
+            referral_code: "X",
+            referrer: null,
+            can_submit_referral_code: true,
+            points_balance: 120,
+            invited_count: 0,
+          },
+        });
       callCount++;
-      if (callCount === 1) return new Promise((resolve) => { resolveFirst = resolve; });
+      if (callCount === 1)
+        return new Promise((resolve) => {
+          resolveFirst = resolve;
+        });
       return Promise.resolve({
-        data: [{
-          id: "fresh-reward", point_cost: 50, image: { id: "i2", url: "http://example.test/r2.jpg", width: 100, height: 100, variants: [] },
-          position: 1, requested_locale: "en", content_locale: "en", is_fallback: false, name: "Fresh Reward", short_description: "Fresh"
-        }],
-        meta: { page: 1, page_size: 1, total: 2 }
+        data: [
+          {
+            id: "fresh-reward",
+            point_cost: 50,
+            image: {
+              id: "i2",
+              url: "http://example.test/r2.jpg",
+              width: 100,
+              height: 100,
+              variants: [],
+            },
+            position: 1,
+            requested_locale: "en",
+            content_locale: "en",
+            is_fallback: false,
+            name: "Fresh Reward",
+            short_description: "Fresh",
+          },
+        ],
+        meta: { page: 1, page_size: 1, total: 2 },
       });
     });
 
-    const { rerender } = render(<RewardsPage locale="en" copy={getSiteContent("en").account} />);
+    const { rerender } = render(
+      <RewardsPage locale="en" copy={getSiteContent("en").account} />,
+    );
 
     // Trigger second request by changing locale (which is a dependency)
     rerender(<RewardsPage locale="vi" copy={getSiteContent("en").account} />);
@@ -452,11 +484,26 @@ describe("redemption history", () => {
     // Resolve the stale request
     await act(async () =>
       resolveFirst({
-        data: [{
-          id: "stale-reward", point_cost: 200, image: { id: "i1", url: "http://example.test/r.jpg", width: 100, height: 100, variants: [] },
-          position: 1, requested_locale: "en", content_locale: "en", is_fallback: false, name: "Stale Reward", short_description: "Stale"
-        }],
-        meta: { page: 1, page_size: 1, total: 2 }
+        data: [
+          {
+            id: "stale-reward",
+            point_cost: 200,
+            image: {
+              id: "i1",
+              url: "http://example.test/r.jpg",
+              width: 100,
+              height: 100,
+              variants: [],
+            },
+            position: 1,
+            requested_locale: "en",
+            content_locale: "en",
+            is_fallback: false,
+            name: "Stale Reward",
+            short_description: "Stale",
+          },
+        ],
+        meta: { page: 1, page_size: 1, total: 2 },
       }),
     );
     expect(screen.queryByText("Stale Reward")).not.toBeInTheDocument();
@@ -464,7 +511,9 @@ describe("redemption history", () => {
   });
 
   it("does not show a catalog error when the component unmounts mid-request", () => {
-    vi.mocked(accountApi).mockImplementation(() => new Promise(() => undefined));
+    vi.mocked(accountApi).mockImplementation(
+      () => new Promise(() => undefined),
+    );
     const { unmount } = render(
       <RewardsPage locale="en" copy={getSiteContent("en").account} />,
     );
@@ -484,24 +533,31 @@ describe("redemption history pagination", () => {
     let callCount = 0;
     vi.mocked(accountApi).mockImplementation(() => {
       callCount++;
-      if (callCount === 1) return new Promise((resolve) => { resolveFirst = resolve; });
+      if (callCount === 1)
+        return new Promise((resolve) => {
+          resolveFirst = resolve;
+        });
       return Promise.resolve({
         data: [{ ...redemption, id: "r2", reward_name: "Fresh Reward" }],
-        meta: { page: 1, page_size: 1, total: 2 }
+        meta: { page: 1, page_size: 1, total: 2 },
       });
     });
 
-    const { rerender } = render(<RedemptionsPage locale="en" copy={getSiteContent("en").account} />);
+    const { rerender } = render(
+      <RedemptionsPage locale="en" copy={getSiteContent("en").account} />,
+    );
 
     // Trigger second request by changing locale
-    rerender(<RedemptionsPage locale="vi" copy={getSiteContent("en").account} />);
+    rerender(
+      <RedemptionsPage locale="vi" copy={getSiteContent("en").account} />,
+    );
 
     expect(await screen.findByText("Fresh Reward")).toBeInTheDocument();
 
     await act(async () =>
       resolveFirst({
         data: [{ ...redemption, id: "r1", reward_name: "Stale Reward" }],
-        meta: { page: 1, page_size: 1, total: 2 }
+        meta: { page: 1, page_size: 1, total: 2 },
       }),
     );
     expect(screen.queryByText("Stale Reward")).not.toBeInTheDocument();
@@ -509,7 +565,9 @@ describe("redemption history pagination", () => {
   });
 
   it("does not show an error when a redemption history request is aborted by unmount", () => {
-    vi.mocked(accountApi).mockImplementation(() => new Promise(() => undefined));
+    vi.mocked(accountApi).mockImplementation(
+      () => new Promise(() => undefined),
+    );
     const { unmount } = render(
       <RedemptionsPage locale="en" copy={getSiteContent("en").account} />,
     );

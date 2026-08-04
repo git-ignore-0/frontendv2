@@ -77,7 +77,11 @@ export function RedemptionsPage({
       setItems(payload.data);
       setMeta(payload.meta ?? null);
     } catch (caught) {
-      if (!isCurrentRequest() || (caught instanceof Error && caught.name === "AbortError")) return;
+      if (
+        !isCurrentRequest() ||
+        (caught instanceof Error && caught.name === "AbortError")
+      )
+        return;
       if (isAccountSessionError(caught)) setSessionExpired(true);
       else setError(copy.redemptionsError);
     } finally {

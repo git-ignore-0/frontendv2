@@ -84,7 +84,7 @@ export function AccountMembershipPage({
     setError("");
     try {
       const current = await accountApi<CurrentMembership | null>(
-        "memberships/current",
+        `memberships/current?locale=${locale}`,
         { signal: controller.signal },
       );
       if (!isCurrentRequest()) return;
@@ -92,7 +92,7 @@ export function AccountMembershipPage({
       setQuota(null);
       if (current.data?.status === "active") {
         const available = await accountApi<MembershipQuota | null>(
-          "memberships/quota",
+          `memberships/quota?locale=${locale}`,
           { signal: controller.signal },
         );
         if (!isCurrentRequest()) return;
@@ -107,7 +107,7 @@ export function AccountMembershipPage({
       activeRequest.current = null;
       setLoading(false);
     }
-  }, [copy.membershipError]);
+  }, [copy.membershipError, locale]);
 
   useEffect(() => {
     void load();
@@ -281,26 +281,49 @@ export function MembershipUsagePage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sessionExpired, setSessionExpired] = useState(false);
+  const requestSequence = useRef(0);
+  const activeRequest = useRef<{
+    controller: AbortController;
+    sequence: number;
+  } | null>(null);
 
   const load = useCallback(async () => {
+    activeRequest.current?.controller.abort();
+    const controller = new AbortController();
+    const sequence = ++requestSequence.current;
+    activeRequest.current = { controller, sequence };
+    const isCurrentRequest = () =>
+      activeRequest.current?.sequence === sequence &&
+      !controller.signal.aborted;
+
     setLoading(true);
     setError("");
     try {
       const payload = await accountApi<MembershipUsage[], PaginationMeta>(
-        `memberships/usage?page=${page}`,
+        `memberships/usage?page=${page}&locale=${locale}`,
+        { signal: controller.signal },
       );
+      if (!isCurrentRequest()) return;
       setItems(payload.data);
       setMeta(payload.meta ?? null);
     } catch (caught) {
+      if (!isCurrentRequest() || isAbortError(caught)) return;
       if (isAccountSessionError(caught)) setSessionExpired(true);
       else setError(copy.membershipUsageError);
     } finally {
+      if (!isCurrentRequest()) return;
+      activeRequest.current = null;
       setLoading(false);
     }
-  }, [copy.membershipUsageError, page]);
+  }, [copy.membershipUsageError, locale, page]);
 
   useEffect(() => {
     void load();
+    return () => {
+      requestSequence.current += 1;
+      activeRequest.current?.controller.abort();
+      activeRequest.current = null;
+    };
   }, [load]);
 
   if (sessionExpired)

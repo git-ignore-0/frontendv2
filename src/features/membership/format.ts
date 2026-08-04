@@ -54,7 +54,9 @@ export function vietQrUrl(instruction: {
   amount: string;
   transfer_content: string;
 }) {
-  const bank = encodeURIComponent(instruction.bank_bin || instruction.bank_code || "");
+  const bank = encodeURIComponent(
+    instruction.bank_bin || instruction.bank_code || "",
+  );
   const account = encodeURIComponent(instruction.account_number);
   const url = new URL(
     `https://img.vietqr.io/image/${bank}-${account}-compact2.png`,

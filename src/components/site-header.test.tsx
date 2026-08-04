@@ -179,7 +179,9 @@ describe("site header session projection", () => {
       "fetch",
       vi.fn((input: string | URL | Request) => {
         if (String(input) === "/api/account/account") return accountResponse;
-        if (String(input) === "/api/account/memberships/current") {
+        if (
+          String(input).startsWith("/api/account/memberships/current?locale=")
+        ) {
           return Promise.resolve(
             Response.json({ data: { status: "active" } }, { status: 200 }),
           );
@@ -284,7 +286,7 @@ describe("site header session projection", () => {
         "fetch",
         vi.fn((input: string | URL | Request) =>
           Promise.resolve(
-            String(input) === "/api/account/memberships/current"
+            String(input).startsWith("/api/account/memberships/current?locale=")
               ? Response.json({ data: { status: "active" } })
               : String(input) === "/api/account/account"
                 ? Response.json({ data: { points_balance: 1280 } })
@@ -331,7 +333,7 @@ describe("site header session projection", () => {
       "fetch",
       vi.fn((input: string | URL | Request) =>
         Promise.resolve(
-          String(input) === "/api/account/memberships/current"
+          String(input).startsWith("/api/account/memberships/current?locale=")
             ? Response.json({ data: { status: "active" } })
             : String(input) === "/api/account/account"
               ? Response.json({ data: { points_balance: 1280 } })
@@ -494,7 +496,7 @@ describe("site header session projection", () => {
     const fetchMock = vi.fn((input: string | URL | Request) =>
       String(input) === "/api/account/account"
         ? accountResponse
-        : String(input) === "/api/account/memberships/current"
+        : String(input).startsWith("/api/account/memberships/current?locale=")
           ? Promise.resolve(Response.json({ data: { status: "scheduled" } }))
           : Promise.resolve(Response.json({ data: { user: member } })),
     );
@@ -613,7 +615,7 @@ describe("mobile account drawer", () => {
     const fetchMock = vi.fn((input: string | URL | Request) =>
       String(input) === "/api/account/account"
         ? accountResponse
-        : String(input) === "/api/account/memberships/current"
+        : String(input).startsWith("/api/account/memberships/current?locale=")
           ? Promise.resolve(Response.json({ data: { status: "scheduled" } }))
           : Promise.resolve(Response.json({ data: { user: member } })),
     );

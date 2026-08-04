@@ -5,16 +5,9 @@ import { WorkshopCard } from "@/features/workshops/workshop-card";
 import { workshopCopy } from "@/features/workshops/copy";
 import { formatWorkshopMonthGroup } from "@/features/workshops/format";
 import { getWorkshops, type PublicWorkshop } from "@/lib/content-api";
-import {
-  isLocale,
-  languageAlternates,
-  type Locale,
-} from "@/lib/i18n";
+import { isLocale, languageAlternates, type Locale } from "@/lib/i18n";
 
-function groupWorkshopsByMonth(
-  workshops: PublicWorkshop[],
-  locale: Locale,
-) {
+function groupWorkshopsByMonth(workshops: PublicWorkshop[], locale: Locale) {
   const groups = new Map<
     string,
     { key: string; label: string; workshops: PublicWorkshop[] }

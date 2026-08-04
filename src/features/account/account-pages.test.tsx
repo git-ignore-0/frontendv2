@@ -194,7 +194,9 @@ describe("public account pages", () => {
       can_submit_referral_code: false,
     };
     await act(async () => resolveFirst({ data: updatedSummary }));
-    expect(screen.queryByLabelText("Enter a referral code")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Enter a referral code"),
+    ).not.toBeInTheDocument();
 
     // Submit button is gone once referrer is set, but the guard should have
     // released — assert postCount is still 1 (no extra calls snuck through)
@@ -227,26 +229,32 @@ describe("public account pages", () => {
     const input = screen.getByLabelText("Enter a referral code");
     fireEvent.change(input, { target: { value: "REFCODE123" } });
     const submitBtn = screen.getByRole("button", { name: "Submit code" });
-    
+
     // First submit fails
     await act(async () => {
       fireEvent.click(submitBtn);
     });
-    
+
     // Check error message displays
-    expect(await screen.findByText(getSiteContent("en").account.error)).toBeInTheDocument();
-    
+    expect(
+      await screen.findByText(getSiteContent("en").account.error),
+    ).toBeInTheDocument();
+
     // Nút submit không bị kẹt disabled sau lỗi đầu
     expect(submitBtn).not.toBeDisabled();
-    
+
     // Submit again
     await act(async () => {
       fireEvent.click(submitBtn);
     });
-    
+
     // Assert second submit succeeds
-    expect(await screen.findByText("You were referred by Referrer.")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Enter a referral code")).not.toBeInTheDocument();
+    expect(
+      await screen.findByText("You were referred by Referrer."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Enter a referral code"),
+    ).not.toBeInTheDocument();
     expect(postCount).toBe(2);
   });
 
@@ -295,7 +303,10 @@ describe("public account pages", () => {
     expect(navigation.replace).toHaveBeenCalledWith("/en");
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     await waitFor(() =>
-      expect(accountApi).toHaveBeenCalledWith("points?page=2", expect.anything()),
+      expect(accountApi).toHaveBeenCalledWith(
+        "points?page=2",
+        expect.anything(),
+      ),
     );
   });
 
@@ -328,7 +339,10 @@ describe("public account pages", () => {
     expect(navigation.replace).toHaveBeenCalledWith("/account/en/referral");
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     await waitFor(() =>
-      expect(accountApi).toHaveBeenCalledWith("invited-users?page=2", expect.anything()),
+      expect(accountApi).toHaveBeenCalledWith(
+        "invited-users?page=2",
+        expect.anything(),
+      ),
     );
   });
 
@@ -354,25 +368,51 @@ describe("public account pages", () => {
     let callCount = 0;
     vi.mocked(accountApi).mockImplementation(() => {
       callCount++;
-      if (callCount === 1) return new Promise((resolve) => { resolveFirst = resolve; });
+      if (callCount === 1)
+        return new Promise((resolve) => {
+          resolveFirst = resolve;
+        });
       return Promise.resolve({
-        data: [{ id: "p2", direction: "debit", amount: 5, message: "Fresh Item", created_at: "2026-01-02T00:00:00Z" }],
-        meta: { page: 1, page_size: 30, total: 31, balance: 5 }
+        data: [
+          {
+            id: "p2",
+            direction: "debit",
+            amount: 5,
+            message: "Fresh Item",
+            created_at: "2026-01-02T00:00:00Z",
+          },
+        ],
+        meta: { page: 1, page_size: 30, total: 31, balance: 5 },
       });
     });
 
-    const { rerender } = render(<PointHistoryPage locale="en" copy={getSiteContent("en").account} />);
-    
+    const { rerender } = render(
+      <PointHistoryPage locale="en" copy={getSiteContent("en").account} />,
+    );
+
     // Trigger second request by changing a dependency primitive
-    rerender(<PointHistoryPage locale="en" copy={{ ...getSiteContent("en").account, error: "trigger" }} />);
-    
+    rerender(
+      <PointHistoryPage
+        locale="en"
+        copy={{ ...getSiteContent("en").account, error: "trigger" }}
+      />,
+    );
+
     expect(await screen.findByText("Fresh Item")).toBeInTheDocument();
-    
+
     // Resolve the first (stale) request
     await act(async () =>
       resolveFirst({
-        data: [{ id: "p1", direction: "credit", amount: 10, message: "Stale Item", created_at: "2026-01-01T00:00:00Z" }],
-        meta: { page: 1, page_size: 30, total: 31, balance: 10 }
+        data: [
+          {
+            id: "p1",
+            direction: "credit",
+            amount: 10,
+            message: "Stale Item",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+        meta: { page: 1, page_size: 30, total: 31, balance: 10 },
       }),
     );
     expect(screen.queryByText("Stale Item")).not.toBeInTheDocument();
@@ -380,7 +420,9 @@ describe("public account pages", () => {
   });
 
   it("does not show an error when a PointHistoryPage request is aborted by unmount", () => {
-    vi.mocked(accountApi).mockImplementation(() => new Promise(() => undefined));
+    vi.mocked(accountApi).mockImplementation(
+      () => new Promise(() => undefined),
+    );
     const { unmount } = render(
       <PointHistoryPage locale="en" copy={getSiteContent("en").account} />,
     );
@@ -396,24 +438,48 @@ describe("public account pages", () => {
     let callCount = 0;
     vi.mocked(accountApi).mockImplementation(() => {
       callCount++;
-      if (callCount === 1) return new Promise((resolve) => { resolveFirst = resolve; });
+      if (callCount === 1)
+        return new Promise((resolve) => {
+          resolveFirst = resolve;
+        });
       return Promise.resolve({
-        data: [{ id: "u2", name: "Fresh Person", status: "joined", referred_at: "2026-01-02T00:00:00Z" }],
-        meta: { page: 1, page_size: 30, total: 31 }
+        data: [
+          {
+            id: "u2",
+            name: "Fresh Person",
+            status: "joined",
+            referred_at: "2026-01-02T00:00:00Z",
+          },
+        ],
+        meta: { page: 1, page_size: 30, total: 31 },
       });
     });
 
-    const { rerender } = render(<InvitedPeoplePage locale="en" copy={getSiteContent("en").account} />);
-    
+    const { rerender } = render(
+      <InvitedPeoplePage locale="en" copy={getSiteContent("en").account} />,
+    );
+
     // Trigger second request by changing a dependency primitive
-    rerender(<InvitedPeoplePage locale="en" copy={{ ...getSiteContent("en").account, error: "trigger" }} />);
-    
+    rerender(
+      <InvitedPeoplePage
+        locale="en"
+        copy={{ ...getSiteContent("en").account, error: "trigger" }}
+      />,
+    );
+
     expect(await screen.findByText("Fresh Person")).toBeInTheDocument();
 
     await act(async () =>
       resolveFirst({
-        data: [{ id: "u1", name: "Stale Person", status: "joined", referred_at: "2026-01-01T00:00:00Z" }],
-        meta: { page: 1, page_size: 30, total: 31 }
+        data: [
+          {
+            id: "u1",
+            name: "Stale Person",
+            status: "joined",
+            referred_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+        meta: { page: 1, page_size: 30, total: 31 },
       }),
     );
     expect(screen.queryByText("Stale Person")).not.toBeInTheDocument();
@@ -421,7 +487,9 @@ describe("public account pages", () => {
   });
 
   it("does not show an error when an InvitedPeoplePage request is aborted by unmount", () => {
-    vi.mocked(accountApi).mockImplementation(() => new Promise(() => undefined));
+    vi.mocked(accountApi).mockImplementation(
+      () => new Promise(() => undefined),
+    );
     const { unmount } = render(
       <InvitedPeoplePage locale="en" copy={getSiteContent("en").account} />,
     );

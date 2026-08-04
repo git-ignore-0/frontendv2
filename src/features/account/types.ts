@@ -82,6 +82,9 @@ export type MembershipPackageItem = {
   unit_label_vi: string;
   unit_label_en: string;
   quota_units: number;
+  requested_locale?: "vi" | "en";
+  content_locale?: "vi" | "en";
+  is_fallback?: boolean;
 };
 
 export type MembershipPackage = {
@@ -92,6 +95,9 @@ export type MembershipPackage = {
   duration_months: number;
   quota_policy: "expire" | "rollover";
   items: MembershipPackageItem[];
+  requested_locale?: "vi" | "en";
+  content_locale?: "vi" | "en";
+  is_fallback?: boolean;
 };
 
 export type MembershipPaymentAvailability = {
@@ -138,6 +144,9 @@ export type CurrentMembership = {
   status: "scheduled" | "active" | "ended";
   package_name: string;
   package_description: string;
+  requested_locale?: "vi" | "en";
+  content_locale?: "vi" | "en";
+  is_fallback?: boolean;
   upfront_price: string;
   duration_months: number;
   quota_policy: "expire" | "rollover";
@@ -149,6 +158,9 @@ export type CurrentMembership = {
 export type MembershipQuotaProduct = {
   product_id: string;
   product_name: string;
+  requested_locale?: "vi" | "en";
+  content_locale?: "vi" | "en";
+  is_fallback?: boolean;
   unit_size: string;
   unit_label_vi: string;
   unit_label_en: string;
@@ -158,6 +170,7 @@ export type MembershipQuotaProduct = {
 
 export type MembershipQuota = {
   membership_id: string;
+  requested_locale?: "vi" | "en";
   products: MembershipQuotaProduct[];
 };
 
@@ -171,6 +184,9 @@ export type MembershipUsage = {
   lines: Array<{
     product_id: string;
     product_name: string;
+    requested_locale?: "vi" | "en";
+    content_locale?: "vi" | "en";
+    is_fallback?: boolean;
     unit_size: string;
     unit_label_vi: string;
     unit_label_en: string;
