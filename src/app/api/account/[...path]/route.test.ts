@@ -53,20 +53,6 @@ describe("account BFF allowlist", () => {
       path: "/api/v1/public/membership-packages",
       requiresSession: false,
     });
-    expect(
-      accountUpstreamTarget(["membership-payment-availability"], "GET"),
-    ).toEqual({
-      path: "/api/v1/public/membership-payment-availability",
-      requiresSession: false,
-    });
-    expect(accountUpstreamTarget(["memberships", "requests"], "GET")).toEqual({
-      path: "/api/v1/memberships/requests",
-      requiresSession: true,
-    });
-    expect(accountUpstreamTarget(["memberships", "requests"], "POST")).toEqual({
-      path: "/api/v1/memberships/requests",
-      requiresSession: true,
-    });
     expect(accountUpstreamTarget(["memberships", "current"], "GET")?.path).toBe(
       "/api/v1/memberships/current",
     );
@@ -76,18 +62,18 @@ describe("account BFF allowlist", () => {
     expect(accountUpstreamTarget(["memberships", "usage"], "GET")?.path).toBe(
       "/api/v1/memberships/usage",
     );
-    expect(
-      accountUpstreamTarget(
-        ["memberships", "requests", redemptionId, "payment-submitted"],
-        "POST",
-      ),
-    ).toEqual({
-      path: `/api/v1/memberships/requests/${redemptionId}/payment-submitted`,
-      requiresSession: true,
-    });
     expect(accountUpstreamTarget(["membership-packages"], "POST")).toBeNull();
     expect(
       accountUpstreamTarget(["membership-payment-availability"], "POST"),
+    ).toBeNull();
+    expect(
+      accountUpstreamTarget(["membership-payment-availability"], "GET"),
+    ).toBeNull();
+    expect(
+      accountUpstreamTarget(["memberships", "requests"], "GET"),
+    ).toBeNull();
+    expect(
+      accountUpstreamTarget(["memberships", "requests"], "POST"),
     ).toBeNull();
     expect(accountUpstreamTarget(["memberships", "quota"], "POST")).toBeNull();
     expect(

@@ -31,6 +31,7 @@ import type {
   PaginationMeta,
 } from "@/features/account/types";
 import {
+  formatMembershipMoney,
   formatMembershipUnits,
   membershipUnitLabel,
 } from "@/features/membership/format";
@@ -183,6 +184,27 @@ export function AccountMembershipPage({
               ) : null}
             </header>
             <dl>
+              <div>
+                <dt>{copy.membershipDuration}</dt>
+                <dd>
+                  {(membership.duration_months === 1
+                    ? copy.membershipMonth
+                    : copy.membershipMonths
+                  ).replace("{count}", String(membership.duration_months))}
+                </dd>
+              </div>
+              <div>
+                <dt>{copy.membershipMonthlyPrice}</dt>
+                <dd>
+                  {formatMembershipMoney(membership.monthly_price_vnd, locale)}
+                </dd>
+              </div>
+              <div>
+                <dt>{copy.membershipTotalPrice}</dt>
+                <dd>
+                  {formatMembershipMoney(membership.total_price_vnd, locale)}
+                </dd>
+              </div>
               <div>
                 <dt>{copy.membershipStartDate}</dt>
                 <dd>

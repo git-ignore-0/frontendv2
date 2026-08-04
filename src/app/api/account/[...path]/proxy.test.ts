@@ -73,17 +73,13 @@ describe("account BFF proxy", () => {
     expect(response.headers.get("cache-control")).toBe("private, no-store");
   });
 
-  it("keeps package discovery and payment availability public but requires a session for Membership data", async () => {
-    const fetchMock = vi.fn(async (input: string | URL | Request) => {
-      const url = String(input);
-      if (url.endsWith("/api/v1/public/membership-payment-availability")) {
-        return Response.json({ data: { direct_transfer_enabled: false } });
-      }
-      return Response.json({
+  it("keeps package discovery public but requires a session for Membership data", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json({
         data: [],
         meta: { page: 1, page_size: 30, total: 0 },
-      });
-    });
+      }),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     const packages = await GET(
@@ -95,20 +91,6 @@ describe("account BFF proxy", () => {
     expect(packages.status).toBe(200);
     expect(readSession).not.toHaveBeenCalled();
 
-    const availability = await GET(
-      new NextRequest(
-        "https://site.example.test/api/account/membership-payment-availability",
-      ),
-      {
-        params: Promise.resolve({ path: ["membership-payment-availability"] }),
-      },
-    );
-    expect(availability.status).toBe(200);
-    expect(await availability.json()).toEqual({
-      data: { direct_transfer_enabled: false },
-    });
-    expect(readSession).not.toHaveBeenCalled();
-
     vi.mocked(readSession).mockResolvedValueOnce(null);
     const current = await GET(
       new NextRequest(
@@ -118,6 +100,6 @@ describe("account BFF proxy", () => {
     );
     expect(current.status).toBe(401);
     expect(await current.json()).toEqual({ error: "unauthorized" });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

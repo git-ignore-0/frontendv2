@@ -45,24 +45,3 @@ export function membershipUnitLabel(
 ) {
   return locale === "vi" ? labels.unit_label_vi : labels.unit_label_en;
 }
-
-export function vietQrUrl(instruction: {
-  bank_bin?: string;
-  bank_code?: string;
-  account_number: string;
-  account_name: string;
-  amount: string;
-  transfer_content: string;
-}) {
-  const bank = encodeURIComponent(
-    instruction.bank_bin || instruction.bank_code || "",
-  );
-  const account = encodeURIComponent(instruction.account_number);
-  const url = new URL(
-    `https://img.vietqr.io/image/${bank}-${account}-compact2.png`,
-  );
-  url.searchParams.set("amount", instruction.amount);
-  url.searchParams.set("addInfo", instruction.transfer_content);
-  url.searchParams.set("accountName", instruction.account_name);
-  return url.toString();
-}

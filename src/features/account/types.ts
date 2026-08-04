@@ -91,8 +91,7 @@ export type MembershipPackage = {
   id: string;
   name: string;
   description: string;
-  upfront_price: string;
-  duration_months: number;
+  price_options: MembershipPackagePriceOption[];
   quota_policy: "expire" | "rollover";
   items: MembershipPackageItem[];
   requested_locale?: "vi" | "en";
@@ -100,55 +99,33 @@ export type MembershipPackage = {
   is_fallback?: boolean;
 };
 
-export type MembershipPaymentAvailability = {
-  direct_transfer_enabled: boolean;
-};
-
-export type MembershipPaymentInstruction = {
-  bank_bin?: string;
-  bank_name?: string;
-  bank_code?: string;
-  account_number: string;
-  account_name: string;
-  amount: string;
-  phone_snapshot: string;
-  transfer_content: string;
-  issued_at: string;
-};
-
-export type MembershipRequestStatus =
-  | "consultation_requested"
-  | "contacted"
-  | "payment_pending"
-  | "payment_submitted"
-  | "approved"
-  | "rejected";
-
-export type MembershipRequest = {
+export type MembershipPackagePriceOption = {
   id: string;
-  short_code: string;
-  status: MembershipRequestStatus;
-  package: MembershipPackage;
-  payment_instruction: MembershipPaymentInstruction | null;
-  return_reason: string;
-  rejection_reason: string;
-  created_at: string;
-  updated_at: string;
+  duration_months: number;
+  monthly_price_vnd: string;
+  total_price_vnd: string;
+  sort_order?: number;
 };
 
 export type CurrentMembership = {
   id: string;
   user_id: string;
-  request_id: string;
   package_id: string;
+  price_option_id: string;
   status: "scheduled" | "active" | "ended";
   package_name: string;
   package_description: string;
   requested_locale?: "vi" | "en";
   content_locale?: "vi" | "en";
   is_fallback?: boolean;
-  upfront_price: string;
   duration_months: number;
+  monthly_price_vnd: string;
+  total_price_vnd: string;
+  price_option: {
+    duration_months: number;
+    monthly_price_vnd: string;
+    total_price_vnd: string;
+  };
   quota_policy: "expire" | "rollover";
   start_date: string;
   end_date: string;

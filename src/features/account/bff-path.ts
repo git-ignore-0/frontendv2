@@ -16,11 +16,6 @@ export function accountUpstreamTarget(
         path: "/api/v1/public/membership-packages",
         requiresSession: false,
       };
-    if (path[0] === "membership-payment-availability" && method === "GET")
-      return {
-        path: "/api/v1/public/membership-payment-availability",
-        requiresSession: false,
-      };
     if (path[0] === "rewards" && method === "GET")
       return { path: "/api/v1/public/rewards", requiresSession: false };
     if (
@@ -44,27 +39,12 @@ export function accountUpstreamTarget(
       };
   }
   if (path.length === 2 && path[0] === "memberships") {
-    if (path[1] === "requests")
-      return { path: "/api/v1/memberships/requests", requiresSession: true };
     if (method === "GET" && ["current", "quota", "usage"].includes(path[1])) {
       return {
         path: `/api/v1/memberships/${path[1]}`,
         requiresSession: true,
       };
     }
-  }
-  if (
-    method === "POST" &&
-    path.length === 4 &&
-    path[0] === "memberships" &&
-    path[1] === "requests" &&
-    uuidPattern.test(path[2]) &&
-    path[3] === "payment-submitted"
-  ) {
-    return {
-      path: `/api/v1/memberships/requests/${path[2]}/payment-submitted`,
-      requiresSession: true,
-    };
   }
   if (
     method === "GET" &&
