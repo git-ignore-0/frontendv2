@@ -18,6 +18,7 @@ describe("locale routing", () => {
   it("switches locale without losing the current route", () => {
     expect(replacePathLocale("/en/plants", "vi")).toBe("/plants/vi");
     expect(replacePathLocale("/plants/en", "vi")).toBe("/plants/vi");
+    expect(replacePathLocale("/en/csa", "vi")).toBe("/vi/csa");
   });
   it("switches the embedded locale in nested account routes", () => {
     expect(replacePathLocale("/account/vi/rewards", "en")).toBe(

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getSiteContent } from "@/content/site-content";
-import { SignedOutAccount } from "@/features/account/account-page";
+import { AccountSignedOutState } from "@/features/account/account-presentation";
 import { readSession } from "@/lib/auth/session";
 import type { Locale } from "@/lib/i18n";
 
@@ -18,7 +18,7 @@ export async function AccountRouteGate({
   return session ? (
     children
   ) : (
-    <SignedOutAccount
+    <AccountSignedOutState
       locale={locale}
       copy={getSiteContent(locale).account}
       returnPath={returnPath}

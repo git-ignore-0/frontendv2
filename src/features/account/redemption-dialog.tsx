@@ -28,6 +28,7 @@ export function RedemptionDialog({
   const dialogRef = useRef<HTMLDivElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(submitting);
+  const remainingBalance = balance - reward.point_cost;
   submittingRef.current = submitting;
 
   useEffect(() => {
@@ -93,7 +94,15 @@ export function RedemptionDialog({
         role="dialog"
         tabIndex={-1}
       >
-        <p className="eyebrow">{copy.redeemRewards}</p>
+        <button
+          aria-label={copy.closeDialog}
+          className="redemption-dialog-close"
+          disabled={submitting}
+          onClick={onCancel}
+          type="button"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
         <h2 id="redemption-dialog-title">{copy.dialogTitle}</h2>
         <p
           id="redemption-dialog-description"
@@ -101,18 +110,23 @@ export function RedemptionDialog({
         >
           {copy.dialogDescription}
         </p>
+        <div className="redemption-dialog-reward">
+          <span>{copy.rewardName}</span>
+          <strong>{reward.name}</strong>
+          {reward.short_description ? <p>{reward.short_description}</p> : null}
+        </div>
         <dl className="redemption-dialog-summary">
-          <div>
-            <dt>{copy.rewardName}</dt>
-            <dd>{reward.name}</dd>
-          </div>
-          <div>
-            <dt>{copy.pointsRequired}</dt>
-            <dd>{formatRewardPoints(copy, reward.point_cost)}</dd>
-          </div>
           <div>
             <dt>{copy.balance}</dt>
             <dd>{formatRewardPoints(copy, balance)}</dd>
+          </div>
+          <div className="is-required">
+            <dt>{copy.pointsRequired}</dt>
+            <dd>− {formatRewardPoints(copy, reward.point_cost)}</dd>
+          </div>
+          <div className="is-remaining">
+            <dt>{copy.balanceAfterRedemption}</dt>
+            <dd>{formatRewardPoints(copy, remainingBalance)}</dd>
           </div>
         </dl>
         {error ? (

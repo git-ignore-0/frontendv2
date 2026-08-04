@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { getSiteContent } from "@/content/site-content";
-import { ReferralProgramPage } from "@/features/account/referral-program-page";
+import { AccountRouteGate } from "@/features/account/account-route-gate";
+import { MembershipUsagePage } from "@/features/membership/account-membership-pages";
 import { isLocale } from "@/lib/i18n";
 
 export async function generateMetadata({
@@ -11,23 +12,23 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return {
-    title: getSiteContent(locale).account.referralProgramMetadataTitle,
-  };
+  return { title: getSiteContent(locale).account.membershipUsageMetadataTitle };
 }
 
-export default async function AccountReferralRoute({
+export default async function MembershipUsageRoute({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ returnTo?: string | string[] }>;
 }) {
   const { locale } = await params;
-  const { returnTo } = await searchParams;
   if (!isLocale(locale)) notFound();
   const copy = getSiteContent(locale).account;
   return (
-    <ReferralProgramPage locale={locale} copy={copy} returnTo={returnTo} />
+    <AccountRouteGate
+      locale={locale}
+      returnPath={`/account/${locale}/membership/usage`}
+    >
+      <MembershipUsagePage copy={copy} locale={locale} />
+    </AccountRouteGate>
   );
 }

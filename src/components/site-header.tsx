@@ -2,12 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Arrow } from "@/components/icons";
 import { siteConfig } from "@/config/site";
 import type { CommonDictionary } from "@/content/site-content";
+import { useHeaderAccountBalance } from "@/features/account/use-header-account-balance";
+import { useHeaderMembershipDestination } from "@/features/account/use-header-membership-destination";
 import type { CoreUser } from "@/lib/auth/schemas";
 import {
   type Locale,
@@ -16,6 +18,253 @@ import {
   localizedPath,
   replacePathLocale,
 } from "@/lib/i18n";
+
+function AccountMenuChevron() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <path d="m6 8 4 4 4-4" />
+    </svg>
+  );
+}
+
+function HeaderAccountDestinations({
+  accountHref,
+  balanceLabel,
+  currentPath,
+  membershipHref,
+  menuSemantics = false,
+  onNavigate,
+  t,
+}: {
+  accountHref: string;
+  balanceLabel: string;
+  currentPath: string;
+  membershipHref: string;
+  menuSemantics?: boolean;
+  onNavigate: () => void;
+  t: CommonDictionary;
+}) {
+  let role: "menuitem" | undefined;
+  let groupRole: "none" | undefined;
+  if (menuSemantics) {
+    role = "menuitem";
+    groupRole = "none";
+  }
+  const returnTo = `?returnTo=${encodeURIComponent(currentPath)}`;
+  const membershipDestination = membershipHref.startsWith("/account/")
+    ? `${membershipHref}${returnTo}`
+    : membershipHref;
+  return (
+    <div className="header-account-destinations" role={groupRole}>
+      <div className="header-account-points-summary" role="presentation">
+        <span>{t.nav.currentPoints}</span>
+        <strong
+          aria-atomic="true"
+          aria-live="polite"
+          className="header-account-balance"
+        >
+          {balanceLabel}
+        </strong>
+      </div>
+      <Link
+        href={`${accountHref}/points${returnTo}`}
+        onClick={onNavigate}
+        role={role}
+      >
+        {t.nav.pointsHistory}
+      </Link>
+      <Link
+        href={`${accountHref}/rewards${returnTo}`}
+        onClick={onNavigate}
+        role={role}
+      >
+        {t.nav.rewards}
+      </Link>
+      <Link
+        href={`${accountHref}/referral${returnTo}`}
+        onClick={onNavigate}
+        role={role}
+      >
+        {t.nav.referFriends}
+      </Link>
+      <a
+        href={`/api/auth/account?returnTo=${encodeURIComponent(accountHref)}`}
+        onClick={onNavigate}
+        role={role}
+      >
+        {t.nav.editAccount}
+      </a>
+      <Link href={membershipDestination} onClick={onNavigate} role={role}>
+        {t.nav.membership}
+      </Link>
+    </div>
+  );
+}
+
+function HeaderAccountIdentity({
+  t,
+  user,
+}: {
+  t: CommonDictionary;
+  user: CoreUser;
+}) {
+  return (
+    <div className="header-account-user" role="presentation" title={user.name}>
+      <span>{t.nav.accountOwner}</span>
+      <strong>{user.name}</strong>
+    </div>
+  );
+}
+
+function HeaderAccountLogout({
+  locale,
+  menuSemantics = false,
+  t,
+}: {
+  locale: Locale;
+  menuSemantics?: boolean;
+  t: CommonDictionary;
+}) {
+  let role: "menuitem" | undefined;
+  if (menuSemantics) {
+    role = "menuitem";
+  }
+  return (
+    <form
+      action={`/api/auth/logout?locale=${locale}`}
+      className="header-account-logout-form"
+      method="post"
+    >
+      <button className="header-account-logout" role={role} type="submit">
+        {t.nav.signOut}
+      </button>
+    </form>
+  );
+}
+
+function HeaderAccountMenu({
+  locale,
+  pathname,
+  currentPath,
+  t,
+  user,
+  balanceLabel,
+  loadBalance,
+  loadMembershipDestination,
+  membershipHref,
+}: {
+  locale: Locale;
+  pathname: string;
+  currentPath: string;
+  t: CommonDictionary;
+  user: CoreUser | null;
+  balanceLabel: string;
+  loadBalance: () => Promise<void>;
+  loadMembershipDestination: () => Promise<void>;
+  membershipHref: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const container = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const accountHref = localizedPath(locale, "/account");
+  const menuId = "header-account-menu";
+  const close = () => setOpen(false);
+
+  const toggle = () => {
+    if (open) {
+      close();
+      return;
+    }
+    setOpen(true);
+    void loadBalance();
+    void loadMembershipDestination();
+  };
+
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!container.current?.contains(event.target as Node)) close();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      close();
+      trigger.current?.focus();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className="desktop-account-menu" ref={container}>
+      <button
+        aria-controls={menuId}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="header-account-trigger"
+        onClick={toggle}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          setOpen(true);
+          void loadBalance();
+          void loadMembershipDestination();
+        }}
+        ref={trigger}
+        type="button"
+      >
+        {t.nav.account}
+        <AccountMenuChevron />
+      </button>
+
+      {open ? (
+        <div
+          aria-label={t.nav.account}
+          className="header-account-popover"
+          id={menuId}
+          role="menu"
+        >
+          {user ? (
+            <>
+              <HeaderAccountIdentity t={t} user={user} />
+              <HeaderAccountDestinations
+                accountHref={accountHref}
+                balanceLabel={balanceLabel}
+                currentPath={currentPath}
+                membershipHref={membershipHref}
+                menuSemantics
+                onNavigate={close}
+                t={t}
+              />
+              <HeaderAccountLogout locale={locale} menuSemantics t={t} />
+            </>
+          ) : (
+            <>
+              <a
+                href={`/api/auth/login?locale=${locale}&returnTo=${encodeURIComponent(currentPath)}`}
+                onClick={close}
+                role="menuitem"
+              >
+                {t.nav.signIn}
+              </a>
+              <a
+                href={`/api/auth/register?locale=${locale}&returnTo=${encodeURIComponent(currentPath)}`}
+                onClick={close}
+                role="menuitem"
+              >
+                {t.nav.register}
+              </a>
+            </>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function SiteHeader({
   locale,
@@ -29,23 +278,41 @@ export function SiteHeader({
   initialUser: CoreUser | null;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const currentPath = search ? `${pathname}?${search}` : pathname;
   const accountHref = localizedPath(locale, "/account");
-  const [open, setOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const [user, setUser] = useState(initialUser);
-  const trigger = useRef<HTMLButtonElement>(null);
+  const { label: balanceLabel, load: loadBalance } = useHeaderAccountBalance({
+    locale,
+    pathname,
+    userId: user?.sub,
+  });
+  const { href: membershipHref, load: loadMembershipDestination } =
+    useHeaderMembershipDestination({
+      locale,
+      pathname,
+      userId: user?.sub,
+    });
+  const mobileMenuTrigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const alternateLocales = locales.filter((item) => item !== locale);
   const links = [
     ["", t.nav.home],
     ["/about", t.nav.about],
-    ["/plants", t.nav.plants],
-    ["/animals", t.nav.animals],
     ["/workshops", t.nav.workshops],
+    ["/csa", t.nav.csa],
   ] as const;
+  const linkHref = (path: (typeof links)[number][0]) =>
+    path === "/csa" ? `/${locale}/csa` : localizedPath(locale, path);
 
   useEffect(() => {
-    setOpen(false);
+    setMobileMenuOpen(false);
+    setMobileAccountOpen(false);
   }, [pathname]);
+  useEffect(() => setMobileAccountOpen(false), [user?.sub]);
   useEffect(() => {
     let active = true;
     fetch("/api/auth/session", { cache: "no-store" })
@@ -66,14 +333,15 @@ export function SiteHeader({
     };
   }, [pathname]);
   useEffect(() => {
-    if (!open) return;
+    if (!mobileMenuOpen) return;
     const previous = document.activeElement as HTMLElement | null;
     const focusable = panel.current?.querySelector<HTMLElement>("a, button");
     focusable?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
-        trigger.current?.focus();
+        setMobileMenuOpen(false);
+        setMobileAccountOpen(false);
+        mobileMenuTrigger.current?.focus();
       }
       if (event.key === "Tab" && panel.current) {
         const nodes = [
@@ -99,7 +367,7 @@ export function SiteHeader({
       document.body.style.overflow = previousOverflow;
       previous?.focus();
     };
-  }, [open]);
+  }, [mobileMenuOpen]);
 
   return (
     <header className="site-header">
@@ -119,7 +387,7 @@ export function SiteHeader({
         </Link>
         <nav className="desktop-nav" aria-label={t.primaryNavigation}>
           {links.map(([path, label]) => {
-            const href = localizedPath(locale, path);
+            const href = linkHref(path);
             const active = pathname === href;
             return (
               <Link
@@ -145,42 +413,17 @@ export function SiteHeader({
           )}
         </nav>
         <div className="header-tools">
-          <div className="desktop-account-actions">
-            {user ? (
-              <>
-                <Link
-                  href={accountHref}
-                  className="account-link"
-                  aria-label={t.nav.account}
-                >
-                  {user.name}
-                </Link>
-                <form
-                  action={`/api/auth/logout?locale=${locale}`}
-                  method="post"
-                >
-                  <button className="header-logout" type="submit">
-                    {t.nav.signOut}
-                  </button>
-                </form>
-              </>
-            ) : (
-              <>
-                <a
-                  className="header-register"
-                  href={`/api/auth/register?locale=${locale}&returnTo=${encodeURIComponent(pathname)}`}
-                >
-                  {t.nav.register}
-                </a>
-                <a
-                  className="header-login"
-                  href={`/api/auth/login?locale=${locale}&returnTo=${encodeURIComponent(pathname)}`}
-                >
-                  {t.nav.signIn}
-                </a>
-              </>
-            )}
-          </div>
+          <HeaderAccountMenu
+            balanceLabel={balanceLabel}
+            loadBalance={loadBalance}
+            loadMembershipDestination={loadMembershipDestination}
+            locale={locale}
+            membershipHref={membershipHref}
+            currentPath={currentPath}
+            pathname={pathname}
+            t={t}
+            user={user}
+          />
           {alternateLocales.map((targetLocale) => (
             <Link
               key={targetLocale}
@@ -190,29 +433,40 @@ export function SiteHeader({
               lang={targetLocale}
               aria-label={`${t.language}: ${localeConfig[targetLocale].label}`}
             >
-              <span aria-hidden="true">{localeConfig[targetLocale].icon}</span>
+              <span aria-hidden="true" className="language-icon">
+                {localeConfig[targetLocale].icon}
+              </span>
+              <span aria-hidden="true" className="language-flag">
+                {localeConfig[targetLocale].flag}
+              </span>
               {localeConfig[targetLocale].shortLabel}
             </Link>
           ))}
           <button
-            ref={trigger}
+            ref={mobileMenuTrigger}
+            aria-label={t.menu}
             className="menu-button"
-            aria-expanded={open}
+            aria-expanded={mobileMenuOpen}
             aria-controls="mobile-menu"
-            onClick={() => setOpen(true)}
+            onClick={() => setMobileMenuOpen(true)}
+            type="button"
           >
-            {t.menu}
-            <span aria-hidden="true">≡</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
           </button>
         </div>
       </div>
-      {open &&
+      {mobileMenuOpen &&
         createPortal(
           <div
             className="menu-backdrop"
             role="presentation"
             onMouseDown={(event) => {
-              if (event.target === event.currentTarget) setOpen(false);
+              if (event.target === event.currentTarget) {
+                setMobileMenuOpen(false);
+                setMobileAccountOpen(false);
+              }
             }}
           >
             <div
@@ -223,15 +477,20 @@ export function SiteHeader({
               aria-modal="true"
               aria-label={t.menu}
             >
-              <button className="menu-close" onClick={() => setOpen(false)}>
+              <button
+                className="menu-close"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setMobileAccountOpen(false);
+                }}
+              >
                 {t.close}
                 <span aria-hidden="true">×</span>
               </button>
               <nav aria-label={t.mobileNavigation}>
-                {links.map(([path, label], i) => (
-                  <Link key={path} href={localizedPath(locale, path)}>
-                    <small>0{i + 1}</small>
-                    {label}
+                {links.map(([path, label]) => (
+                  <Link key={path} href={linkHref(path)}>
+                    <span>{label}</span>
                     <Arrow />
                   </Link>
                 ))}
@@ -241,8 +500,7 @@ export function SiteHeader({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <small>06</small>
-                    {t.nav.store}
+                    <span>{t.nav.store}</span>
                     <Arrow external />
                     <span className="sr-only"> ({t.external})</span>
                   </a>
@@ -253,72 +511,77 @@ export function SiteHeader({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <small>{externalLinks.store ? "07" : "06"}</small>
-                    {t.nav.forum}
+                    <span>{t.nav.forum}</span>
                     <Arrow external />
                     <span className="sr-only"> ({t.external})</span>
                   </a>
                 )}
-                <div className="mobile-account-actions">
-                  {user ? (
-                    <>
-                      <Link href={accountHref}>
-                        <small>
-                          {externalLinks.store && externalLinks.forum
-                            ? "08"
-                            : "07"}
-                        </small>
-                        {t.nav.account}
-                        <Arrow />
-                      </Link>
-                      <form
-                        className="mobile-account-logout"
-                        action={`/api/auth/logout?locale=${locale}`}
-                        method="post"
-                      >
-                        <button type="submit">
-                          <small>→</small>
-                          {t.nav.signOut}
-                          <Arrow />
-                        </button>
-                      </form>
-                    </>
-                  ) : (
-                    <>
-                      <a
-                        href={`/api/auth/register?locale=${locale}&returnTo=${encodeURIComponent(pathname)}`}
-                      >
-                        <small>+</small>
-                        {t.nav.register}
-                        <Arrow />
-                      </a>
-                      <a
-                        href={`/api/auth/login?locale=${locale}&returnTo=${encodeURIComponent(pathname)}`}
-                      >
-                        <small>→</small>
-                        {t.nav.signIn}
-                        <Arrow />
-                      </a>
-                    </>
-                  )}
+                <div className="mobile-account-section">
+                  <button
+                    aria-controls="mobile-account-panel"
+                    aria-expanded={mobileAccountOpen}
+                    className="mobile-account-trigger"
+                    onClick={() => {
+                      const next = !mobileAccountOpen;
+                      setMobileAccountOpen(next);
+                      if (next) {
+                        void loadBalance();
+                        void loadMembershipDestination();
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      const next = !mobileAccountOpen;
+                      setMobileAccountOpen(next);
+                      if (next) {
+                        void loadBalance();
+                        void loadMembershipDestination();
+                      }
+                    }}
+                    type="button"
+                  >
+                    <span>{t.nav.account}</span>
+                    <AccountMenuChevron />
+                  </button>
+                  {mobileAccountOpen ? (
+                    <div
+                      className="mobile-account-panel"
+                      id="mobile-account-panel"
+                    >
+                      {user ? (
+                        <>
+                          <HeaderAccountIdentity t={t} user={user} />
+                          <HeaderAccountDestinations
+                            accountHref={accountHref}
+                            balanceLabel={balanceLabel}
+                            currentPath={currentPath}
+                            membershipHref={membershipHref}
+                            onNavigate={() => setMobileMenuOpen(false)}
+                            t={t}
+                          />
+                          <HeaderAccountLogout locale={locale} t={t} />
+                        </>
+                      ) : (
+                        <>
+                          <a
+                            href={`/api/auth/login?locale=${locale}&returnTo=${encodeURIComponent(currentPath)}`}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {t.nav.signIn}
+                          </a>
+                          <a
+                            href={`/api/auth/register?locale=${locale}&returnTo=${encodeURIComponent(currentPath)}`}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {t.nav.register}
+                          </a>
+                        </>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               </nav>
-              <div className="mobile-languages" aria-label={t.language}>
-                {alternateLocales.map((targetLocale) => (
-                  <Link
-                    key={targetLocale}
-                    href={replacePathLocale(pathname, targetLocale)}
-                    hrefLang={targetLocale}
-                    lang={targetLocale}
-                    className="mobile-language"
-                  >
-                    <span aria-hidden="true">
-                      {localeConfig[targetLocale].icon}
-                    </span>
-                    {localeConfig[targetLocale].label}
-                  </Link>
-                ))}
-              </div>
             </div>
           </div>,
           document.body,

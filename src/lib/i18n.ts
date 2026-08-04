@@ -4,10 +4,10 @@ export const defaultLocale: Locale = "en";
 
 export const localeConfig: Record<
   Locale,
-  { label: string; shortLabel: string; icon: string }
+  { label: string; shortLabel: string; icon: string; flag: string }
 > = {
-  en: { label: "English", shortLabel: "EN", icon: "🌐" },
-  vi: { label: "Tiếng Việt", shortLabel: "VI", icon: "🇻🇳" },
+  en: { label: "English", shortLabel: "EN", icon: "🌐", flag: "🇬🇧" },
+  vi: { label: "Tiếng Việt", shortLabel: "VI", icon: "🇻🇳", flag: "🇻🇳" },
 };
 
 export function isLocale(value: string): value is Locale {
@@ -21,9 +21,12 @@ export function localizedPath(locale: Locale, path = "") {
 
 export function replacePathLocale(pathname: string, locale: Locale) {
   const localePattern = locales.join("|");
+  const csaPattern = new RegExp(`^/(?:${localePattern})/csa$`);
   const accountPattern = new RegExp(`^/account/(?:${localePattern})(?=/|$)`);
   const prefixPattern = new RegExp(`^/(${localePattern})(?=/|$)`);
   const suffixPattern = new RegExp(`/(?:${localePattern})$`);
+
+  if (csaPattern.test(pathname)) return `/${locale}/csa`;
 
   if (accountPattern.test(pathname)) {
     return pathname.replace(accountPattern, `/account/${locale}`);

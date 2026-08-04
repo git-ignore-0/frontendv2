@@ -25,6 +25,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     })),
   );
+  const csaPages = locales.map((locale) => ({
+    url: `${base}/${locale}/csa`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    alternates: {
+      languages: Object.fromEntries(
+        locales.map((language) => [language, `${base}/${language}/csa`]),
+      ),
+    },
+  }));
   const localizedWorkshops = await Promise.all(
     locales.map(async (locale) => [
       ...(await getWorkshops(locale, "upcoming")),
@@ -41,5 +51,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       })),
   );
-  return [...staticPages, ...workshopPages];
+  return [...staticPages, ...csaPages, ...workshopPages];
 }

@@ -427,7 +427,9 @@ test("long workshop content stays inside the content column", async ({
   await page.setViewportSize({ width: 1035, height: 980 });
   await page.goto("/workshops/vi");
 
-  const detailLink = page.locator(".workshop-card h3 a").first();
+  const detailLink = page
+    .locator(".workshop-calendar-card .workshop-title-link")
+    .first();
   test.skip((await detailLink.count()) === 0, "No published workshop fixture");
   await detailLink.click();
   await expect(page.locator(".workshop-main")).toBeVisible();

@@ -3,8 +3,86 @@ import { notFound } from "next/navigation";
 
 import { WorkshopCard } from "@/features/workshops/workshop-card";
 import { workshopCopy } from "@/features/workshops/copy";
-import { getWorkshops } from "@/lib/content-api";
-import { isLocale, languageAlternates } from "@/lib/i18n";
+import { formatWorkshopMonthGroup } from "@/features/workshops/format";
+import { getWorkshops, type PublicWorkshop } from "@/lib/content-api";
+import {
+  isLocale,
+  languageAlternates,
+  type Locale,
+} from "@/lib/i18n";
+
+function groupWorkshopsByMonth(
+  workshops: PublicWorkshop[],
+  locale: Locale,
+) {
+  const groups = new Map<
+    string,
+    { key: string; label: string; workshops: PublicWorkshop[] }
+  >();
+
+  for (const workshop of workshops) {
+    const month = formatWorkshopMonthGroup(
+      workshop.start_at,
+      workshop.event_timezone,
+      locale,
+    );
+    const group = groups.get(month.key);
+
+    if (group) {
+      group.workshops.push(workshop);
+    } else {
+      groups.set(month.key, { ...month, workshops: [workshop] });
+    }
+  }
+
+  return [...groups.values()];
+}
+
+function WorkshopMonthGroups({
+  workshops,
+  locale,
+  idPrefix,
+}: {
+  workshops: PublicWorkshop[];
+  locale: Locale;
+  idPrefix: string;
+}) {
+  const groups = groupWorkshopsByMonth(workshops, locale);
+
+  return (
+    <div className="workshop-calendar">
+      {groups.map((group) => {
+        const headingId = `${idPrefix}-${group.key}`;
+
+        return (
+          <section
+            key={group.key}
+            className="workshop-month-group"
+            aria-labelledby={headingId}
+          >
+            <header className="workshop-month-header">
+              <h3 id={headingId} className="workshop-month-heading">
+                {group.label}
+              </h3>
+              <span aria-hidden="true" className="workshop-month-divider" />
+            </header>
+            <div className="workshop-month-list">
+              {group.workshops.map((workshop) => (
+                <WorkshopCard
+                  key={workshop.id}
+                  workshop={workshop}
+                  locale={locale}
+                  titleTag="h4"
+                  calendar
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
 
 export async function generateMetadata({
   params,
@@ -37,42 +115,58 @@ export default async function WorkshopListPage({
     getWorkshops(locale, "past"),
   ]);
   return (
-    <>
-      <section className="workshop-list-hero">
-        <div className="shell">
-          <p className="eyebrow">{t.eyebrow}</p>
+    <div className="workshop-list-page">
+      <div className="workshop-list-background" aria-hidden="true">
+        <span className="workshop-background-grain" />
+        <span className="workshop-background-moss" />
+        <span className="workshop-background-straw" />
+      </div>
+      <div className="shell workshop-list-shell">
+        <header className="workshop-list-hero">
           <h1>{t.title}</h1>
-          <p className="lede">{t.intro}</p>
-        </div>
-      </section>
-      <section className="section">
-        <div className="shell">
-          <h2 className="workshop-section-title">{t.upcoming}</h2>
+          <p className="workshop-list-intro">{t.intro}</p>
+        </header>
+        <section
+          className="workshop-list-section"
+          aria-labelledby="workshop-upcoming-title"
+        >
+          <header className="workshop-section-header">
+            <h2 id="workshop-upcoming-title">{t.upcoming}</h2>
+            <p className="workshop-section-count">
+              {t.workshopCount(upcoming.length)}
+            </p>
+          </header>
           {upcoming.length ? (
-            <div className="workshop-grid">
-              {upcoming.map((item) => (
-                <WorkshopCard key={item.id} workshop={item} locale={locale} />
-              ))}
-            </div>
+            <WorkshopMonthGroups
+              workshops={upcoming}
+              locale={locale}
+              idPrefix="workshop-upcoming-month"
+            />
           ) : (
             <p className="workshop-empty">{t.emptyUpcoming}</p>
           )}
-        </div>
-      </section>
-      <section className="section section-cream">
-        <div className="shell">
-          <h2 className="workshop-section-title">{t.past}</h2>
+        </section>
+        <section
+          className="workshop-list-section workshop-list-section-past"
+          aria-labelledby="workshop-past-title"
+        >
+          <header className="workshop-section-header">
+            <h2 id="workshop-past-title">{t.past}</h2>
+            <p className="workshop-section-count">
+              {t.workshopCount(past.length)}
+            </p>
+          </header>
           {past.length ? (
-            <div className="workshop-grid">
-              {past.map((item) => (
-                <WorkshopCard key={item.id} workshop={item} locale={locale} />
-              ))}
-            </div>
+            <WorkshopMonthGroups
+              workshops={past}
+              locale={locale}
+              idPrefix="workshop-past-month"
+            />
           ) : (
             <p className="workshop-empty">{t.emptyPast}</p>
           )}
-        </div>
-      </section>
-    </>
+        </section>
+      </div>
+    </div>
   );
 }

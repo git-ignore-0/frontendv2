@@ -5,15 +5,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AccountArrowIcon } from "@/features/account/account-icons";
 import {
+  buildAccountLevelOnePath,
+  resolveAccountLevelOneBackHref,
+} from "@/features/account/account-level-one-back";
+import {
   AccountApiError,
   accountApi,
   isAccountSessionError,
   redemptionErrorKey,
 } from "@/features/account/api";
+import { AccountPagination } from "@/features/account/account-pagination";
+import { AccountGiftIcon } from "@/features/account/account-icons";
 import {
-  AccountListHeading,
-  Pager,
-} from "@/features/account/account-list-pages";
+  AccountBalanceSummary,
+  AccountDetailHeader,
+  AccountEmptyState,
+  AccountErrorState,
+  AccountLoadingState,
+  AccountPageShell,
+} from "@/features/account/account-presentation";
 import { RedemptionDialog } from "@/features/account/redemption-dialog";
 import {
   type AccountCopy,
@@ -44,9 +54,11 @@ function rewardActionLabel(
 export function RewardsPage({
   locale,
   copy,
+  returnTo,
 }: {
   locale: Locale;
   copy: AccountCopy;
+  returnTo?: string | string[] | null;
 }) {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
@@ -60,6 +72,12 @@ export function RewardsPage({
   const [submitError, setSubmitError] = useState("");
   const [created, setCreated] = useState<RedemptionCreated | null>(null);
   const submittingRef = useRef(false);
+  const attemptRef = useRef<Attempt | null>(null);
+  const catalogSequence = useRef(0);
+  const catalogRequest = useRef<{
+    controller: AbortController;
+    sequence: number;
+  } | null>(null);
 
   const loadAccount = useCallback(async () => {
     setAccountState("loading");
@@ -78,17 +96,30 @@ export function RewardsPage({
   }, []);
 
   const loadCatalog = useCallback(async () => {
+    catalogRequest.current?.controller.abort();
+    const controller = new AbortController();
+    const sequence = ++catalogSequence.current;
+    catalogRequest.current = { controller, sequence };
+    const isCurrentRequest = () =>
+      catalogRequest.current?.sequence === sequence &&
+      !controller.signal.aborted;
+
     setCatalogLoading(true);
     setCatalogError("");
     try {
       const payload = await accountApi<Reward[], PaginationMeta>(
         `rewards?locale=${locale}&page=${page}`,
+        { signal: controller.signal },
       );
+      if (!isCurrentRequest()) return;
       setRewards(payload.data);
       setMeta(payload.meta ?? null);
-    } catch {
+    } catch (caught) {
+      if (!isCurrentRequest() || (caught instanceof Error && caught.name === "AbortError")) return;
       setCatalogError(copy.catalogError);
     } finally {
+      if (!isCurrentRequest()) return;
+      catalogRequest.current = null;
       setCatalogLoading(false);
     }
   }, [copy.catalogError, locale, page]);
@@ -99,15 +130,24 @@ export function RewardsPage({
 
   useEffect(() => {
     void loadCatalog();
+    return () => {
+      catalogSequence.current += 1;
+      catalogRequest.current?.controller.abort();
+      catalogRequest.current = null;
+    };
   }, [loadCatalog]);
 
   function openAttempt(reward: Reward) {
+    if (attempt || attemptRef.current || submittingRef.current) return;
+    const nextAttempt = { reward, idempotencyKey: crypto.randomUUID() };
+    attemptRef.current = nextAttempt;
     setSubmitError("");
-    setAttempt({ reward, idempotencyKey: crypto.randomUUID() });
+    setAttempt(nextAttempt);
   }
 
   const closeAttempt = useCallback(() => {
     if (submittingRef.current) return;
+    attemptRef.current = null;
     setAttempt(null);
     setSubmitError("");
   }, []);
@@ -132,9 +172,11 @@ export function RewardsPage({
       });
       setBalance(payload.data.balance);
       setCreated(payload.data);
+      attemptRef.current = null;
       setAttempt(null);
     } catch (caught) {
       if (isAccountSessionError(caught)) {
+        attemptRef.current = null;
         setAttempt(null);
         setBalance(null);
         setAccountState("signed-out");
@@ -155,36 +197,58 @@ export function RewardsPage({
   }
 
   const returnPath = `/account/${locale}/rewards`;
-  const loginHref = `/api/auth/login?locale=${locale}&returnTo=${encodeURIComponent(returnPath)}`;
+  const currentLevelOnePath = buildAccountLevelOnePath({
+    locale,
+    returnTo,
+    currentPath: returnPath,
+  });
+  const backHref = resolveAccountLevelOneBackHref({
+    locale,
+    returnTo,
+    currentPath: returnPath,
+  });
+  const loginHref = `/api/auth/login?locale=${locale}&returnTo=${encodeURIComponent(currentLevelOnePath)}`;
 
   return (
-    <div className="account-list-page rewards-page shell">
-      <AccountListHeading
-        locale={locale}
-        copy={copy}
-        title={copy.catalogTitle}
+    <AccountPageShell className="account-detail-page rewards-page">
+      <AccountDetailHeader
+        action={
+          <div className="rewards-balance-panel">
+            <span className="rewards-balance-icon">
+              <AccountGiftIcon />
+            </span>
+            <AccountBalanceSummary
+              action={
+                <div className="account-balance-links">
+                  {accountState === "signed-out" ? (
+                    <Link href={loginHref} prefetch={false}>
+                      {copy.signIn}
+                    </Link>
+                  ) : null}
+                  <Link href={`/account/${locale}/redemptions`}>
+                    {copy.redemptionHistory}
+                  </Link>
+                </div>
+              }
+              label={copy.pointsTitle}
+              live
+              value={balance ?? "—"}
+            />
+          </div>
+        }
+        backLabel={copy.back}
+        backReplaceHref={backHref}
+        subtitle={copy.catalogIntro}
+        title={copy.redeemRewards}
       />
 
-      <section className="reward-catalog" aria-labelledby="catalog-title">
-        <header className="reward-catalog-heading">
-          <p id="catalog-title">{copy.catalogIntro}</p>
-          <div className="reward-balance" aria-live="polite">
-            <span>{copy.balance}</span>
-            <strong>{balance ?? "—"}</strong>
-            <small>{copy.pointsUnit}</small>
-            {accountState === "signed-out" ? (
-              <Link href={loginHref} prefetch={false}>
-                {copy.signIn}
-              </Link>
-            ) : null}
-          </div>
-        </header>
-
+      <section className="reward-catalog" aria-label={copy.redeemRewards}>
         {accountState === "error" ? (
-          <div className="account-inline-state" role="alert">
-            <p>{copy.error}</p>
-            <button onClick={() => void loadAccount()}>{copy.retry}</button>
-          </div>
+          <AccountErrorState
+            message={copy.error}
+            onRetry={() => void loadAccount()}
+            retryLabel={copy.retry}
+          />
         ) : null}
 
         {created ? (
@@ -193,10 +257,8 @@ export function RewardsPage({
               <strong>{copy.redemptionSuccessTitle}</strong>
               <p>{copy.redemptionSuccessBody}</p>
             </div>
-            <Link
-              href={`/account/${locale}/redemptions/${created.redemption.id}`}
-            >
-              {copy.viewRedemption}
+            <Link href={`/account/${locale}/redemptions`}>
+              {copy.redemptionHistory}
               <AccountArrowIcon />
             </Link>
             <button
@@ -210,16 +272,15 @@ export function RewardsPage({
         ) : null}
 
         {catalogError ? (
-          <div className="account-inline-state" role="alert">
-            <p>{catalogError}</p>
-            <button onClick={() => void loadCatalog()}>{copy.retry}</button>
-          </div>
+          <AccountErrorState
+            message={catalogError}
+            onRetry={() => void loadCatalog()}
+            retryLabel={copy.retry}
+          />
         ) : catalogLoading && !meta ? (
-          <p aria-live="polite" className="account-inline-state">
-            {copy.catalogLoading}
-          </p>
+          <AccountLoadingState message={copy.catalogLoading} />
         ) : rewards.length === 0 ? (
-          <p className="account-empty">{copy.catalogEmpty}</p>
+          <AccountEmptyState message={copy.catalogEmpty} />
         ) : (
           <div aria-busy={catalogLoading} className="reward-grid">
             {rewards.map((reward) => {
@@ -242,15 +303,15 @@ export function RewardsPage({
                       srcSet={imageSources.srcSet}
                       width={reward.image.width}
                     />
+                    <span className="reward-card-cost">
+                      {formatRewardPoints(copy, reward.point_cost)}
+                    </span>
                   </div>
                   <div className="reward-card-body">
                     <h3>{reward.name}</h3>
                     {reward.short_description ? (
                       <p>{reward.short_description}</p>
                     ) : null}
-                    <strong>
-                      {formatRewardPoints(copy, reward.point_cost)}
-                    </strong>
                     {accountState === "signed-out" ? (
                       <Link
                         aria-label={copy.signInToRedeem.replace(
@@ -284,7 +345,7 @@ export function RewardsPage({
           </div>
         )}
         {meta ? (
-          <Pager
+          <AccountPagination
             meta={meta}
             loading={catalogLoading}
             onPage={setPage}
@@ -304,6 +365,6 @@ export function RewardsPage({
           submitting={submitting}
         />
       ) : null}
-    </div>
+    </AccountPageShell>
   );
 }

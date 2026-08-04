@@ -18,9 +18,9 @@ describe("account BFF allowlist", () => {
     expect(accountUpstreamTarget(["redemptions"], "GET")?.requiresSession).toBe(
       true,
     );
-    expect(accountUpstreamTarget(["redemptions", redemptionId], "GET")?.path).toBe(
-      `/api/v1/referrals/redemptions/${redemptionId}`,
-    );
+    expect(
+      accountUpstreamTarget(["redemptions", redemptionId], "GET")?.path,
+    ).toBe(`/api/v1/referrals/redemptions/${redemptionId}`);
   });
 
   it("rejects arbitrary paths and malformed redemption identifiers", () => {
@@ -45,6 +45,62 @@ describe("account BFF allowlist", () => {
     );
     expect(
       accountUpstreamTarget(["redemptions", redemptionId], "POST"),
+    ).toBeNull();
+  });
+
+  it("allowlists only the exact Membership endpoints and methods", () => {
+    expect(accountUpstreamTarget(["membership-packages"], "GET")).toEqual({
+      path: "/api/v1/public/membership-packages",
+      requiresSession: false,
+    });
+    expect(
+      accountUpstreamTarget(["membership-payment-availability"], "GET"),
+    ).toEqual({
+      path: "/api/v1/public/membership-payment-availability",
+      requiresSession: false,
+    });
+    expect(accountUpstreamTarget(["memberships", "requests"], "GET")).toEqual({
+      path: "/api/v1/memberships/requests",
+      requiresSession: true,
+    });
+    expect(accountUpstreamTarget(["memberships", "requests"], "POST")).toEqual({
+      path: "/api/v1/memberships/requests",
+      requiresSession: true,
+    });
+    expect(accountUpstreamTarget(["memberships", "current"], "GET")?.path).toBe(
+      "/api/v1/memberships/current",
+    );
+    expect(accountUpstreamTarget(["memberships", "quota"], "GET")?.path).toBe(
+      "/api/v1/memberships/quota",
+    );
+    expect(accountUpstreamTarget(["memberships", "usage"], "GET")?.path).toBe(
+      "/api/v1/memberships/usage",
+    );
+    expect(
+      accountUpstreamTarget(
+        ["memberships", "requests", redemptionId, "payment-submitted"],
+        "POST",
+      ),
+    ).toEqual({
+      path: `/api/v1/memberships/requests/${redemptionId}/payment-submitted`,
+      requiresSession: true,
+    });
+    expect(accountUpstreamTarget(["membership-packages"], "POST")).toBeNull();
+    expect(
+      accountUpstreamTarget(["membership-payment-availability"], "POST"),
+    ).toBeNull();
+    expect(accountUpstreamTarget(["memberships", "quota"], "POST")).toBeNull();
+    expect(
+      accountUpstreamTarget(
+        ["memberships", "requests", "not-a-uuid", "payment-submitted"],
+        "POST",
+      ),
+    ).toBeNull();
+    expect(
+      accountUpstreamTarget(
+        ["memberships", "requests", redemptionId, "approve"],
+        "POST",
+      ),
     ).toBeNull();
   });
 });

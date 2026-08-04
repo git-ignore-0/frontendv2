@@ -1,10 +1,10 @@
 const vi = {
-  eyebrow: "Workshop · Học từ thực hành",
-  title: "Workshop sắp diễn ra",
+  title: "Workshop",
   intro:
     "Gặp gỡ, quan sát và thực hành Natural Farming trong bối cảnh địa phương.",
-  upcoming: "Sắp và đang diễn ra",
+  upcoming: "Lịch workshop",
   past: "Đã tổ chức",
+  workshopCount: (count: number) => `${count} buổi`,
   emptyUpcoming: "Chưa có workshop mới được công bố.",
   emptyPast: "Chưa có workshop đã tổ chức.",
   details: "Xem chi tiết",
@@ -27,11 +27,12 @@ const vi = {
 type WorkshopCopy = typeof vi;
 
 const en: WorkshopCopy = {
-  eyebrow: "Workshops · Learning by doing",
-  title: "Upcoming workshops",
+  title: "Workshops",
   intro: "Meet, observe and practise Natural Farming in its local context.",
-  upcoming: "Upcoming and ongoing",
+  upcoming: "Workshop schedule",
   past: "Past workshops",
+  workshopCount: (count: number) =>
+    `${count} ${count === 1 ? "workshop" : "workshops"}`,
   emptyUpcoming: "No new workshop has been announced yet.",
   emptyPast: "No past workshop is available yet.",
   details: "View details",

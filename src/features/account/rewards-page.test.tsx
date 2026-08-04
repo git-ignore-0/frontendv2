@@ -1,14 +1,24 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getSiteContent } from "@/content/site-content";
 import { AccountApiError, accountApi } from "@/features/account/api";
-import {
-  RedemptionDetailPage,
-  RedemptionsPage,
-} from "@/features/account/redemption-pages";
+import { RedemptionsPage } from "@/features/account/redemption-pages";
 import { RewardsPage } from "@/features/account/rewards-page";
 import type { Redemption, Reward } from "@/features/account/types";
+
+const navigation = vi.hoisted(() => ({ back: vi.fn(), replace: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => navigation,
+}));
 
 vi.mock("@/features/account/api", async (importOriginal) => {
   const actual =
@@ -120,7 +130,7 @@ describe("public reward redemption", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Available rewards" }),
+      await screen.findByRole("heading", { name: "Redeem rewards" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "How it works" }),
@@ -134,6 +144,13 @@ describe("public reward redemption", () => {
     expect(
       screen.getByRole("button", { name: "Redeem Farm meat box" }),
     ).toBeEnabled();
+    expect(
+      screen.getByRole("link", { name: "Redemption history" }),
+    ).toHaveAttribute("href", "/account/en/redemptions");
+    expect(screen.getByText("Your points")).toBeInTheDocument();
+    expect(
+      container.querySelector(".rewards-balance-icon svg"),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/out of stock/i)).not.toBeInTheDocument();
     expect(container.querySelector("img")).toHaveAttribute(
       "src",
@@ -143,6 +160,8 @@ describe("public reward redemption", () => {
       "srcset",
       expect.stringContaining("reward-960.webp 960w"),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(navigation.replace).toHaveBeenCalledWith("/en");
   });
 
   it("keeps the public catalog visible and offers sign-in without a session", async () => {
@@ -156,7 +175,7 @@ describe("public reward redemption", () => {
     render(<RewardsPage locale="vi" copy={getSiteContent("vi").account} />);
 
     expect(
-      await screen.findByRole("heading", { name: "Danh sách quà" }),
+      await screen.findByRole("heading", { name: "Đổi quà" }),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Fresh vegetables from the farm."),
@@ -195,9 +214,8 @@ describe("public reward redemption", () => {
     expect(
       screen.getByRole("dialog", { name: "Confirm your reward" }),
     ).toBeVisible();
-    expect(
-      screen.queryByText("Balance after redemption"),
-    ).not.toBeInTheDocument();
+    expect(screen.getByText("Balance after redemption")).toBeInTheDocument();
+    expect(screen.getByText("20 points")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Confirm redemption" }));
     expect(
@@ -218,10 +236,53 @@ describe("public reward redemption", () => {
       reward_id: rewards[0].id,
       idempotency_key: uuid,
     });
-    expect(screen.getByRole("link", { name: "View request" })).toHaveAttribute(
-      "href",
-      `/account/en/redemptions/${redemption.id}`,
+    expect(
+      within(screen.getByRole("status")).getByRole("link", {
+        name: "Redemption history",
+      }),
+    ).toHaveAttribute("href", "/account/en/redemptions");
+  });
+
+  it("keeps the first reward selected when two redemption actions are clicked quickly", async () => {
+    const randomUUID = vi
+      .fn()
+      .mockReturnValueOnce("first-attempt")
+      .mockReturnValueOnce("second-attempt");
+    vi.stubGlobal("crypto", { randomUUID });
+    vi.mocked(accountApi).mockImplementation(async (path) =>
+      catalogResponse(path),
     );
+    render(<RewardsPage locale="en" copy={getSiteContent("en").account} />);
+
+    const firstReward = await screen.findByRole("button", {
+      name: "Redeem Seasonal vegetables",
+    });
+    const secondReward = screen.getByRole("button", {
+      name: "Redeem Farm meat box",
+    });
+    fireEvent.click(firstReward);
+    fireEvent.click(secondReward);
+
+    const dialog = screen.getByRole("dialog", { name: "Confirm your reward" });
+    expect(within(dialog).getByText("Seasonal vegetables")).toBeVisible();
+    expect(within(dialog).queryByText("Farm meat box")).toBeNull();
+    expect(randomUUID).toHaveBeenCalledTimes(1);
+    expect(
+      vi
+        .mocked(accountApi)
+        .mock.calls.filter(
+          ([path, init]) => path === "redemptions" && init?.method === "POST",
+        ),
+    ).toHaveLength(0);
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(secondReward);
+    expect(
+      within(
+        screen.getByRole("dialog", { name: "Confirm your reward" }),
+      ).getByText("Farm meat box"),
+    ).toBeVisible();
+    expect(randomUUID).toHaveBeenCalledTimes(2);
   });
 
   it("blocks rapid confirmation while a redemption request is pending", async () => {
@@ -315,7 +376,7 @@ describe("public reward redemption", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Available rewards" }),
+      screen.getByRole("heading", { name: "Redeem rewards" }),
     ).toBeVisible();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -337,42 +398,125 @@ describe("redemption history", () => {
 
     render(<RedemptionsPage locale="en" copy={getSiteContent("en").account} />);
 
-    expect(await screen.findByText("Seasonal vegetables")).toBeInTheDocument();
-    expect(screen.getByText("Rejected")).toBeInTheDocument();
+    const title = await screen.findByText("Seasonal vegetables");
+    const row = title.closest("li");
+    expect(title.tagName).toBe("P");
+    expect(title).toHaveClass("redemption-reward-name");
+    expect(
+      screen.getByRole("heading", { name: "Reward request history" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Redeem rewards" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByText("Rejected")).toHaveLength(1);
     expect(
       screen.getByText("Reward is temporarily unavailable."),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "View details: Seasonal vegetables" }),
-    ).toHaveAttribute("href", `/account/en/redemptions/${redemption.id}`);
-    expect(accountApi).toHaveBeenCalledWith("redemptions?locale=en&page=1");
+    const noteLabel = screen.getByText("Note:");
+    expect(noteLabel.closest(".redemption-rejection")).toHaveClass(
+      "redemption-rejection",
+    );
+    expect(noteLabel.closest(".redemption-rejection")?.parentElement).toBe(row);
+    expect(row?.querySelector(".redemption-list-summary")).toHaveTextContent(
+      "Points used: 100 points",
+    );
+    expect(screen.queryByRole("link", { name: /view details/i })).toBeNull();
+    expect(accountApi).toHaveBeenCalledWith("redemptions?locale=en&page=1", expect.anything());
+    fireEvent.click(screen.getByRole("button", { name: "Back to rewards" }));
+    expect(navigation.replace).toHaveBeenCalledWith("/account/en/rewards");
   });
 
-  it("loads one owned redemption on its dedicated detail page", async () => {
-    vi.mocked(accountApi).mockResolvedValue({
-      data: { ...redemption, internal_note: "Admin-only fulfillment note" },
+  it("discards a stale catalog response when a new request is triggered", async () => {
+    let resolveFirst!: (value: { data: unknown[]; meta: unknown }) => void;
+    let callCount = 0;
+    vi.mocked(accountApi).mockImplementation((path) => {
+      if (path === "account") return Promise.resolve({ data: { referral_code: "X", referrer: null, can_submit_referral_code: true, points_balance: 120, invited_count: 0 } });
+      callCount++;
+      if (callCount === 1) return new Promise((resolve) => { resolveFirst = resolve; });
+      return Promise.resolve({
+        data: [{
+          id: "fresh-reward", point_cost: 50, image: { id: "i2", url: "http://example.test/r2.jpg", width: 100, height: 100, variants: [] },
+          position: 1, requested_locale: "en", content_locale: "en", is_fallback: false, name: "Fresh Reward", short_description: "Fresh"
+        }],
+        meta: { page: 1, page_size: 1, total: 2 }
+      });
     });
 
-    render(
-      <RedemptionDetailPage
-        locale="en"
-        redemptionId={redemption.id}
-        copy={getSiteContent("en").account}
-      />,
-    );
+    const { rerender } = render(<RewardsPage locale="en" copy={getSiteContent("en").account} />);
 
-    expect(
-      await screen.findByRole("heading", { name: "Seasonal vegetables" }),
-    ).toBeInTheDocument();
-    expect(screen.getAllByText("Pending")).toHaveLength(2);
-    expect(accountApi).toHaveBeenCalledWith(
-      `redemptions/${redemption.id}?locale=en`,
+    // Trigger second request by changing locale (which is a dependency)
+    rerender(<RewardsPage locale="vi" copy={getSiteContent("en").account} />);
+
+    expect(await screen.findByText("Fresh Reward")).toBeInTheDocument();
+
+    // Resolve the stale request
+    await act(async () =>
+      resolveFirst({
+        data: [{
+          id: "stale-reward", point_cost: 200, image: { id: "i1", url: "http://example.test/r.jpg", width: 100, height: 100, variants: [] },
+          position: 1, requested_locale: "en", content_locale: "en", is_fallback: false, name: "Stale Reward", short_description: "Stale"
+        }],
+        meta: { page: 1, page_size: 1, total: 2 }
+      }),
     );
-    expect(
-      screen.getByRole("link", { name: "Back to redemption history" }),
-    ).toHaveAttribute("href", "/account/en/redemptions");
-    expect(
-      screen.queryByText("Admin-only fulfillment note"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Stale Reward")).not.toBeInTheDocument();
+    expect(screen.getByText("Fresh Reward")).toBeInTheDocument();
+  });
+
+  it("does not show a catalog error when the component unmounts mid-request", () => {
+    vi.mocked(accountApi).mockImplementation(() => new Promise(() => undefined));
+    const { unmount } = render(
+      <RewardsPage locale="en" copy={getSiteContent("en").account} />,
+    );
+    const signal = vi
+      .mocked(accountApi)
+      .mock.calls.find(([path]) => path.startsWith("rewards"))?.[1]?.signal;
+    expect(signal).toBeInstanceOf(AbortSignal);
+    unmount();
+    expect(signal?.aborted).toBe(true);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("redemption history pagination", () => {
+  it("discards a stale response when a new request is triggered", async () => {
+    let resolveFirst!: (value: { data: unknown[]; meta: unknown }) => void;
+    let callCount = 0;
+    vi.mocked(accountApi).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return new Promise((resolve) => { resolveFirst = resolve; });
+      return Promise.resolve({
+        data: [{ ...redemption, id: "r2", reward_name: "Fresh Reward" }],
+        meta: { page: 1, page_size: 1, total: 2 }
+      });
+    });
+
+    const { rerender } = render(<RedemptionsPage locale="en" copy={getSiteContent("en").account} />);
+
+    // Trigger second request by changing locale
+    rerender(<RedemptionsPage locale="vi" copy={getSiteContent("en").account} />);
+
+    expect(await screen.findByText("Fresh Reward")).toBeInTheDocument();
+
+    await act(async () =>
+      resolveFirst({
+        data: [{ ...redemption, id: "r1", reward_name: "Stale Reward" }],
+        meta: { page: 1, page_size: 1, total: 2 }
+      }),
+    );
+    expect(screen.queryByText("Stale Reward")).not.toBeInTheDocument();
+    expect(screen.getByText("Fresh Reward")).toBeInTheDocument();
+  });
+
+  it("does not show an error when a redemption history request is aborted by unmount", () => {
+    vi.mocked(accountApi).mockImplementation(() => new Promise(() => undefined));
+    const { unmount } = render(
+      <RedemptionsPage locale="en" copy={getSiteContent("en").account} />,
+    );
+    const signal = vi.mocked(accountApi).mock.calls[0]?.[1]?.signal;
+    expect(signal).toBeInstanceOf(AbortSignal);
+    unmount();
+    expect(signal?.aborted).toBe(true);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
