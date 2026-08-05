@@ -224,7 +224,8 @@ const en = {
     membershipTotalPrice: "Total paid",
     membershipQuotaPolicy: "Unused quantity",
     membershipExpire: "Unused quantity does not carry over to the next month",
-    membershipRollover: "Unused quantity carries over to the next month",
+    membershipRollover:
+      "Unused quantity carries over only within a multi-month membership",
     membershipScheduledNotice:
       "This membership will begin on {date}. Product quantities are not available yet.",
     membershipQuotaTitle: "Products in your membership",
@@ -308,7 +309,8 @@ const en = {
     bestSavings: "Best savings",
     buyOnFarmbrite: "Buy now",
     expire: "Unused quantity does not carry over to the next month",
-    rollover: "Unused quantity carries over to the next month",
+    rollover:
+      "Unused quantity carries over only within a multi-month membership",
     includedProducts: "Quantity you can use each month",
     cycle: "month",
     whyTitle: "Why Natural Farming Vietnam?",
@@ -746,7 +748,8 @@ const vi: SiteContent = {
     membershipTotalPrice: "Tổng tiền đã mua",
     membershipQuotaPolicy: "Số lượng chưa dùng",
     membershipExpire: "Số lượng chưa dùng không cộng sang tháng sau",
-    membershipRollover: "Số lượng chưa dùng được cộng sang tháng sau",
+    membershipRollover:
+      "Số lượng chưa dùng chỉ được cộng sang tháng sau trong gói nhiều tháng",
     membershipScheduledNotice:
       "Gói này sẽ bắt đầu từ {date}. Số lượng sản phẩm chưa khả dụng.",
     membershipQuotaTitle: "Sản phẩm trong gói",
@@ -830,7 +833,8 @@ const vi: SiteContent = {
     bestSavings: "Tiết kiệm nhất",
     buyOnFarmbrite: "Mua ngay",
     expire: "Số lượng chưa dùng không cộng sang tháng sau",
-    rollover: "Số lượng chưa dùng được cộng sang tháng sau",
+    rollover:
+      "Số lượng chưa dùng chỉ được cộng sang tháng sau trong gói nhiều tháng",
     includedProducts: "Số lượng bạn có thể dùng mỗi tháng",
     cycle: "tháng",
     whyTitle: "Vì sao chọn Nông Nghiệp Thiên Nhiên?",
