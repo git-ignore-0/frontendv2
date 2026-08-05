@@ -246,12 +246,12 @@ const en = {
   csa: {
     metadataTitle: "Community Supported Agriculture",
     eyebrow: "Community Supported Agriculture",
-    title: "Farm-fresh produce, delivered every Saturday",
+    title: "Farm-fresh produce, delivered weekly",
     intro:
       "Join our community to receive seasonal vegetables weekly and support local farming families.",
     benefits: [
       {
-        label: "Receive products every Saturday",
+        label: "Receive products weekly",
         icon: "calendar",
       },
       {
@@ -261,6 +261,10 @@ const en = {
       {
         label: "Products updated early in the week",
         icon: "refresh",
+      },
+      {
+        label: "From farm to table within 24 hours",
+        icon: "clock",
       },
     ],
     timelineTitle: "How does a typical week work?",
@@ -278,17 +282,15 @@ const en = {
         description: "Members finalize their selections and orders.",
       },
       {
-        day: "Fri",
+        day: "Thu",
         description: "Farmers harvest and the team packs orders.",
       },
       {
-        day: "Sat",
+        day: "Fri",
         description: "Products are delivered to your door.",
       },
     ],
     packagesTitle: "Packages open for registration",
-    packagesIntro:
-      "Each package shows its available durations, exact prices, product quantities, and unused-quantity policy.",
     packagesLoading: "Loading packages…",
     packagesError: "We could not load packages. Please try again.",
     packagesEmpty: "There are no packages available right now.",
@@ -766,12 +768,12 @@ const vi: SiteContent = {
   csa: {
     metadataTitle: "Nông nghiệp cộng đồng",
     eyebrow: "Nông nghiệp cộng đồng",
-    title: "Rau từ nông trại, giao tận nhà mỗi thứ Bảy",
+    title: "Rau từ nông trại, giao tận nhà hằng tuần",
     intro:
       "Tham gia chương trình để nhận rau theo mùa hằng tuần và đồng hành cùng nông hộ địa phương.",
     benefits: [
       {
-        label: "Nhận hàng vào thứ Bảy hằng tuần",
+        label: "Nhận hàng hằng tuần",
         icon: "calendar",
       },
       {
@@ -781,6 +783,10 @@ const vi: SiteContent = {
       {
         label: "Sản phẩm được cập nhật đầu tuần",
         icon: "refresh",
+      },
+      {
+        label: "Từ nông trại đến bàn ăn trong 24 giờ",
+        icon: "clock",
       },
     ],
     timelineTitle: "Một tuần giao nhận diễn ra như thế nào?",
@@ -798,17 +804,15 @@ const vi: SiteContent = {
         description: "Khách chốt lựa chọn và đơn hàng.",
       },
       {
-        day: "T6",
+        day: "T5",
         description: "Nông dân thu hoạch, đội ngũ đóng gói.",
       },
       {
-        day: "T7",
+        day: "T6",
         description: "Giao sản phẩm tận nhà.",
       },
     ],
     packagesTitle: "Các gói đang mở đăng ký",
-    packagesIntro:
-      "Mỗi gói hiển thị mọi thời hạn đang mở, giá chính xác, số lượng sản phẩm và chính sách phần chưa dùng.",
     packagesLoading: "Đang tải các gói đăng ký…",
     packagesError: "Không thể tải các gói đăng ký. Vui lòng thử lại.",
     packagesEmpty: "Hiện chưa có gói đăng ký nào.",

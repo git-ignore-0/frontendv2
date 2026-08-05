@@ -1762,23 +1762,25 @@ tbody th {
   stroke-width: 2;
 }
 .csa-benefits {
-  padding-block: clamp(1.5rem, 3vw, 2rem);
+  padding-block: clamp(0.9rem, 1.75vw, 1.25rem);
   border-bottom: 1px solid var(--line);
 }
 .csa-benefits ul {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: clamp(1rem, 2vw, 1.5rem);
-  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.65rem, 1.25vw, 0.9rem);
+  max-width: 52rem;
+  margin: 0 auto;
   padding: 0;
   list-style: none;
 }
 .csa-benefits li {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 0.85rem;
-  padding: 0.85rem 1.25rem;
+  min-height: 3.35rem;
+  padding: 0.65rem 1rem;
   border-radius: 100px;
   background: color-mix(in srgb, var(--cream) 50%, transparent);
   border: 1px solid var(--line);
@@ -1959,7 +1961,7 @@ tbody th {
   color: #8b3d25;
 }
 .csa-packages {
-  padding-top: clamp(2.5rem, 4.5vw, 3.75rem);
+  padding-top: clamp(0.9rem, 1.75vw, 1.25rem);
 }
 .csa-packages > header {
   display: flex;
@@ -1967,14 +1969,8 @@ tbody th {
   align-items: center;
   text-align: center;
   gap: 1.5rem;
-  margin-bottom: clamp(2.5rem, 4vw, 3.5rem);
+  margin-bottom: clamp(1rem, 1.75vw, 1.5rem);
   padding-bottom: 0;
-}
-.csa-packages-heading-copy {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.85rem;
 }
 .csa-packages > header h2 {
   margin: 0;
@@ -1984,13 +1980,6 @@ tbody th {
   font-weight: 850;
   letter-spacing: -0.02em;
   line-height: 1.15;
-}
-.csa-packages > header p {
-  max-width: 46rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: 1.05rem;
-  line-height: 1.6;
 }
 .csa-package-list {
   display: flex;
@@ -2554,8 +2543,7 @@ tbody th {
   }
 
   .csa-benefits ul {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: 1fr;
   }
   .csa-benefits li {
     justify-content: center;

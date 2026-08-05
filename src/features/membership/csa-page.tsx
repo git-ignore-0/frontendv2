@@ -77,6 +77,13 @@ function BenefitIcon({ type }: { type: string }) {
           <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
         </svg>
       );
+    case "clock":
+      return (
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -177,29 +184,11 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
           </section>
 
           <section
-            className="csa-timeline"
-            aria-labelledby="csa-timeline-title"
-          >
-            <h2 id="csa-timeline-title">{copy.timelineTitle}</h2>
-            <ol>
-              {copy.timeline.map((step) => (
-                <li key={step.day}>
-                  <span className="csa-timeline-day">{step.day}</span>
-                  <p>{step.description}</p>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          <section
             className="csa-packages"
             aria-labelledby="csa-packages-title"
           >
             <header>
-              <div className="csa-packages-heading-copy">
-                <h2 id="csa-packages-title">{copy.packagesTitle}</h2>
-                <p>{copy.packagesIntro}</p>
-              </div>
+              <h2 id="csa-packages-title">{copy.packagesTitle}</h2>
             </header>
             {packagesError ? (
               <div className="csa-inline-state" role="alert">
@@ -387,6 +376,21 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
                 ) : null}
               </>
             )}
+          </section>
+
+          <section
+            className="csa-timeline"
+            aria-labelledby="csa-timeline-title"
+          >
+            <h2 id="csa-timeline-title">{copy.timelineTitle}</h2>
+            <ol>
+              {copy.timeline.map((step) => (
+                <li key={step.day}>
+                  <span className="csa-timeline-day">{step.day}</span>
+                  <p>{step.description}</p>
+                </li>
+              ))}
+            </ol>
           </section>
 
           <section className="csa-why" aria-labelledby="csa-why-title">
