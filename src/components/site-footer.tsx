@@ -15,7 +15,6 @@ export function SiteFooter({
   settings: PublicSiteSettings;
 }) {
   const t = getDictionary(locale);
-  const store = linkFromSettings(settings, "store");
   const forum = linkFromSettings(settings, "forum");
   return (
     <footer id="contact" className="footer">
@@ -44,11 +43,7 @@ export function SiteFooter({
           <Link href={localizedPath(locale, "/term-conditions")}>
             {t.nav.terms}
           </Link>
-          {store && (
-            <a href={store} target="_blank" rel="noreferrer">
-              {t.nav.store} <Arrow external />
-            </a>
-          )}
+          <Link href={localizedPath(locale, "/store")}>{t.nav.store}</Link>
           {forum && (
             <a href={forum} target="_blank" rel="noreferrer">
               {t.nav.forum} <Arrow external />

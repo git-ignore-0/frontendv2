@@ -231,39 +231,35 @@ test("reward confirmation stays open and submits only once during a rapid click"
   expect(postCount).toBe(1);
 });
 
-test("store link follows the public site settings", async ({
+test("store link always uses the internal locale route", async ({
   page,
   isMobile,
-  request,
-}) => {
-  const settings = await getSiteSettings(request);
-  const store = settings.links.find((link) => link.kind === "store");
+}, testInfo) => {
+  const usesMobileMenu = isMobile || testInfo.project.name === "tablet";
   await page.goto("/vi");
-  if (isMobile) await page.getByRole("button", { name: "Menu" }).click();
-  const link = page
-    .getByRole("link", { name: /Cửa hàng.*mở trong tab mới/i })
-    .first();
-  if (store) {
-    await expect(link).toHaveAttribute("href", store.url);
-    await expect(link).toHaveAttribute("target", "_blank");
-  } else {
-    await expect(link).toHaveCount(0);
-  }
+  if (usesMobileMenu) await page.getByRole("button", { name: "Menu" }).click();
+  const navigation = page.getByRole("navigation", {
+    name: usesMobileMenu ? "Điều hướng di động" : "Điều hướng chính",
+  });
+  const store = navigation.getByRole("link", { name: "Cửa hàng" });
+  await expect(store).toHaveAttribute("href", "/store/vi");
+  await expect(store).not.toHaveAttribute("target");
+  await expect(store).not.toHaveAttribute("rel");
 });
 
-test("forum follows store when both links are enabled", async ({
+test("forum remains external and follows the internal Store link", async ({
   page,
   isMobile,
   request,
-}) => {
+}, testInfo) => {
+  const usesMobileMenu = isMobile || testInfo.project.name === "tablet";
   const settings = await getSiteSettings(request);
-  const storeSetting = settings.links.find((link) => link.kind === "store");
   const forumSetting = settings.links.find((link) => link.kind === "forum");
   await page.goto("/vi");
-  if (isMobile) await page.getByRole("button", { name: "Menu" }).click();
+  if (usesMobileMenu) await page.getByRole("button", { name: "Menu" }).click();
 
   const navigation = page.getByRole("navigation", {
-    name: isMobile ? "Điều hướng di động" : "Điều hướng chính",
+    name: usesMobileMenu ? "Điều hướng di động" : "Điều hướng chính",
   });
   const store = navigation.getByRole("link", { name: /Cửa hàng/i });
   const forum = navigation.getByRole("link", { name: /Diễn đàn/i });
@@ -275,14 +271,143 @@ test("forum follows store when both links are enabled", async ({
 
   await expect(forum).toHaveAttribute("href", forumSetting.url);
   await expect(forum).toHaveAttribute("target", "_blank");
-  if (!storeSetting) return;
-
-  await expect(store).toHaveAttribute("href", storeSetting.url);
-  await expect(store).toHaveAttribute("target", "_blank");
+  await expect(forum).toHaveAttribute("rel", "noreferrer");
+  await expect(store).toHaveAttribute("href", "/store/vi");
+  await expect(store).not.toHaveAttribute("target");
   const labels = await navigation.getByRole("link").allTextContents();
   const storeIndex = labels.findIndex((label) => label.includes("Cửa hàng"));
   const forumIndex = labels.findIndex((label) => label.includes("Diễn đàn"));
   expect(forumIndex).toBe(storeIndex + 1);
+});
+
+test("Store navigation works from Home, header, mobile menu, and footer", async ({
+  isMobile,
+  page,
+}, testInfo) => {
+  const usesMobileMenu = isMobile || testInfo.project.name === "tablet";
+  await page.goto("/en");
+
+  await page.locator(".section-forest").getByRole("link").click();
+  await expect(page).toHaveURL(/\/store\/en$/);
+  await page.goBack();
+
+  if (usesMobileMenu) {
+    await page.getByRole("button", { name: "Menu" }).click();
+    await page
+      .getByRole("navigation", { name: "Mobile navigation" })
+      .getByRole("link", { name: "Store" })
+      .click();
+  } else {
+    await page
+      .getByRole("navigation", { name: "Primary navigation" })
+      .getByRole("link", { name: "Store" })
+      .click();
+  }
+  await expect(page).toHaveURL(/\/store\/en$/);
+  await page.goBack();
+
+  await page
+    .getByRole("navigation", { name: "Footer navigation" })
+    .getByRole("link", { name: "Store" })
+    .click();
+  await expect(page).toHaveURL(/\/store\/en$/);
+});
+
+test("Store guide is responsive and its FAQ works by keyboard", async ({
+  isMobile,
+  page,
+}, testInfo) => {
+  const viewport =
+    testInfo.project.name === "mobile"
+      ? { width: 360, height: 900 }
+      : testInfo.project.name === "tablet"
+        ? { width: 768, height: 1024 }
+        : { width: 1440, height: 1000 };
+  await page.setViewportSize(viewport);
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+
+  await page.goto("/store/en");
+  await expect(
+    page.getByRole("heading", { name: "Shop Natural Farming Vietnam" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Language: Tiếng Việt/i }),
+  ).toHaveAttribute("href", "/store/vi");
+  await expect(page.locator("main main")).toHaveCount(0);
+  await expect(page.locator(".store-card")).toHaveCount(3);
+  const cardBoxes = await page.locator(".store-card").evaluateAll((cards) =>
+    cards.map((card) => {
+      const box = card.getBoundingClientRect();
+      return { left: box.left, top: box.top };
+    }),
+  );
+  if (isMobile) {
+    expect(new Set(cardBoxes.map((box) => Math.round(box.top))).size).toBe(3);
+  } else {
+    expect(new Set(cardBoxes.map((box) => Math.round(box.top))).size).toBe(1);
+  }
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+
+  const first = page.getByRole("button", {
+    name: "How do I choose my weekly CSA items?",
+  });
+  const second = page.getByRole("button", {
+    name: "What does |C mean?",
+  });
+  await expect(first).toHaveAttribute("aria-expanded", "true");
+  await expect(second).toHaveAttribute("aria-expanded", "false");
+  await second.focus();
+  await page.keyboard.press("Enter");
+  await expect(second).toHaveAttribute("aria-expanded", "true");
+  await expect(first).toHaveAttribute("aria-expanded", "false");
+  const secondPanelId = await second.getAttribute("aria-controls");
+  await expect(page.locator(`#${secondPanelId}`)).toBeVisible();
+  await page.keyboard.press("Space");
+  await expect(second).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator(`#${secondPanelId}`)).toBeHidden();
+
+  for (const link of await page
+    .locator('.store-card a, a[href^="https://zalo.me/"]')
+    .all()) {
+    await expect(link).not.toHaveAttribute("target");
+    await expect(link).not.toHaveAttribute("rel");
+  }
+  if (isMobile) {
+    const referral = page.locator(".referral-floating-action");
+    for (const action of await page.locator(".store-card .store-btn").all()) {
+      await action.evaluate((element) => {
+        const root = document.documentElement;
+        const previousScrollBehavior = root.style.scrollBehavior;
+        root.style.scrollBehavior = "auto";
+        element.scrollIntoView({ block: "center" });
+        root.style.scrollBehavior = previousScrollBehavior;
+      });
+      const actionBox = await action.boundingBox();
+      const referralBox = await referral.boundingBox();
+      expect(actionBox).not.toBeNull();
+      expect(referralBox).not.toBeNull();
+      const overlaps =
+        (actionBox?.x ?? 0) <
+          (referralBox?.x ?? 0) + (referralBox?.width ?? 0) &&
+        (actionBox?.x ?? 0) + (actionBox?.width ?? 0) > (referralBox?.x ?? 0) &&
+        (actionBox?.y ?? 0) <
+          (referralBox?.y ?? 0) + (referralBox?.height ?? 0) &&
+        (actionBox?.y ?? 0) + (actionBox?.height ?? 0) > (referralBox?.y ?? 0);
+      expect(overlaps, (await action.textContent()) ?? "Store action").toBe(
+        false,
+      );
+    }
+  }
+  expect(errors).toEqual([]);
 });
 
 test("contact details and official social links are actionable", async ({

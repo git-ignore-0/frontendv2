@@ -94,7 +94,11 @@ function HeaderAccountDestinations({
         {t.nav.editAccount}
       </a>
       {hasCurrentMembership && membershipHref ? (
-        <Link href={`${membershipHref}${returnTo}`} onClick={onNavigate} role={role}>
+        <Link
+          href={`${membershipHref}${returnTo}`}
+          onClick={onNavigate}
+          role={role}
+        >
           {t.nav.membership}
         </Link>
       ) : null}
@@ -278,7 +282,7 @@ export function SiteHeader({
 }: {
   locale: Locale;
   dictionary: CommonDictionary;
-  externalLinks: { store?: string; forum?: string };
+  externalLinks: { forum?: string };
   initialUser: CoreUser | null;
 }) {
   const pathname = usePathname();
@@ -406,12 +410,14 @@ export function SiteHeader({
               </Link>
             );
           })}
-          {externalLinks.store && (
-            <a href={externalLinks.store} target="_blank" rel="noreferrer">
-              {t.nav.store} <Arrow external />
-              <span className="sr-only"> ({t.external})</span>
-            </a>
-          )}
+          <Link
+            href={localizedPath(locale, "/store")}
+            aria-current={
+              pathname === localizedPath(locale, "/store") ? "page" : undefined
+            }
+          >
+            {t.nav.store}
+          </Link>
           {externalLinks.forum && (
             <a href={externalLinks.forum} target="_blank" rel="noreferrer">
               {t.nav.forum} <Arrow external />
@@ -502,17 +508,10 @@ export function SiteHeader({
                     <Arrow />
                   </Link>
                 ))}
-                {externalLinks.store && (
-                  <a
-                    href={externalLinks.store}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span>{t.nav.store}</span>
-                    <Arrow external />
-                    <span className="sr-only"> ({t.external})</span>
-                  </a>
-                )}
+                <Link href={localizedPath(locale, "/store")}>
+                  <span>{t.nav.store}</span>
+                  <Arrow />
+                </Link>
                 {externalLinks.forum && (
                   <a
                     href={externalLinks.forum}

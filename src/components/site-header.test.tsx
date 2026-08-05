@@ -47,7 +47,6 @@ function renderHeader(locale: "en" | "vi" = "en") {
     <SiteHeader
       dictionary={getSiteContent(locale).common}
       externalLinks={{
-        store: "https://shop.example.com",
         forum: "https://forum.example.com",
       }}
       initialUser={null}
@@ -85,11 +84,17 @@ describe("site header navigation", () => {
       primaryNavigation.querySelector('a[href="/en/csa"]'),
     ).toHaveTextContent("CSA");
     expect(
-      primaryNavigation.querySelector('a[href="https://shop.example.com"]'),
+      primaryNavigation.querySelector('a[href="/store/en"]'),
     ).toHaveTextContent("Store");
-    expect(
-      primaryNavigation.querySelector('a[href="https://forum.example.com"]'),
-    ).toHaveTextContent("Forum");
+    const storeLink = primaryNavigation.querySelector('a[href="/store/en"]');
+    expect(storeLink).not.toHaveAttribute("target");
+    expect(storeLink).not.toHaveAttribute("rel");
+    const forumLink = primaryNavigation.querySelector(
+      'a[href="https://forum.example.com"]',
+    );
+    expect(forumLink).toHaveTextContent("Forum");
+    expect(forumLink).toHaveAttribute("target", "_blank");
+    expect(forumLink).toHaveAttribute("rel", "noreferrer");
   });
 
   it("omits Plants and Animals while keeping the remaining mobile links", () => {
@@ -134,11 +139,45 @@ describe("site header navigation", () => {
       mobileNavigation.querySelector('a[href="/en/csa"]'),
     ).toHaveTextContent("CSA");
     expect(
-      mobileNavigation.querySelector('a[href="https://shop.example.com"]'),
+      mobileNavigation.querySelector('a[href="/store/en"]'),
     ).toHaveTextContent("Store");
+    const mobileStoreLink = mobileNavigation.querySelector(
+      'a[href="/store/en"]',
+    );
+    expect(mobileStoreLink).not.toHaveAttribute("target");
+    expect(mobileStoreLink).not.toHaveAttribute("rel");
+    const mobileForumLink = mobileNavigation.querySelector(
+      'a[href="https://forum.example.com"]',
+    );
+    expect(mobileForumLink).toHaveTextContent("Forum");
+    expect(mobileForumLink).toHaveAttribute("target", "_blank");
+    expect(mobileForumLink).toHaveAttribute("rel", "noreferrer");
+  });
+
+  it("keeps Store in desktop and mobile navigation without a backend Store URL", () => {
+    render(
+      <SiteHeader
+        dictionary={getSiteContent("vi").common}
+        externalLinks={{}}
+        initialUser={null}
+        locale="vi"
+      />,
+    );
+
+    const primaryNavigation = screen.getByRole("navigation", {
+      name: "Điều hướng chính",
+    });
     expect(
-      mobileNavigation.querySelector('a[href="https://forum.example.com"]'),
-    ).toHaveTextContent("Forum");
+      primaryNavigation.querySelector('a[href="/store/vi"]'),
+    ).toHaveTextContent("Cửa hàng");
+
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    const mobileNavigation = within(
+      screen.getByRole("dialog", { name: "Menu" }),
+    ).getByRole("navigation", { name: "Điều hướng di động" });
+    expect(
+      mobileNavigation.querySelector('a[href="/store/vi"]'),
+    ).toHaveTextContent("Cửa hàng");
   });
 });
 
@@ -313,11 +352,15 @@ describe("site header session projection", () => {
       await waitFor(() =>
         expect(
           fetchMock.mock.calls.filter(([input]) =>
-            String(input).startsWith("/api/account/memberships/current?locale="),
+            String(input).startsWith(
+              "/api/account/memberships/current?locale=",
+            ),
           ),
         ).toHaveLength(1),
       );
-      await act(async () => resolveMembership(Response.json({ data: membershipData })));
+      await act(async () =>
+        resolveMembership(Response.json({ data: membershipData })),
+      );
       expect(
         within(menu).queryByRole("menuitem", { name: "CSA Membership" }),
       ).toBeNull();
@@ -334,9 +377,7 @@ describe("site header session projection", () => {
       });
       const fetchMock = vi.fn((input: string | URL | Request) => {
         if (
-          String(input).startsWith(
-            "/api/account/memberships/current?locale=",
-          )
+          String(input).startsWith("/api/account/memberships/current?locale=")
         ) {
           membershipCalls += 1;
           return membershipCalls === 1
@@ -637,9 +678,7 @@ describe("site header session projection", () => {
     ).toHaveLength(1);
     expect(
       fetchMock.mock.calls.filter(([input]) =>
-        String(input).startsWith(
-          "/api/account/memberships/current?locale=",
-        ),
+        String(input).startsWith("/api/account/memberships/current?locale="),
       ),
     ).toHaveLength(1);
 
@@ -659,9 +698,7 @@ describe("site header session projection", () => {
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.filter(([input]) =>
-          String(input).startsWith(
-            "/api/account/memberships/current?locale=",
-          ),
+          String(input).startsWith("/api/account/memberships/current?locale="),
         ),
       ).toHaveLength(2),
     );
@@ -843,9 +880,7 @@ describe("mobile account drawer", () => {
     ).toHaveLength(1);
     expect(
       fetchMock.mock.calls.filter(([input]) =>
-        String(input).startsWith(
-          "/api/account/memberships/current?locale=",
-        ),
+        String(input).startsWith("/api/account/memberships/current?locale="),
       ),
     ).toHaveLength(1);
     fireEvent.click(account);
@@ -858,9 +893,7 @@ describe("mobile account drawer", () => {
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.filter(([input]) =>
-          String(input).startsWith(
-            "/api/account/memberships/current?locale=",
-          ),
+          String(input).startsWith("/api/account/memberships/current?locale="),
         ),
       ).toHaveLength(2),
     );
@@ -909,11 +942,15 @@ describe("mobile account drawer", () => {
       await waitFor(() =>
         expect(
           fetchMock.mock.calls.filter(([input]) =>
-            String(input).startsWith("/api/account/memberships/current?locale="),
+            String(input).startsWith(
+              "/api/account/memberships/current?locale=",
+            ),
           ),
         ).toHaveLength(1),
       );
-      await act(async () => resolveMembership(Response.json({ data: membershipData })));
+      await act(async () =>
+        resolveMembership(Response.json({ data: membershipData })),
+      );
       expect(
         within(drawer).queryByRole("link", { name: "CSA Membership" }),
       ).toBeNull();
@@ -930,9 +967,7 @@ describe("mobile account drawer", () => {
       });
       const fetchMock = vi.fn((input: string | URL | Request) => {
         if (
-          String(input).startsWith(
-            "/api/account/memberships/current?locale=",
-          )
+          String(input).startsWith("/api/account/memberships/current?locale=")
         ) {
           membershipCalls += 1;
           return membershipCalls === 1

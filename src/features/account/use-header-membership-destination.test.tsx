@@ -17,24 +17,24 @@ afterEach(() => {
 });
 
 describe("useHeaderMembershipDestination", () => {
-  it.each([
-    { ...membership, status: "scheduled" as const },
-    membership,
-  ])("exposes the account Membership destination for %s", async (data) => {
-    vi.mocked(accountApi).mockResolvedValue({ data });
-    const { result } = renderHook(() =>
-      useHeaderMembershipDestination({
-        locale: "en",
-        pathname: "/en",
-        userId: "user-a",
-      }),
-    );
+  it.each([{ ...membership, status: "scheduled" as const }, membership])(
+    "exposes the account Membership destination for %s",
+    async (data) => {
+      vi.mocked(accountApi).mockResolvedValue({ data });
+      const { result } = renderHook(() =>
+        useHeaderMembershipDestination({
+          locale: "en",
+          pathname: "/en",
+          userId: "user-a",
+        }),
+      );
 
-    await act(async () => result.current.load());
+      await act(async () => result.current.load());
 
-    expect(result.current.hasCurrentMembership).toBe(true);
-    expect(result.current.membershipHref).toBe("/account/en/membership");
-  });
+      expect(result.current.hasCurrentMembership).toBe(true);
+      expect(result.current.membershipHref).toBe("/account/en/membership");
+    },
+  );
 
   it.each([
     null,

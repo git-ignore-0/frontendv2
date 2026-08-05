@@ -48,7 +48,6 @@ export default async function Home({
     getWorkshops(locale, "upcoming"),
   ]);
   const workshopText = workshopCopy[locale];
-  const store = settings.links.find((item) => item.kind === "store")?.url;
   return (
     <>
       <section className="home-hero">
@@ -178,22 +177,20 @@ export default async function Home({
           </div>
         </section>
       )}
-      {store && (
-        <section className="section section-forest">
-          <div className="shell split">
-            <div>
-              <p className="eyebrow">{c.storeEyebrow}</p>
-              <h2 className="section-heading">{c.storeTitle}</h2>
-            </div>
-            <div>
-              <p className="lede store-lede">{c.storeBody}</p>
-              <TextLink href={store} external>
-                {c.storeCta}
-              </TextLink>
-            </div>
+      <section className="section section-forest">
+        <div className="shell split">
+          <div>
+            <p className="eyebrow">{c.storeEyebrow}</p>
+            <h2 className="section-heading">{c.storeTitle}</h2>
           </div>
-        </section>
-      )}
+          <div>
+            <p className="lede store-lede">{c.storeBody}</p>
+            <TextLink href={localizedPath(locale, "/store")}>
+              {c.storeCta}
+            </TextLink>
+          </div>
+        </div>
+      </section>
       <section className="section contact-band">
         <div className="shell split">
           <div className="contact-image">

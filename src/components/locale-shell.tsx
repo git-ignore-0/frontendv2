@@ -21,7 +21,6 @@ export async function LocaleShell({
     readSession(),
   ]);
   const externalLinks = {
-    store: linkFromSettings(settings, "store"),
     forum: linkFromSettings(settings, "forum"),
   };
   return (

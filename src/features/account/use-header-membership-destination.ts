@@ -71,8 +71,7 @@ export function useHeaderMembershipDestination({
   );
 
   return {
-    hasCurrentMembership:
-      state === "ready" && membershipHref !== undefined,
+    hasCurrentMembership: state === "ready" && membershipHref !== undefined,
     membershipHref,
     load,
   };

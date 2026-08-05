@@ -441,6 +441,75 @@ const en = {
       "No legal terms have been inferred or published before formal review.",
     contactCta: "Contact Natural Farming Vietnam",
   },
+  storeGuide: {
+    title: "Shop Natural Farming Vietnam",
+    intro:
+      "Choose the best way to browse and order fresh products through our Farmbrite store.",
+    howToShopTitle: "Explore options from the farm",
+    csaCard: {
+      title: "CSA & Membership members",
+      body: "See the items available this week and choose products marked |C using your CSA or Membership allowance.",
+      cta: "View this week’s CSA items",
+      url: "https://store.farmbrite.com/store/nntn/products?category=CSA",
+    },
+    individualCard: {
+      title: "Shop individual items",
+      body: "Browse all available vegetables, herbs, fruit, and other products. You can also add extra items beyond your CSA allowance.",
+      cta: "Browse all products",
+      url: "https://store.farmbrite.com/store/nntn",
+    },
+    livePlantsCard: {
+      title: "Live plants",
+      body: "Browse live plants and seedlings currently available from our farm.",
+      cta: "Browse live plants",
+      url: "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
+    },
+    csaPromo: "New to CSA? Learn how the CSA program works.",
+    csaPromoLink: "Explore CSA",
+    faqTitle: "Ordering questions",
+    faqItems: [
+      {
+        question: "How do I choose my weekly CSA items?",
+        answer:
+          "Visit the Farmbrite store and navigate to the 'CSA' category. Add items marked with '|C' to your cart up to your plan's limit.",
+      },
+      {
+        question: "What does |C mean?",
+        answer:
+          "Items marked with '|C' in the CSA category use your included allowance. The Farmbrite cart shows your remaining included quantity.",
+      },
+      {
+        question: "Why do some products appear twice in the store?",
+        answer:
+          "One version is marked with '|C' for CSA members to use with their allowance, while the other is for standard purchase. Unavailable CSA items simply do not appear in the CSA category.",
+      },
+      {
+        question: "Can I add extra individual items to the same order?",
+        answer:
+          "Yes, you can mix standard non-|C products with your CSA order. The standard non-|C products are regular paid items and are charged separately.",
+      },
+      {
+        question: "What does “Backordered” mean?",
+        answer:
+          "In regular product categories, “Backordered” means an item is temporarily unavailable. In the CSA category, unavailable items simply do not appear.",
+      },
+      {
+        question: "How do payment and delivery work?",
+        answer:
+          "At checkout, select 'Cash' or 'Invoice Me'. CSA delivery is free. Delivery fees for Monthly Membership and individual-item orders are calculated and shown in the Farmbrite cart.",
+      },
+      {
+        question: "How can I change my CSA plan or household size?",
+        answer:
+          "Any plan or household changes require contacting Natural Farming Vietnam directly on Zalo.",
+      },
+    ],
+    zaloTitle: "Need help with your order?",
+    zaloBody:
+      "Message Natural Farming Vietnam on Zalo for help choosing a plan, ordering, or changing an existing membership.",
+    zaloCta: "Contact us on Zalo",
+    zaloUrl: "https://zalo.me/84988158285",
+  },
 } as const;
 
 type LocalizedShape<T> = T extends string
@@ -891,6 +960,76 @@ const vi: SiteContent = {
     sourceNote:
       "Không có điều khoản pháp lý nào được suy diễn hoặc xuất bản trước khi hoàn tất rà soát chính thức.",
     contactCta: "Liên hệ Natural Farming Vietnam",
+  },
+  storeGuide: {
+    title: "Cửa hàng Natural Farming Vietnam",
+    intro:
+      "Chọn cách phù hợp để xem và đặt sản phẩm tươi từ cửa hàng Farmbrite của chúng tôi.",
+    howToShopTitle: "Khám phá các lựa chọn từ trang trại",
+    csaCard: {
+      title: "Dành cho thành viên CSA / Membership",
+      body: "Xem các sản phẩm có sẵn trong tuần và chọn sản phẩm có ký hiệu |C bằng quyền lợi CSA hoặc Membership của bạn.",
+      cta: "Xem sản phẩm CSA tuần này",
+      url: "https://store.farmbrite.com/store/nntn/products?category=CSA",
+    },
+    individualCard: {
+      title: "Mua sản phẩm lẻ",
+      body: "Xem toàn bộ rau, gia vị, trái cây và các sản phẩm hiện có. Bạn cũng có thể mua thêm ngoài quyền lợi CSA.",
+      cta: "Xem tất cả sản phẩm",
+      url: "https://store.farmbrite.com/store/nntn",
+    },
+    livePlantsCard: {
+      title: "Cây sống và cây giống",
+      body: "Xem các loại cây sống và cây giống hiện đang có từ trang trại.",
+      cta: "Xem cây sống và cây giống",
+      url: "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
+    },
+    csaPromo: "Chưa tham gia CSA? Tìm hiểu chương trình CSA.",
+    csaPromoLink: "Tìm hiểu CSA",
+    faqTitle: "Câu hỏi về đặt hàng",
+    faqItems: [
+      {
+        question: "Làm thế nào để chọn sản phẩm CSA hàng tuần?",
+        answer:
+          "Truy cập cửa hàng Farmbrite và vào danh mục 'CSA'. Thêm các sản phẩm có ký hiệu '|C' vào giỏ hàng theo định mức gói của bạn.",
+      },
+      {
+        question: "Ký hiệu |C có nghĩa là gì?",
+        answer:
+          "Sản phẩm có ký hiệu '|C' trong danh mục CSA sẽ dùng quyền lợi trong gói. Giỏ hàng Farmbrite hiển thị số lượng còn lại trong gói.",
+      },
+      {
+        question: "Tại sao một số sản phẩm xuất hiện 2 lần trong cửa hàng?",
+        answer:
+          "Một loại có ký hiệu '|C' dành cho thành viên CSA dùng định mức của họ, loại còn lại dành cho mua lẻ thông thường. Các sản phẩm CSA không có sẵn sẽ không xuất hiện trong danh mục CSA.",
+      },
+      {
+        question: "Tôi có thể mua thêm sản phẩm lẻ vào cùng đơn hàng không?",
+        answer:
+          "Có, bạn có thể chọn thêm các sản phẩm thông thường không có ký hiệu '|C' cùng lúc. Các sản phẩm này được tính phí riêng biệt.",
+      },
+      {
+        question: "Trạng thái 'Backordered' nghĩa là gì?",
+        answer:
+          "Trong các danh mục sản phẩm thông thường, 'Backordered' nghĩa là sản phẩm tạm thời chưa có sẵn. Trong danh mục CSA, sản phẩm chưa có sẵn sẽ không xuất hiện.",
+      },
+      {
+        question: "Hình thức thanh toán và giao hàng ra sao?",
+        answer:
+          "Khi thanh toán, hãy chọn 'Cash' hoặc 'Invoice Me'. Giao hàng CSA được miễn phí. Phí giao hàng cho Membership hàng tháng và đơn mua lẻ được tính và hiển thị trong giỏ hàng Farmbrite.",
+      },
+      {
+        question:
+          "Làm sao để thay đổi gói CSA hoặc số người trong hộ gia đình?",
+        answer:
+          "Mọi thay đổi về gói hoặc số người yêu cầu liên hệ trực tiếp với Natural Farming Vietnam qua Zalo.",
+      },
+    ],
+    zaloTitle: "Cần hỗ trợ đặt hàng?",
+    zaloBody:
+      "Nhắn Natural Farming Vietnam trên Zalo nếu bạn cần hỗ trợ chọn gói, đặt hàng hoặc thay đổi Membership hiện có.",
+    zaloCta: "Liên hệ qua Zalo",
+    zaloUrl: "https://zalo.me/84988158285",
   },
 };
 
