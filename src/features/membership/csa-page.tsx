@@ -52,6 +52,42 @@ export function membershipOptionSavings(
   }
 }
 
+function BenefitIcon({ type }: { type: string }) {
+  switch (type) {
+    case "calendar":
+      return (
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <path d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+      );
+    case "truck":
+      return (
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M1 3h15v13H1zM16 8h4l3 4v5h-7V8z" />
+          <circle cx="5.5" cy="18.5" r="2.5" />
+          <circle cx="18.5" cy="18.5" r="2.5" />
+        </svg>
+      );
+    case "refresh":
+      return (
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M21 2v6h-6" />
+          <path d="M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6" />
+          <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+        </svg>
+      );
+    case "chat":
+      return (
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
   const [packages, setPackages] = useState<MembershipPackage[]>([]);
   const [packagesMeta, setPackagesMeta] = useState<PaginationMeta | null>(null);
@@ -115,7 +151,14 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
             <p className="csa-hero-kicker">{copy.eyebrow}</p>
             <h1>{copy.title}</h1>
             <p className="csa-hero-lead">{copy.intro}</p>
-            <p className="csa-hero-body">{copy.aboutBody}</p>
+            <div className="csa-hero-actions">
+              <a
+                className="csa-package-action csa-hero-action"
+                href={FARM_BRITE_MEMBERSHIPS_URL}
+              >
+                {copy.buyOnFarmbrite}
+              </a>
+            </div>
           </div>
           <span className="csa-hero-leaf" aria-hidden="true">
             <svg viewBox="0 0 120 160" fill="none">
@@ -128,18 +171,27 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
         </header>
 
         <main>
-          <section className="csa-how" aria-labelledby="csa-about-title">
-            <header className="csa-section-heading">
-              <h2 id="csa-about-title">{copy.aboutTitle}</h2>
-            </header>
-            <ol className="csa-how-list">
-              {copy.howSteps.map((step, index) => (
-                <li key={step.title}>
-                  <span className="csa-how-number" aria-hidden="true">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <h3>{step.title}</h3>
-                  <p>{step.body}</p>
+          <section className="csa-benefits" aria-label={copy.eyebrow}>
+            <ul>
+              {copy.benefits.map((benefit) => (
+                <li key={benefit.label}>
+                  <BenefitIcon type={benefit.icon} />
+                  <span>{benefit.label}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section
+            className="csa-timeline"
+            aria-labelledby="csa-timeline-title"
+          >
+            <h2 id="csa-timeline-title">{copy.timelineTitle}</h2>
+            <ol>
+              {copy.timeline.map((step) => (
+                <li key={step.day}>
+                  <span className="csa-timeline-day">{step.day}</span>
+                  <p>{step.description}</p>
                 </li>
               ))}
             </ol>
@@ -154,16 +206,6 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
                 <h2 id="csa-packages-title">{copy.packagesTitle}</h2>
                 <p>{copy.packagesIntro}</p>
               </div>
-              <a
-                className="csa-package-action csa-packages-action"
-                href={FARM_BRITE_MEMBERSHIPS_URL}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                {copy.buyOnFarmbrite}
-                <span aria-hidden="true">↗</span>
-                <span className="sr-only"> ({copy.opensNewTab})</span>
-              </a>
             </header>
             {packagesError ? (
               <div className="csa-inline-state" role="alert">
@@ -351,6 +393,18 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
                 ) : null}
               </>
             )}
+          </section>
+
+          <section className="csa-why" aria-labelledby="csa-why-title">
+            <h2 id="csa-why-title">{copy.whyTitle}</h2>
+            <ul>
+              {copy.whyReasons.map((reason) => (
+                <li key={reason.title}>
+                  <h3>{reason.title}</h3>
+                  <p>{reason.body}</p>
+                </li>
+              ))}
+            </ul>
           </section>
         </main>
       </div>

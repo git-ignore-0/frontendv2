@@ -244,36 +244,60 @@ const en = {
     membershipUsageReversalReason: "Reversal reason",
   },
   csa: {
-    metadataTitle: "CSA Membership",
+    metadataTitle: "Community Supported Agriculture",
     eyebrow: "Community Supported Agriculture",
-    title: "CSA Membership packages",
+    title: "Farm-fresh produce, delivered every Saturday",
     intro:
-      "Explore the farm's CSA packages and choose the duration that fits you.",
-    aboutTitle: "How does CSA work?",
-    aboutBody:
-      "Farmbrite is the only place to purchase and pay for CSA. After the farm confirms your order, your Membership benefits and remaining quantities appear in your NFV account.",
-    howSteps: [
+      "Join our community to receive seasonal vegetables weekly and support local farming families.",
+    benefits: [
       {
-        title: "Choose a package",
-        body: "Compare every available duration, monthly price and total before continuing to Farmbrite.",
+        label: "Receive products every Saturday",
+        icon: "calendar",
       },
       {
-        title: "Purchase on Farmbrite",
-        body: "Farmbrite handles the CSA order and payment. NFV does not collect payment on this website.",
+        label: "Free delivery for CSA members",
+        icon: "truck",
       },
       {
-        title: "Track what you use",
-        body: "See used and remaining quantities in your account. Unused quantities carry over or expire according to each package policy.",
+        label: "Products updated early in the week",
+        icon: "refresh",
+      },
+      {
+        label: "Information updated via CSA Zalo group",
+        icon: "chat",
+      },
+    ],
+    timelineTitle: "How does a typical week work?",
+    timeline: [
+      {
+        day: "Mon",
+        description: "The farm updates which products are available.",
+      },
+      {
+        day: "Tue",
+        description: "The team sends the product list to members.",
+      },
+      {
+        day: "Wed",
+        description: "Members finalize their selections and orders.",
+      },
+      {
+        day: "Fri",
+        description: "Farmers harvest and the team packs orders.",
+      },
+      {
+        day: "Sat",
+        description: "Products are delivered to your door.",
       },
     ],
     packagesTitle: "Packages open for registration",
     packagesIntro:
       "Each package shows its available durations, exact prices, product quantities, and unused-quantity policy.",
-    packagesLoading: "Loading CSA packages…",
-    packagesError: "We could not load CSA packages. Please try again.",
-    packagesEmpty: "There are no CSA packages available right now.",
+    packagesLoading: "Loading packages…",
+    packagesError: "We could not load packages. Please try again.",
+    packagesEmpty: "There are no packages available right now.",
     retry: "Try again",
-    paginationLabel: "CSA package pagination",
+    paginationLabel: "Package pagination",
     previousPage: "Previous",
     nextPage: "Next",
     pageSummary: "Page {page}/{pages}",
@@ -285,11 +309,25 @@ const en = {
     saving: "Save {amount}",
     bestSavings: "Best savings",
     buyOnFarmbrite: "Buy now",
-    opensNewTab: "opens in a new tab",
     expire: "Unused quantity does not carry over to the next month",
     rollover: "Unused quantity carries over to the next month",
     includedProducts: "Quantity you can use each month",
     cycle: "month",
+    whyTitle: "Why Natural Farming Vietnam?",
+    whyReasons: [
+      {
+        title: "Support the local farming economy",
+        body: "Help keep money circulating within the community, create jobs, and strengthen the economic health of the area.",
+      },
+      {
+        title: "Support sustainable growing practices",
+        body: "Natural Farming produces its own organic fertilizer and uses bio-integrated pest management instead of harmful chemicals.",
+      },
+      {
+        title: "Support biodiversity and soil health",
+        body: "Our farmers grow a large variety of produce which helps keep food sources genetically strong and soil healthy by preventing monocultures.",
+      },
+    ],
   },
   home: {
     heroEyebrow: "Living Soil · From soil, life begins",
@@ -661,36 +699,60 @@ const vi: SiteContent = {
     membershipUsageReversalReason: "Lý do hoàn tác",
   },
   csa: {
-    metadataTitle: "Membership CSA",
-    eyebrow: "Nông nghiệp cộng đồng CSA",
-    title: "Gói thành viên CSA",
+    metadataTitle: "Nông nghiệp cộng đồng",
+    eyebrow: "Nông nghiệp cộng đồng",
+    title: "Rau từ nông trại, giao tận nhà mỗi thứ Bảy",
     intro:
-      "Khám phá các gói CSA của nông trại và chọn thời hạn phù hợp với bạn.",
-    aboutTitle: "CSA vận hành như thế nào?",
-    aboutBody:
-      "Farmbrite là nơi duy nhất mua và thanh toán CSA. Sau khi nông trại xác nhận đơn, quyền lợi Membership và số lượng còn lại sẽ hiển thị trong tài khoản NFV.",
-    howSteps: [
+      "Tham gia chương trình để nhận rau theo mùa hằng tuần và đồng hành cùng nông hộ địa phương.",
+    benefits: [
       {
-        title: "Chọn gói phù hợp",
-        body: "So sánh mọi thời hạn, giá theo tháng và tổng tiền trước khi tiếp tục sang Farmbrite.",
+        label: "Nhận hàng vào thứ Bảy hằng tuần",
+        icon: "calendar",
       },
       {
-        title: "Mua trên Farmbrite",
-        body: "Farmbrite xử lý đơn và thanh toán CSA. NFV không thu tiền trên website này.",
+        label: "Miễn phí giao hàng cho thành viên CSA",
+        icon: "truck",
       },
       {
-        title: "Theo dõi số lượng đã dùng",
-        body: "Theo dõi số lượng đã dùng và còn lại trong tài khoản. Phần chưa dùng được cộng dồn hoặc hết hạn tùy chính sách của từng gói.",
+        label: "Sản phẩm được cập nhật đầu tuần",
+        icon: "refresh",
+      },
+      {
+        label: "Thông tin được cập nhật qua nhóm Zalo CSA",
+        icon: "chat",
+      },
+    ],
+    timelineTitle: "Một tuần giao nhận diễn ra như thế nào?",
+    timeline: [
+      {
+        day: "T2",
+        description: "Nông trại cập nhật sản phẩm sẵn có.",
+      },
+      {
+        day: "T3",
+        description: "Đội ngũ gửi danh sách sản phẩm cho thành viên.",
+      },
+      {
+        day: "T4",
+        description: "Khách chốt lựa chọn và đơn hàng.",
+      },
+      {
+        day: "T6",
+        description: "Nông dân thu hoạch, đội ngũ đóng gói.",
+      },
+      {
+        day: "T7",
+        description: "Giao sản phẩm tận nhà.",
       },
     ],
     packagesTitle: "Các gói đang mở đăng ký",
     packagesIntro:
       "Mỗi gói hiển thị mọi thời hạn đang mở, giá chính xác, số lượng sản phẩm và chính sách phần chưa dùng.",
-    packagesLoading: "Đang tải các gói CSA…",
-    packagesError: "Không thể tải các gói CSA. Vui lòng thử lại.",
-    packagesEmpty: "Hiện chưa có gói CSA nào.",
+    packagesLoading: "Đang tải các gói đăng ký…",
+    packagesError: "Không thể tải các gói đăng ký. Vui lòng thử lại.",
+    packagesEmpty: "Hiện chưa có gói đăng ký nào.",
     retry: "Thử lại",
-    paginationLabel: "Phân trang gói CSA",
+    paginationLabel: "Phân trang gói đăng ký",
     previousPage: "Trước",
     nextPage: "Sau",
     pageSummary: "Trang {page}/{pages}",
@@ -702,11 +764,25 @@ const vi: SiteContent = {
     saving: "Tiết kiệm {amount}",
     bestSavings: "Tiết kiệm nhất",
     buyOnFarmbrite: "Mua ngay",
-    opensNewTab: "mở trong tab mới",
     expire: "Số lượng chưa dùng không cộng sang tháng sau",
     rollover: "Số lượng chưa dùng được cộng sang tháng sau",
     includedProducts: "Số lượng bạn có thể dùng mỗi tháng",
     cycle: "tháng",
+    whyTitle: "Vì sao chọn Nông Nghiệp Thiên Nhiên?",
+    whyReasons: [
+      {
+        title: "Ủng hộ nông hộ và kinh tế địa phương",
+        body: "Giúp giữ dòng tiền luân chuyển trong cộng đồng, tạo việc làm và tăng cường sức khỏe kinh tế khu vực.",
+      },
+      {
+        title: "Ủng hộ canh tác bền vững, hạn chế hóa chất gây hại",
+        body: "Nông Nghiệp Thiên Nhiên tự sản xuất phân bón hữu cơ và quản lý sâu hại bằng sinh học thay vì hóa chất.",
+      },
+      {
+        title: "Bảo vệ đa dạng sinh học và sức khỏe đất",
+        body: "Nông dân trồng đa dạng các loại nông sản, giúp nguồn thực phẩm giữ được sự đa dạng di truyền và nói không với độc canh.",
+      },
+    ],
   },
   home: {
     heroEyebrow: "Đất sống · Từ đất, sự sống bắt đầu",

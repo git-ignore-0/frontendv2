@@ -174,32 +174,48 @@ describe("public CSA Membership", () => {
     expect(screen.queryByText("Best savings")).toBeNull();
   });
 
-  it("opens the Farmbrite CTA in a safe new tab and makes no request/payment/login call", async () => {
+  it("opens the Farmbrite CTA in the same tab and makes no request/payment/login call", async () => {
     vi.mocked(accountApi).mockResolvedValue(catalog());
-    render(<CsaPage copy={getSiteContent("vi").csa} locale="vi" />);
+    const copy = getSiteContent("vi").csa;
+    render(<CsaPage copy={copy} locale="vi" />);
 
     const cta = await screen.findByRole("link", {
-      name: "Mua ngay (mở trong tab mới)",
+      name: "Mua ngay",
     });
     expect(cta).toHaveAttribute(
       "href",
       "https://store.farmbrite.com/store/nntn/products?category=Memberships",
     );
-    expect(cta).toHaveAttribute("target", "_blank");
-    expect(cta).toHaveAttribute("rel", "noopener noreferrer");
+    expect(cta).not.toHaveAttribute("target");
+    expect(cta).not.toHaveAttribute("rel");
     expect(vi.mocked(accountApi).mock.calls.map(([path]) => path)).toEqual([
       "membership-packages?page=1&locale=vi",
     ]);
     expect(document.querySelector('a[href^="/api/auth/login"]')).toBeNull();
+
+    const benefits = screen.getByRole("region", { name: copy.eyebrow });
+    expect(benefits.querySelectorAll("li")).toHaveLength(4);
+    expect(within(benefits).getByText("Nhận hàng vào thứ Bảy hằng tuần")).toBeVisible();
+    expect(within(benefits).getByText("Miễn phí giao hàng cho thành viên CSA")).toBeVisible();
+    expect(within(benefits).getByText("Sản phẩm được cập nhật đầu tuần")).toBeVisible();
+    expect(within(benefits).getByText("Thông tin được cập nhật qua nhóm Zalo CSA")).toBeVisible();
   });
 
-  it("keeps the English Farmbrite CTA localized", async () => {
+  it("keeps the English Farmbrite CTA localized and verifies benefits", async () => {
     vi.mocked(accountApi).mockResolvedValue(catalog());
-    render(<CsaPage copy={getSiteContent("en").csa} locale="en" />);
+    const copy = getSiteContent("en").csa;
+    render(<CsaPage copy={copy} locale="en" />);
 
     expect(
-      await screen.findByRole("link", { name: "Buy now (opens in a new tab)" }),
+      await screen.findByRole("link", { name: "Buy now" }),
     ).toBeVisible();
+
+    const benefits = screen.getByRole("region", { name: copy.eyebrow });
+    expect(benefits.querySelectorAll("li")).toHaveLength(4);
+    expect(within(benefits).getByText("Receive products every Saturday")).toBeVisible();
+    expect(within(benefits).getByText("Free delivery for CSA members")).toBeVisible();
+    expect(within(benefits).getByText("Products updated early in the week")).toBeVisible();
+    expect(within(benefits).getByText("Information updated via CSA Zalo group")).toBeVisible();
   });
 
   it("paginates all active packages without loading every page", async () => {

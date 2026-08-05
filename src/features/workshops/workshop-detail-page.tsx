@@ -91,7 +91,12 @@ function Detail({
   return (
     <>
       {preview && <div className="preview-banner">{t.preview}</div>}
-      <article>
+      <article className="workshop-detail-page">
+        <div className="workshop-list-background" aria-hidden="true">
+          <span className="workshop-background-grain" />
+          <span className="workshop-background-moss" />
+          <span className="workshop-background-straw" />
+        </div>
         <header className="workshop-detail-hero">
           <div className="shell workshop-detail-heading">
             <h1>{workshop.title}</h1>
