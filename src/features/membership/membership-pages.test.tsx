@@ -195,10 +195,18 @@ describe("public CSA Membership", () => {
 
     const benefits = screen.getByRole("region", { name: copy.eyebrow });
     expect(benefits.querySelectorAll("li")).toHaveLength(4);
-    expect(within(benefits).getByText("Nhận hàng vào thứ Bảy hằng tuần")).toBeVisible();
-    expect(within(benefits).getByText("Miễn phí giao hàng cho thành viên CSA")).toBeVisible();
-    expect(within(benefits).getByText("Sản phẩm được cập nhật đầu tuần")).toBeVisible();
-    expect(within(benefits).getByText("Thông tin được cập nhật qua nhóm Zalo CSA")).toBeVisible();
+    expect(
+      within(benefits).getByText("Nhận hàng vào thứ Bảy hằng tuần"),
+    ).toBeVisible();
+    expect(
+      within(benefits).getByText("Miễn phí giao hàng cho thành viên CSA"),
+    ).toBeVisible();
+    expect(
+      within(benefits).getByText("Sản phẩm được cập nhật đầu tuần"),
+    ).toBeVisible();
+    expect(
+      within(benefits).getByText("Thông tin được cập nhật qua nhóm Zalo CSA"),
+    ).toBeVisible();
   });
 
   it("keeps the English Farmbrite CTA localized and verifies benefits", async () => {
@@ -206,16 +214,22 @@ describe("public CSA Membership", () => {
     const copy = getSiteContent("en").csa;
     render(<CsaPage copy={copy} locale="en" />);
 
-    expect(
-      await screen.findByRole("link", { name: "Buy now" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("link", { name: "Buy now" })).toBeVisible();
 
     const benefits = screen.getByRole("region", { name: copy.eyebrow });
     expect(benefits.querySelectorAll("li")).toHaveLength(4);
-    expect(within(benefits).getByText("Receive products every Saturday")).toBeVisible();
-    expect(within(benefits).getByText("Free delivery for CSA members")).toBeVisible();
-    expect(within(benefits).getByText("Products updated early in the week")).toBeVisible();
-    expect(within(benefits).getByText("Information updated via CSA Zalo group")).toBeVisible();
+    expect(
+      within(benefits).getByText("Receive products every Saturday"),
+    ).toBeVisible();
+    expect(
+      within(benefits).getByText("Free delivery for CSA members"),
+    ).toBeVisible();
+    expect(
+      within(benefits).getByText("Products updated early in the week"),
+    ).toBeVisible();
+    expect(
+      within(benefits).getByText("Information updated via CSA Zalo group"),
+    ).toBeVisible();
   });
 
   it("paginates all active packages without loading every page", async () => {
