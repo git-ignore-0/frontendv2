@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -278,6 +279,113 @@ describe("site header session projection", () => {
     ).toHaveClass("header-account-balance");
   });
 
+  it.each([null, { status: "ended" }, { status: "revoked" }])(
+    "hides the desktop Membership destination for %o",
+    async (membershipData) => {
+      let resolveMembership!: (response: Response) => void;
+      const membershipResponse = new Promise<Response>((resolve) => {
+        resolveMembership = resolve;
+      });
+      const fetchMock = vi.fn((input: string | URL | Request) =>
+        String(input).startsWith("/api/account/memberships/current?locale=")
+          ? membershipResponse
+          : Promise.resolve(
+              String(input) === "/api/account/account"
+                ? Response.json({ data: { points_balance: 1280 } })
+                : Response.json({ data: { user: member } }),
+            ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      render(
+        <SiteHeader
+          dictionary={getSiteContent("en").common}
+          externalLinks={{}}
+          initialUser={member}
+          locale="en"
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Account" }));
+      const menu = screen.getByRole("menu", { name: "Account" });
+      expect(
+        within(menu).queryByRole("menuitem", { name: "CSA Membership" }),
+      ).toBeNull();
+      await waitFor(() =>
+        expect(
+          fetchMock.mock.calls.filter(([input]) =>
+            String(input).startsWith("/api/account/memberships/current?locale="),
+          ),
+        ).toHaveLength(1),
+      );
+      await act(async () => resolveMembership(Response.json({ data: membershipData })));
+      expect(
+        within(menu).queryByRole("menuitem", { name: "CSA Membership" }),
+      ).toBeNull();
+    },
+  );
+
+  it.each([null, { status: "revoked" }])(
+    "hides the desktop Membership destination when reopen refreshes to %o",
+    async (membershipData) => {
+      let membershipCalls = 0;
+      let resolveRefresh!: (response: Response) => void;
+      const refreshResponse = new Promise<Response>((resolve) => {
+        resolveRefresh = resolve;
+      });
+      const fetchMock = vi.fn((input: string | URL | Request) => {
+        if (
+          String(input).startsWith(
+            "/api/account/memberships/current?locale=",
+          )
+        ) {
+          membershipCalls += 1;
+          return membershipCalls === 1
+            ? Promise.resolve(Response.json({ data: { status: "active" } }))
+            : refreshResponse;
+        }
+        return Promise.resolve(
+          String(input) === "/api/account/account"
+            ? Response.json({ data: { points_balance: 1280 } })
+            : Response.json({ data: { user: member } }),
+        );
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      render(
+        <SiteHeader
+          dictionary={getSiteContent("en").common}
+          externalLinks={{}}
+          initialUser={member}
+          locale="en"
+        />,
+      );
+
+      const trigger = screen.getByRole("button", { name: "Account" });
+      fireEvent.click(trigger);
+      let menu = screen.getByRole("menu", { name: "Account" });
+      expect(
+        await within(menu).findByRole("menuitem", {
+          name: "CSA Membership",
+        }),
+      ).toBeVisible();
+
+      fireEvent.click(trigger);
+      fireEvent.click(trigger);
+      menu = screen.getByRole("menu", { name: "Account" });
+      expect(
+        within(menu).queryByRole("menuitem", { name: "CSA Membership" }),
+      ).toBeNull();
+      expect(membershipCalls).toBe(2);
+
+      await act(async () =>
+        resolveRefresh(Response.json({ data: membershipData })),
+      );
+      expect(
+        within(menu).queryByRole("menuitem", { name: "CSA Membership" }),
+      ).toBeNull();
+      expect(membershipCalls).toBe(2);
+    },
+  );
+
   it.each(["/workshops/en", "/en/csa"])(
     "adds the current pathname to every level-one destination from %s",
     async (pathname) => {
@@ -453,7 +561,8 @@ describe("site header session projection", () => {
   it("shows an unavailable balance after failure and retries on reopen", async () => {
     const fetchMock = vi.fn((input: string | URL | Request) =>
       Promise.resolve(
-        String(input) === "/api/account/account"
+        String(input) === "/api/account/account" ||
+          String(input).startsWith("/api/account/memberships/current?locale=")
           ? Response.json({ error: "upstream_unavailable" }, { status: 502 })
           : Response.json({ data: { user: member } }),
       ),
@@ -470,12 +579,19 @@ describe("site header session projection", () => {
 
     const trigger = screen.getByRole("button", { name: "Account" });
     fireEvent.click(trigger);
+    const menu = screen.getByRole("menu", { name: "Account" });
+    expect(
+      within(menu).queryByRole("menuitem", { name: "CSA Membership" }),
+    ).toBeNull();
     expect(
       await screen.findByText("—", { selector: ".header-account-balance" }),
     ).toBeVisible();
     expect(
       screen.queryByText("0", { selector: ".header-account-balance" }),
     ).not.toBeInTheDocument();
+    expect(
+      within(menu).queryByRole("menuitem", { name: "CSA Membership" }),
+    ).toBeNull();
 
     fireEvent.click(trigger);
     fireEvent.click(trigger);
@@ -488,7 +604,7 @@ describe("site header session projection", () => {
     );
   });
 
-  it("deduplicates rapid opens and caches a successful balance", async () => {
+  it("deduplicates rapid opens while refreshing Membership on each completed reopen", async () => {
     let resolveAccount!: (response: Response) => void;
     const accountResponse = new Promise<Response>((resolve) => {
       resolveAccount = resolve;
@@ -519,6 +635,13 @@ describe("site header session projection", () => {
         ([input]) => String(input) === "/api/account/account",
       ),
     ).toHaveLength(1);
+    expect(
+      fetchMock.mock.calls.filter(([input]) =>
+        String(input).startsWith(
+          "/api/account/memberships/current?locale=",
+        ),
+      ),
+    ).toHaveLength(1);
 
     resolveAccount(Response.json({ data: { points_balance: 1280 } }));
     expect(
@@ -533,6 +656,15 @@ describe("site header session projection", () => {
         ([input]) => String(input) === "/api/account/account",
       ),
     ).toHaveLength(1);
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.filter(([input]) =>
+          String(input).startsWith(
+            "/api/account/memberships/current?locale=",
+          ),
+        ),
+      ).toHaveLength(2),
+    );
   });
 
   it.each(["Enter", " "])("opens the account menu with %s", (key) => {
@@ -661,7 +793,7 @@ describe("mobile account drawer", () => {
     const rewards = within(drawer).getByRole("link", {
       name: "Redeem rewards",
     });
-    const membership = within(drawer).getByRole("link", {
+    const membership = await within(drawer).findByRole("link", {
       name: "CSA Membership",
     });
     expect(edit).toHaveAttribute(
@@ -677,11 +809,9 @@ describe("mobile account drawer", () => {
       "href",
       "/account/en/referral?returnTo=%2Fen",
     );
-    await waitFor(() =>
-      expect(membership).toHaveAttribute(
-        "href",
-        "/account/en/membership?returnTo=%2Fen",
-      ),
+    expect(membership).toHaveAttribute(
+      "href",
+      "/account/en/membership?returnTo=%2Fen",
     );
     expect(
       within(drawer).queryByRole("link", { name: "Your account" }),
@@ -711,6 +841,13 @@ describe("mobile account drawer", () => {
         ([input]) => String(input) === "/api/account/account",
       ),
     ).toHaveLength(1);
+    expect(
+      fetchMock.mock.calls.filter(([input]) =>
+        String(input).startsWith(
+          "/api/account/memberships/current?locale=",
+        ),
+      ),
+    ).toHaveLength(1);
     fireEvent.click(account);
     fireEvent.click(account);
     expect(
@@ -718,6 +855,15 @@ describe("mobile account drawer", () => {
         ([input]) => String(input) === "/api/account/account",
       ),
     ).toHaveLength(1);
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.filter(([input]) =>
+          String(input).startsWith(
+            "/api/account/memberships/current?locale=",
+          ),
+        ),
+      ).toHaveLength(2),
+    );
     const referralLink = within(drawer).getByRole("link", {
       name: "Referral code",
     });
@@ -728,12 +874,119 @@ describe("mobile account drawer", () => {
     expect(screen.queryByRole("dialog", { name: "Menu" })).toBeNull();
   });
 
+  it.each([null, { status: "ended" }, { status: "revoked" }])(
+    "hides the mobile Membership destination for %o",
+    async (membershipData) => {
+      let resolveMembership!: (response: Response) => void;
+      const membershipResponse = new Promise<Response>((resolve) => {
+        resolveMembership = resolve;
+      });
+      const fetchMock = vi.fn((input: string | URL | Request) =>
+        String(input).startsWith("/api/account/memberships/current?locale=")
+          ? membershipResponse
+          : Promise.resolve(
+              String(input) === "/api/account/account"
+                ? Response.json({ data: { points_balance: 1280 } })
+                : Response.json({ data: { user: member } }),
+            ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      render(
+        <SiteHeader
+          dictionary={getSiteContent("en").common}
+          externalLinks={{}}
+          initialUser={member}
+          locale="en"
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+      const drawer = screen.getByRole("dialog", { name: "Menu" });
+      fireEvent.click(within(drawer).getByRole("button", { name: "Account" }));
+      expect(
+        within(drawer).queryByRole("link", { name: "CSA Membership" }),
+      ).toBeNull();
+      await waitFor(() =>
+        expect(
+          fetchMock.mock.calls.filter(([input]) =>
+            String(input).startsWith("/api/account/memberships/current?locale="),
+          ),
+        ).toHaveLength(1),
+      );
+      await act(async () => resolveMembership(Response.json({ data: membershipData })));
+      expect(
+        within(drawer).queryByRole("link", { name: "CSA Membership" }),
+      ).toBeNull();
+    },
+  );
+
+  it.each([null, { status: "revoked" }])(
+    "hides the mobile Membership destination when reopen refreshes to %o",
+    async (membershipData) => {
+      let membershipCalls = 0;
+      let resolveRefresh!: (response: Response) => void;
+      const refreshResponse = new Promise<Response>((resolve) => {
+        resolveRefresh = resolve;
+      });
+      const fetchMock = vi.fn((input: string | URL | Request) => {
+        if (
+          String(input).startsWith(
+            "/api/account/memberships/current?locale=",
+          )
+        ) {
+          membershipCalls += 1;
+          return membershipCalls === 1
+            ? Promise.resolve(Response.json({ data: { status: "active" } }))
+            : refreshResponse;
+        }
+        return Promise.resolve(
+          String(input) === "/api/account/account"
+            ? Response.json({ data: { points_balance: 1280 } })
+            : Response.json({ data: { user: member } }),
+        );
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      render(
+        <SiteHeader
+          dictionary={getSiteContent("en").common}
+          externalLinks={{}}
+          initialUser={member}
+          locale="en"
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+      const drawer = screen.getByRole("dialog", { name: "Menu" });
+      const account = within(drawer).getByRole("button", { name: "Account" });
+      fireEvent.click(account);
+      expect(
+        await within(drawer).findByRole("link", { name: "CSA Membership" }),
+      ).toBeVisible();
+
+      fireEvent.click(account);
+      fireEvent.click(account);
+      expect(
+        within(drawer).queryByRole("link", { name: "CSA Membership" }),
+      ).toBeNull();
+      expect(membershipCalls).toBe(2);
+
+      await act(async () =>
+        resolveRefresh(Response.json({ data: membershipData })),
+      );
+      expect(
+        within(drawer).queryByRole("link", { name: "CSA Membership" }),
+      ).toBeNull();
+      expect(membershipCalls).toBe(2);
+    },
+  );
+
   it("shows an unavailable mobile balance without inventing zero", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((input: string | URL | Request) =>
         Promise.resolve(
-          String(input) === "/api/account/account"
+          String(input) === "/api/account/account" ||
+            String(input).startsWith("/api/account/memberships/current?locale=")
             ? Response.json({ error: "upstream_unavailable" }, { status: 502 })
             : Response.json({ data: { user: member } }),
         ),
@@ -751,6 +1004,9 @@ describe("mobile account drawer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     const drawer = screen.getByRole("dialog", { name: "Menu" });
     fireEvent.click(within(drawer).getByRole("button", { name: "Account" }));
+    expect(
+      within(drawer).queryByRole("link", { name: "CSA Membership" }),
+    ).toBeNull();
 
     expect(
       await within(drawer).findByText("—", {
@@ -763,8 +1019,8 @@ describe("mobile account drawer", () => {
       }),
     ).toBeNull();
     expect(
-      within(drawer).getByRole("link", { name: "CSA Membership" }),
-    ).toHaveAttribute("href", "/en/csa");
+      within(drawer).queryByRole("link", { name: "CSA Membership" }),
+    ).toBeNull();
   });
 
   it.each(["Enter", " "])(

@@ -31,6 +31,7 @@ function HeaderAccountDestinations({
   accountHref,
   balanceLabel,
   currentPath,
+  hasCurrentMembership,
   membershipHref,
   menuSemantics = false,
   onNavigate,
@@ -39,7 +40,8 @@ function HeaderAccountDestinations({
   accountHref: string;
   balanceLabel: string;
   currentPath: string;
-  membershipHref: string;
+  hasCurrentMembership: boolean;
+  membershipHref?: string;
   menuSemantics?: boolean;
   onNavigate: () => void;
   t: CommonDictionary;
@@ -51,9 +53,6 @@ function HeaderAccountDestinations({
     groupRole = "none";
   }
   const returnTo = `?returnTo=${encodeURIComponent(currentPath)}`;
-  const membershipDestination = membershipHref.startsWith("/account/")
-    ? `${membershipHref}${returnTo}`
-    : membershipHref;
   return (
     <div className="header-account-destinations" role={groupRole}>
       <div className="header-account-points-summary" role="presentation">
@@ -94,9 +93,11 @@ function HeaderAccountDestinations({
       >
         {t.nav.editAccount}
       </a>
-      <Link href={membershipDestination} onClick={onNavigate} role={role}>
-        {t.nav.membership}
-      </Link>
+      {hasCurrentMembership && membershipHref ? (
+        <Link href={`${membershipHref}${returnTo}`} onClick={onNavigate} role={role}>
+          {t.nav.membership}
+        </Link>
+      ) : null}
     </div>
   );
 }
@@ -149,6 +150,7 @@ function HeaderAccountMenu({
   t,
   user,
   balanceLabel,
+  hasCurrentMembership,
   loadBalance,
   loadMembershipDestination,
   membershipHref,
@@ -159,9 +161,10 @@ function HeaderAccountMenu({
   t: CommonDictionary;
   user: CoreUser | null;
   balanceLabel: string;
+  hasCurrentMembership: boolean;
   loadBalance: () => Promise<void>;
   loadMembershipDestination: () => Promise<void>;
-  membershipHref: string;
+  membershipHref?: string;
 }) {
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLDivElement>(null);
@@ -235,6 +238,7 @@ function HeaderAccountMenu({
                 accountHref={accountHref}
                 balanceLabel={balanceLabel}
                 currentPath={currentPath}
+                hasCurrentMembership={hasCurrentMembership}
                 membershipHref={membershipHref}
                 menuSemantics
                 onNavigate={close}
@@ -290,12 +294,15 @@ export function SiteHeader({
     pathname,
     userId: user?.sub,
   });
-  const { href: membershipHref, load: loadMembershipDestination } =
-    useHeaderMembershipDestination({
-      locale,
-      pathname,
-      userId: user?.sub,
-    });
+  const {
+    hasCurrentMembership,
+    membershipHref,
+    load: loadMembershipDestination,
+  } = useHeaderMembershipDestination({
+    locale,
+    pathname,
+    userId: user?.sub,
+  });
   const mobileMenuTrigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const alternateLocales = locales.filter((item) => item !== locale);
@@ -415,6 +422,7 @@ export function SiteHeader({
         <div className="header-tools">
           <HeaderAccountMenu
             balanceLabel={balanceLabel}
+            hasCurrentMembership={hasCurrentMembership}
             loadBalance={loadBalance}
             loadMembershipDestination={loadMembershipDestination}
             locale={locale}
@@ -556,6 +564,7 @@ export function SiteHeader({
                             accountHref={accountHref}
                             balanceLabel={balanceLabel}
                             currentPath={currentPath}
+                            hasCurrentMembership={hasCurrentMembership}
                             membershipHref={membershipHref}
                             onNavigate={() => setMobileMenuOpen(false)}
                             t={t}

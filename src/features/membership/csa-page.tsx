@@ -77,12 +77,6 @@ function BenefitIcon({ type }: { type: string }) {
           <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
         </svg>
       );
-    case "chat":
-      return (
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-      );
     default:
       return null;
   }

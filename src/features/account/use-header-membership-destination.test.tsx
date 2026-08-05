@@ -18,11 +18,9 @@ afterEach(() => {
 
 describe("useHeaderMembershipDestination", () => {
   it.each([
-    [null, "/en/csa"],
-    [{ ...membership, status: "ended" as const }, "/en/csa"],
-    [{ ...membership, status: "scheduled" as const }, "/account/en/membership"],
-    [membership, "/account/en/membership"],
-  ])("maps current Membership %o to %s", async (data, expectedHref) => {
+    { ...membership, status: "scheduled" as const },
+    membership,
+  ])("exposes the account Membership destination for %s", async (data) => {
     vi.mocked(accountApi).mockResolvedValue({ data });
     const { result } = renderHook(() =>
       useHeaderMembershipDestination({
@@ -34,10 +32,87 @@ describe("useHeaderMembershipDestination", () => {
 
     await act(async () => result.current.load());
 
-    expect(result.current.href).toBe(expectedHref);
+    expect(result.current.hasCurrentMembership).toBe(true);
+    expect(result.current.membershipHref).toBe("/account/en/membership");
   });
 
-  it("keeps the public CSA fallback while loading and after an error", async () => {
+  it.each([
+    null,
+    { ...membership, status: "ended" as const },
+    { ...membership, status: "revoked" as const },
+  ])("does not expose a destination for %o", async (data) => {
+    vi.mocked(accountApi).mockResolvedValue({ data });
+    const { result } = renderHook(() =>
+      useHeaderMembershipDestination({
+        locale: "en",
+        pathname: "/en",
+        userId: "user-a",
+      }),
+    );
+
+    await act(async () => result.current.load());
+
+    expect(result.current.hasCurrentMembership).toBe(false);
+    expect(result.current.membershipHref).toBeUndefined();
+  });
+
+  it("resets a completed active result when the pathname changes", async () => {
+    vi.mocked(accountApi).mockResolvedValue({ data: membership });
+    const { result, rerender } = renderHook(
+      ({ pathname }) =>
+        useHeaderMembershipDestination({
+          locale: "en",
+          pathname,
+          userId: "user-a",
+        }),
+      { initialProps: { pathname: "/en" } },
+    );
+
+    await act(async () => result.current.load());
+    expect(result.current.hasCurrentMembership).toBe(true);
+
+    rerender({ pathname: "/en/csa" });
+
+    expect(result.current.hasCurrentMembership).toBe(false);
+    expect(result.current.membershipHref).toBeUndefined();
+  });
+
+  it.each([
+    null,
+    { ...membership, status: "revoked" } as unknown as CurrentMembership,
+  ])(
+    "hides a cached active result while refreshing to %o",
+    async (nextMembership) => {
+      let resolveRefresh!: (value: { data: CurrentMembership | null }) => void;
+      vi.mocked(accountApi)
+        .mockResolvedValueOnce({ data: membership })
+        .mockReturnValueOnce(
+          new Promise((resolve) => {
+            resolveRefresh = resolve;
+          }),
+        );
+      const { result } = renderHook(() =>
+        useHeaderMembershipDestination({
+          locale: "en",
+          pathname: "/en",
+          userId: "user-a",
+        }),
+      );
+
+      await act(async () => result.current.load());
+      expect(result.current.hasCurrentMembership).toBe(true);
+
+      act(() => void result.current.load());
+      expect(result.current.hasCurrentMembership).toBe(false);
+      expect(result.current.membershipHref).toBeUndefined();
+      await act(async () => resolveRefresh({ data: nextMembership }));
+      expect(result.current.hasCurrentMembership).toBe(false);
+      expect(result.current.membershipHref).toBeUndefined();
+      expect(accountApi).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("keeps the destination hidden while loading and after an error", async () => {
     let rejectRequest!: (reason: unknown) => void;
     vi.mocked(accountApi).mockReturnValue(
       new Promise((_, reject) => {
@@ -53,12 +128,23 @@ describe("useHeaderMembershipDestination", () => {
     );
 
     act(() => void result.current.load());
-    expect(result.current.href).toBe("/en/csa");
+    expect(result.current.hasCurrentMembership).toBe(false);
+    expect(result.current.membershipHref).toBeUndefined();
     await act(async () => rejectRequest(new Error("upstream unavailable")));
-    expect(result.current.href).toBe("/en/csa");
+    expect(result.current.hasCurrentMembership).toBe(false);
+    expect(result.current.membershipHref).toBeUndefined();
   });
 
-  it("aborts stale work on identity changes and ignores its late response", async () => {
+  it.each([
+    {
+      label: "path",
+      next: { pathname: "/en/csa", userId: "user-a" },
+    },
+    {
+      label: "user",
+      next: { pathname: "/en", userId: "user-b" },
+    },
+  ])("aborts stale work after a $label change", async ({ next }) => {
     let resolveFirst!: (value: { data: CurrentMembership | null }) => void;
     let resolveSecond!: (value: { data: CurrentMembership | null }) => void;
     const first = new Promise<{ data: CurrentMembership | null }>((resolve) => {
@@ -80,19 +166,19 @@ describe("useHeaderMembershipDestination", () => {
 
     act(() => void result.current.load());
     const firstSignal = vi.mocked(accountApi).mock.calls[0][1]?.signal;
-    rerender({ pathname: "/en/csa", userId: "user-b" });
+    rerender(next);
     await waitFor(() => expect(firstSignal?.aborted).toBe(true));
     act(() => void result.current.load());
-    await act(async () =>
-      resolveSecond({ data: { ...membership, status: "scheduled" } }),
-    );
-    expect(result.current.href).toBe("/account/en/membership");
+    await act(async () => resolveSecond({ data: null }));
+    expect(result.current.hasCurrentMembership).toBe(false);
+    expect(result.current.membershipHref).toBeUndefined();
 
-    await act(async () => resolveFirst({ data: null }));
-    expect(result.current.href).toBe("/account/en/membership");
+    await act(async () => resolveFirst({ data: membership }));
+    expect(result.current.hasCurrentMembership).toBe(false);
+    expect(result.current.membershipHref).toBeUndefined();
   });
 
-  it("does not fetch signed-out users or duplicate a current request", async () => {
+  it("does not fetch signed-out users or duplicate an in-flight request", async () => {
     let resolveRequest!: (value: { data: CurrentMembership | null }) => void;
     vi.mocked(accountApi).mockReturnValue(
       new Promise((resolve) => {
@@ -118,7 +204,7 @@ describe("useHeaderMembershipDestination", () => {
     });
     expect(accountApi).toHaveBeenCalledTimes(1);
     await act(async () => resolveRequest({ data: membership }));
-    await act(async () => result.current.load());
     expect(accountApi).toHaveBeenCalledTimes(1);
+    expect(result.current.hasCurrentMembership).toBe(true);
   });
 });

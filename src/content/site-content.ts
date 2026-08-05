@@ -262,10 +262,6 @@ const en = {
         label: "Products updated early in the week",
         icon: "refresh",
       },
-      {
-        label: "Information updated via CSA Zalo group",
-        icon: "chat",
-      },
     ],
     timelineTitle: "How does a typical week work?",
     timeline: [
@@ -716,10 +712,6 @@ const vi: SiteContent = {
       {
         label: "Sản phẩm được cập nhật đầu tuần",
         icon: "refresh",
-      },
-      {
-        label: "Thông tin được cập nhật qua nhóm Zalo CSA",
-        icon: "chat",
       },
     ],
     timelineTitle: "Một tuần giao nhận diễn ra như thế nào?",

@@ -2672,7 +2672,7 @@ tbody th {
   .csa-package-list:not(.is-scrollable) .csa-package-card {
     width: auto;
     min-width: 0;
-    flex: 1 1 calc((100% - 2.4rem) / 3);
+    flex: 0 1 calc((100% - 2.4rem) / 3);
   }
 }
 .account-navigation-row {

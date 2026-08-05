@@ -194,7 +194,7 @@ describe("public CSA Membership", () => {
     expect(document.querySelector('a[href^="/api/auth/login"]')).toBeNull();
 
     const benefits = screen.getByRole("region", { name: copy.eyebrow });
-    expect(benefits.querySelectorAll("li")).toHaveLength(4);
+    expect(benefits.querySelectorAll("li")).toHaveLength(3);
     expect(
       within(benefits).getByText("Nhận hàng vào thứ Bảy hằng tuần"),
     ).toBeVisible();
@@ -203,9 +203,6 @@ describe("public CSA Membership", () => {
     ).toBeVisible();
     expect(
       within(benefits).getByText("Sản phẩm được cập nhật đầu tuần"),
-    ).toBeVisible();
-    expect(
-      within(benefits).getByText("Thông tin được cập nhật qua nhóm Zalo CSA"),
     ).toBeVisible();
   });
 
@@ -217,7 +214,7 @@ describe("public CSA Membership", () => {
     expect(await screen.findByRole("link", { name: "Buy now" })).toBeVisible();
 
     const benefits = screen.getByRole("region", { name: copy.eyebrow });
-    expect(benefits.querySelectorAll("li")).toHaveLength(4);
+    expect(benefits.querySelectorAll("li")).toHaveLength(3);
     expect(
       within(benefits).getByText("Receive products every Saturday"),
     ).toBeVisible();
@@ -226,9 +223,6 @@ describe("public CSA Membership", () => {
     ).toBeVisible();
     expect(
       within(benefits).getByText("Products updated early in the week"),
-    ).toBeVisible();
-    expect(
-      within(benefits).getByText("Information updated via CSA Zalo group"),
     ).toBeVisible();
   });
 
