@@ -3,9 +3,9 @@ import Link from "next/link";
 import { ContactLinks } from "@/components/contact-links";
 import { Arrow } from "@/components/icons";
 import { siteConfig } from "@/config/site";
-import { getDictionary } from "@/content/dictionaries";
 import { type Locale, localizedPath } from "@/lib/i18n";
 import { linkFromSettings, type PublicSiteSettings } from "@/lib/content-api";
+import { getSiteContent } from "@/content/site-content";
 
 export function SiteFooter({
   locale,
@@ -14,7 +14,9 @@ export function SiteFooter({
   locale: Locale;
   settings: PublicSiteSettings;
 }) {
-  const t = getDictionary(locale);
+  const content = getSiteContent(locale);
+  const t = content.common;
+  const tTestimonials = content.testimonials;
   const forum = linkFromSettings(settings, "forum");
   return (
     <footer id="contact" className="footer">
@@ -35,6 +37,9 @@ export function SiteFooter({
           <Link href={localizedPath(locale, "/animals")}>{t.nav.animals}</Link>
           <Link href={localizedPath(locale, "/workshops")}>
             {t.nav.workshops}
+          </Link>
+          <Link href={localizedPath(locale, "/testimonials")}>
+            {tTestimonials.launcher}
           </Link>
           <Link href={`/${locale}/csa`}>{t.nav.csa}</Link>
           <Link href={localizedPath(locale, "/privacy-policy")}>

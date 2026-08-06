@@ -34,7 +34,40 @@ export type PublicWorkshop = {
   body?: Record<string, unknown>;
 };
 
+export type PublicTestimonial = {
+  id: string;
+  type: "customer" | "farmer";
+  display_name: string;
+  image: {
+    id: string;
+    url: string;
+    width: number;
+    height: number;
+    variants: Array<{
+      width: number;
+      height: number;
+      file: string;
+      url: string;
+    }>;
+  } | null;
+  requested_locale: Locale;
+  content_locale: Locale;
+  available_locales: Locale[];
+  is_fallback: boolean;
+  role: string;
+  location: string;
+  quote: string;
+  published_at: string;
+  full_story?: string;
+};
+
 class ContentApiConfigurationError extends Error {}
+
+class ContentApiResponseError extends Error {
+  constructor(readonly status: number) {
+    super(`Content API request failed with status ${status}`);
+  }
+}
 
 export const contentApiOrigin = () => {
   const configured = process.env.CONTENT_API_ORIGIN?.trim();
@@ -88,7 +121,7 @@ async function contentFetch<T>(
   const response = await fetch(`${contentApiOrigin()}${path}`, {
     ...contentFetchOptions(tags, revalidate),
   });
-  if (!response.ok) throw new Error(`Content API ${response.status}: ${path}`);
+  if (!response.ok) throw new ContentApiResponseError(response.status);
   const payload = (await response.json()) as { data: T };
   return payload.data;
 }
@@ -180,4 +213,45 @@ export async function getWorkshopPreview(token: string, locale: Locale) {
 
 export function linkFromSettings(settings: PublicSiteSettings, kind: string) {
   return settings.links.find((item) => item.kind === kind)?.url;
+}
+
+export async function getFeaturedTestimonials(locale: Locale) {
+  return contentFetch<PublicTestimonial[]>(
+    `/api/v1/public/testimonials/featured?locale=${locale}`,
+    ["testimonials", "testimonials:featured"],
+  );
+}
+
+export async function testimonialsPage(
+  locale: Locale,
+  type: "all" | "customer" | "farmer",
+  page: number,
+  pageSize: number = 12,
+) {
+  const response = await fetch(
+    `${contentApiOrigin()}/api/v1/public/testimonials?locale=${locale}&type=${type}&page=${page}&page_size=${pageSize}`,
+    contentFetchOptions(["testimonials"], 300),
+  );
+  if (!response.ok)
+    throw new Error(
+      `Content API ${response.status}: testimonials page ${page}`,
+    );
+  return (await response.json()) as {
+    data: PublicTestimonial[];
+    meta: { page: number; page_size: number; total: number };
+  };
+}
+
+export async function getTestimonial(uuid: string, locale: Locale) {
+  try {
+    return await contentFetch<PublicTestimonial>(
+      `/api/v1/public/testimonials/${encodeURIComponent(uuid)}?locale=${locale}`,
+      ["testimonials", `testimonial:${uuid}`],
+    );
+  } catch (error) {
+    rethrowConfigurationError(error);
+    if (error instanceof ContentApiResponseError && error.status === 404)
+      return null;
+    throw error;
+  }
 }

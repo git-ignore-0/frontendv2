@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   contentApiOrigin,
+  getFeaturedTestimonials,
   getSiteSettings,
+  getTestimonial,
   getWorkshopPreview,
   getWorkshops,
   linkFromSettings,
@@ -112,5 +114,28 @@ describe("content API", () => {
     expect(result.is_email_enabled).toBe(false);
     expect(result.is_phone_enabled).toBe(false);
     expect(result.links).toEqual([]);
+  });
+
+  it("surfaces featured testimonial failures so the proxy can return 502", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 503 }),
+    );
+
+    await expect(getFeaturedTestimonials("vi")).rejects.toThrow(/503/);
+  });
+
+  it("returns null only for a missing testimonial detail", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
+    );
+    await expect(getTestimonial("missing", "en")).resolves.toBeNull();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 502 }),
+    );
+    await expect(getTestimonial("unavailable", "en")).rejects.toThrow(/502/);
   });
 });

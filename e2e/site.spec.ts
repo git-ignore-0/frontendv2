@@ -44,6 +44,37 @@ const reward = {
   short_description: "Rau đang có tại nông trại.",
 };
 
+const testimonial = {
+  id: "44444444-4444-4444-8444-444444444444",
+  type: "farmer",
+  display_name: "Mai Tran",
+  image: null,
+  requested_locale: "vi",
+  content_locale: "vi",
+  available_locales: ["vi", "en"],
+  is_fallback: false,
+  role: "Nông dân",
+  location: "Lâm Đồng",
+  quote: "Đất khỏe thì cây khỏe.",
+  published_at: "2026-08-06T00:00:00Z",
+};
+
+async function mockTestimonials(page: Page) {
+  await page.route("**/api/testimonials/featured?**", (route) =>
+    route.fulfill({ json: { data: [testimonial] } }),
+  );
+  await page.route("**/api/testimonials?**", (route) =>
+    route.fulfill({
+      json: { data: [testimonial], meta: { page: 1, page_size: 12, total: 1 } },
+    }),
+  );
+  await page.route(/\/api\/testimonials\/[0-9a-f-]+(?:\?.*)?$/i, (route) =>
+    route.fulfill({
+      json: { data: { ...testimonial, full_story: "Câu chuyện đầy đủ." } },
+    }),
+  );
+}
+
 async function mockRewardCatalog(page: Page, signedIn: boolean) {
   await page.route("**/api/account/account", (route) =>
     route.fulfill(
@@ -102,6 +133,53 @@ for (const route of internalRoutes) {
     expect(errors).toEqual([]);
   });
 }
+
+test("Testimonials canonical page and legacy redirect stay usable without overflow", async ({
+  page,
+}) => {
+  await mockTestimonials(page);
+  await page.goto("/testimonials/vi");
+  await expect(
+    page.getByRole("heading", { name: "Câu chuyện từ nông trại và bàn ăn" }),
+  ).toBeVisible();
+  await expect(page.locator(".testimonials-launcher")).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+
+  await page.goto("/vi/testimonials");
+  await expect(page).toHaveURL(/\/testimonials\/vi$/);
+});
+
+test("Testimonials launcher opens layered stories and Escape closes one layer at a time", async ({
+  page,
+}) => {
+  await mockTestimonials(page);
+  await page.goto("/vi");
+  await page.locator(".testimonials-launcher:visible").click();
+  await expect(
+    page.getByRole("dialog", { name: "Những câu chuyện" }),
+  ).toBeVisible();
+  await page.locator(".testimonials-featured-card").click();
+  await expect(
+    page.getByRole("button", { name: "Đóng chi tiết câu chuyện" }),
+  ).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "Đóng chi tiết câu chuyện" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("dialog", { name: "Những câu chuyện" }),
+  ).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
 
 test("nested account routes keep their shape when switching language", async ({
   page,

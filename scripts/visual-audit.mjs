@@ -13,6 +13,8 @@ const routes = [
   "/animals/vi",
   "/workshops/en",
   "/workshops/vi",
+  "/testimonials/en",
+  "/testimonials/vi",
 ];
 const viewports = [
   { name: "mobile-320", width: 320, height: 800 },
@@ -35,6 +37,29 @@ for (const viewport of viewports) {
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  await page.route("**/api/testimonials?**", (route) =>
+    route.fulfill({
+      json: {
+        data: [
+          {
+            id: "44444444-4444-4444-8444-444444444444",
+            type: "farmer",
+            display_name: "Mai Tran",
+            image: null,
+            requested_locale: "vi",
+            content_locale: "vi",
+            available_locales: ["vi", "en"],
+            is_fallback: false,
+            role: "Nông dân",
+            location: "Lâm Đồng",
+            quote: "Đất khỏe thì cây khỏe.",
+            published_at: "2026-08-06T00:00:00Z",
+          },
+        ],
+        meta: { page: 1, page_size: 12, total: 1 },
+      },
+    }),
+  );
   const consoleErrors = [];
   const failedRequests = [];
   page.on("console", (message) => {

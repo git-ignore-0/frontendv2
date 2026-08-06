@@ -10,6 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/plants",
     "/animals",
     "/workshops",
+    "/testimonials",
   ].flatMap((path) =>
     locales.map((locale) => ({
       url: `${base}${localizedPath(locale, path)}`,

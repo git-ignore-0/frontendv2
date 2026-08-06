@@ -101,3 +101,69 @@ export function ChevronDownIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+function TestimonialIcon({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      {children}
+    </svg>
+  );
+}
+
+export function CloseIcon({ className }: { className?: string }) {
+  return (
+    <TestimonialIcon className={className}>
+      <path d="m6 6 12 12M18 6 6 18" />
+    </TestimonialIcon>
+  );
+}
+
+export function UserIcon({ className }: { className?: string }) {
+  return (
+    <TestimonialIcon className={className}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+    </TestimonialIcon>
+  );
+}
+
+export function QuoteIcon({ className }: { className?: string }) {
+  return (
+    <TestimonialIcon className={className}>
+      <path d="M9 11H5a4 4 0 0 1 4-4v8a3 3 0 0 1-3 3" />
+      <path d="M19 11h-4a4 4 0 0 1 4-4v8a3 3 0 0 1-3 3" />
+    </TestimonialIcon>
+  );
+}
+
+export function ArrowLeftIcon({ className }: { className?: string }) {
+  return (
+    <TestimonialIcon className={className}>
+      <path d="m15 18-6-6 6-6M9 12h10" />
+    </TestimonialIcon>
+  );
+}
+
+export function ArrowRightIcon({ className }: { className?: string }) {
+  return (
+    <TestimonialIcon className={className}>
+      <path d="m9 18 6-6-6-6M5 12h10" />
+    </TestimonialIcon>
+  );
+}
+import type { ReactNode } from "react";
