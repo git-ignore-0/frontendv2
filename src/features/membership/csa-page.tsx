@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { SiteContent } from "@/content/site-content";
@@ -140,12 +141,7 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
   }, [loadPackages]);
 
   return (
-    <div className="csa-page">
-      <div className="csa-page-background" aria-hidden="true">
-        <span className="csa-background-grain" />
-        <span className="csa-background-moss" />
-        <span className="csa-background-straw" />
-      </div>
+    <div className="csa-page csa-membership-page">
       <div className="shell csa-page-shell">
         <header className="csa-hero">
           <div className="csa-hero-copy">
@@ -161,14 +157,16 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
               </a>
             </div>
           </div>
-          <span className="csa-hero-leaf" aria-hidden="true">
-            <svg viewBox="0 0 120 160" fill="none">
-              <path d="M57 153C55 107 65 63 103 17" />
-              <path d="M66 111C39 103 23 85 15 58C43 61 62 76 66 111Z" />
-              <path d="M77 82C82 52 98 35 115 28C115 54 101 75 77 82Z" />
-              <path d="M58 132C38 128 23 117 12 99C34 98 51 108 58 132Z" />
-            </svg>
-          </span>
+          <div className="csa-hero-media">
+            <Image
+              src="/images/csa-seedlings.webp"
+              alt={copy.heroAlt}
+              fill
+              priority
+              sizes="(min-width: 768px) 44vw, calc(100vw - 2rem)"
+              style={{ objectPosition: "center" }}
+            />
+          </div>
         </header>
 
         <main>
@@ -183,12 +181,42 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
             </ul>
           </section>
 
+          <section className="csa-story" aria-labelledby="csa-story-title">
+            <div className="csa-story-media">
+              <Image
+                src="/images/bean-sprouts.webp"
+                alt={copy.storyAlt}
+                fill
+                sizes="(min-width: 768px) 45vw, calc(100vw - 2rem)"
+              />
+            </div>
+            <div className="csa-story-content">
+              <p className="csa-story-kicker">{copy.storyEyebrow}</p>
+              <h2 id="csa-story-title">{copy.storyTitle}</h2>
+              <p className="csa-story-intro">{copy.storyIntro}</p>
+              <div className="csa-story-comparison">
+                {copy.storyComparisons.map((column) => (
+                  <div className="csa-story-column" key={column.label}>
+                    <h3>{column.label}</h3>
+                    <ul>
+                      {column.items.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <p className="csa-story-note">{copy.storyNote}</p>
+            </div>
+          </section>
+
           <section
             className="csa-packages"
             aria-labelledby="csa-packages-title"
           >
             <header>
               <h2 id="csa-packages-title">{copy.packagesTitle}</h2>
+              <p>{copy.packagesSubtitle}</p>
             </header>
             {packagesError ? (
               <div className="csa-inline-state" role="alert">
@@ -208,6 +236,8 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
                 <div
                   className={[
                     "csa-package-list",
+                    packages.length === 1 && "is-single",
+                    packages.length === 2 && "is-pair",
                     packages.length > 3 && "is-scrollable",
                   ]
                     .filter(Boolean)
@@ -391,18 +421,6 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
                 </li>
               ))}
             </ol>
-          </section>
-
-          <section className="csa-why" aria-labelledby="csa-why-title">
-            <h2 id="csa-why-title">{copy.whyTitle}</h2>
-            <ul>
-              {copy.whyReasons.map((reason) => (
-                <li key={reason.title}>
-                  <h3>{reason.title}</h3>
-                  <p>{reason.body}</p>
-                </li>
-              ))}
-            </ul>
           </section>
         </main>
       </div>

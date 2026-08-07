@@ -247,9 +247,10 @@ const en = {
   csa: {
     metadataTitle: "Community Supported Agriculture",
     eyebrow: "Community Supported Agriculture",
-    title: "Farm-fresh produce, delivered weekly",
+    title: "Fresh food each week, supporting farmers for a better future.",
     intro:
-      "Join our community to receive seasonal vegetables weekly and support local farming families.",
+      "CSA connects your household with naturally farmed produce. You receive food weekly while farmers gain more certainty to plan each season and care for the land.",
+    heroAlt: "A farmer tending crops in a green field",
     benefits: [
       {
         label: "Receive products weekly",
@@ -268,6 +269,31 @@ const en = {
         icon: "clock",
       },
     ],
+    storyEyebrow: "WHY CSA?",
+    storyTitle: "What does CSA offer beyond individual shopping?",
+    storyIntro:
+      "CSA helps your household receive seasonal food more regularly while giving the farm more confidence to prepare for each season.",
+    storyComparisons: [
+      {
+        label: "Individual shopping",
+        items: [
+          "Choose products when you need them",
+          "Flexible for changing needs",
+          "Each order can be different",
+        ],
+      },
+      {
+        label: "CSA",
+        items: [
+          "Receive food in a weekly rhythm",
+          "Know more about what each season brings",
+          "Signing up in advance helps the farm plan ahead",
+        ],
+      },
+    ],
+    storyNote:
+      "CSA does not replace individual shopping — it is another way to stay connected with the farm.",
+    storyAlt: "Freshly harvested vegetables gathered at the farm",
     timelineTitle: "How does a typical week work?",
     timeline: [
       {
@@ -292,6 +318,7 @@ const en = {
       },
     ],
     packagesTitle: "Packages open for registration",
+    packagesSubtitle: "Choose a duration that suits your household.",
     packagesLoading: "Loading packages…",
     packagesError: "We could not load packages. Please try again.",
     packagesEmpty: "There are no packages available right now.",
@@ -313,21 +340,6 @@ const en = {
       "Unused quantity carries over only within a multi-month membership",
     includedProducts: "Quantity you can use each month",
     cycle: "month",
-    whyTitle: "Why Natural Farming Vietnam?",
-    whyReasons: [
-      {
-        title: "Support the local farming economy",
-        body: "Help keep money circulating within the community, create jobs, and strengthen the economic health of the area.",
-      },
-      {
-        title: "Support sustainable growing practices",
-        body: "Natural Farming produces its own organic fertilizer and uses bio-integrated pest management instead of harmful chemicals.",
-      },
-      {
-        title: "Support biodiversity and soil health",
-        body: "Our farmers grow a large variety of produce which helps keep food sources genetically strong and soil healthy by preventing monocultures.",
-      },
-    ],
   },
   home: {
     heroEyebrow: "Living Soil · From soil, life begins",
@@ -809,9 +821,11 @@ const vi: SiteContent = {
   csa: {
     metadataTitle: "Nông nghiệp cộng đồng",
     eyebrow: "Nông nghiệp cộng đồng",
-    title: "Rau từ nông trại, giao tận nhà hằng tuần",
+    title:
+      "Thực phẩm tươi mỗi tuần, cùng nông dân vun bồi một tương lai tốt hơn.",
     intro:
-      "Tham gia chương trình để nhận rau theo mùa hằng tuần và đồng hành cùng nông hộ địa phương.",
+      "CSA kết nối gia đình bạn với những nông trại canh tác tự nhiên. Bạn nhận thực phẩm theo tuần, còn nông dân có điều kiện lên kế hoạch và chăm sóc đất lâu dài.",
+    heroAlt: "Nông dân chăm sóc cây trồng trên cánh đồng xanh",
     benefits: [
       {
         label: "Nhận hàng hằng tuần",
@@ -830,6 +844,31 @@ const vi: SiteContent = {
         icon: "clock",
       },
     ],
+    storyEyebrow: "VÌ SAO CHỌN CSA?",
+    storyTitle: "CSA mang lại điều gì khác với mua lẻ?",
+    storyIntro:
+      "CSA giúp gia đình bạn nhận thực phẩm theo mùa đều đặn hơn, đồng thời giúp nông trại chủ động chuẩn bị cho mùa vụ.",
+    storyComparisons: [
+      {
+        label: "Mua sản phẩm lẻ",
+        items: [
+          "Chọn sản phẩm khi cần",
+          "Phù hợp với nhu cầu linh hoạt",
+          "Mỗi lần mua có thể khác nhau",
+        ],
+      },
+      {
+        label: "CSA",
+        items: [
+          "Nhận thực phẩm theo nhịp hằng tuần",
+          "Biết trước hơn về mùa vụ",
+          "Đăng ký trước giúp nông trại chủ động hơn",
+        ],
+      },
+    ],
+    storyNote:
+      "CSA không thay thế mua lẻ — đây là một cách khác để đồng hành cùng nông trại.",
+    storyAlt: "Rau củ tươi vừa được thu hoạch tại nông trại",
     timelineTitle: "Một tuần giao nhận diễn ra như thế nào?",
     timeline: [
       {
@@ -854,6 +893,7 @@ const vi: SiteContent = {
       },
     ],
     packagesTitle: "Các gói đang mở đăng ký",
+    packagesSubtitle: "Chọn thời hạn phù hợp với gia đình bạn.",
     packagesLoading: "Đang tải các gói đăng ký…",
     packagesError: "Không thể tải các gói đăng ký. Vui lòng thử lại.",
     packagesEmpty: "Hiện chưa có gói đăng ký nào.",
@@ -875,21 +915,6 @@ const vi: SiteContent = {
       "Số lượng chưa dùng chỉ được cộng sang tháng sau trong gói nhiều tháng",
     includedProducts: "Số lượng bạn có thể dùng mỗi tháng",
     cycle: "tháng",
-    whyTitle: "Vì sao chọn Nông Nghiệp Thiên Nhiên?",
-    whyReasons: [
-      {
-        title: "Ủng hộ nông hộ và kinh tế địa phương",
-        body: "Giúp giữ dòng tiền luân chuyển trong cộng đồng, tạo việc làm và tăng cường sức khỏe kinh tế khu vực.",
-      },
-      {
-        title: "Ủng hộ canh tác bền vững, hạn chế hóa chất gây hại",
-        body: "Nông Nghiệp Thiên Nhiên tự sản xuất phân bón hữu cơ và quản lý sâu hại bằng sinh học thay vì hóa chất.",
-      },
-      {
-        title: "Bảo vệ đa dạng sinh học và sức khỏe đất",
-        body: "Nông dân trồng đa dạng các loại nông sản, giúp nguồn thực phẩm giữ được sự đa dạng di truyền và nói không với độc canh.",
-      },
-    ],
   },
   home: {
     heroEyebrow: "Đất sống · Từ đất, sự sống bắt đầu",

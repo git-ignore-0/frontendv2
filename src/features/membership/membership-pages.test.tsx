@@ -23,6 +23,15 @@ import {
 } from "@/features/membership/account-membership-pages";
 import { CsaPage } from "@/features/membership/csa-page";
 
+const FARM_BRITE_MEMBERSHIPS_URL =
+  "https://store.farmbrite.com/store/nntn/products?category=Memberships";
+
+function farmbriteCtas() {
+  return document.querySelectorAll<HTMLAnchorElement>(
+    `a[href="${FARM_BRITE_MEMBERSHIPS_URL}"]`,
+  );
+}
+
 const navigation = vi.hoisted(() => ({ back: vi.fn(), replace: vi.fn() }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => navigation }));
@@ -179,22 +188,55 @@ describe("public CSA Membership", () => {
     const copy = getSiteContent("vi").csa;
     render(<CsaPage copy={copy} locale="vi" />);
 
-    const cta = await screen.findByRole("link", {
+    const heroCta = await screen.findByRole("link", {
       name: "Mua ngay",
     });
-    expect(cta).toHaveAttribute(
-      "href",
-      "https://store.farmbrite.com/store/nntn/products?category=Memberships",
+    expect(farmbriteCtas()).toHaveLength(1);
+    expect(farmbriteCtas()[0]).toBe(heroCta);
+    expect(heroCta).toHaveAttribute("href", FARM_BRITE_MEMBERSHIPS_URL);
+    expect(heroCta).not.toHaveAttribute("target");
+    expect(heroCta).not.toHaveAttribute("rel");
+    expect(screen.getByText("VÌ SAO CHỌN CSA?")).toBeVisible();
+    expect(
+      screen.getByRole("heading", {
+        name: "CSA mang lại điều gì khác với mua lẻ?",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Mua sản phẩm lẻ" }),
+    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: "CSA" })).toBeVisible();
+    expect(screen.getByText("Chọn sản phẩm khi cần")).toBeVisible();
+    expect(
+      screen.getByText("Đăng ký trước giúp nông trại chủ động hơn"),
+    ).toBeVisible();
+    const story = document.querySelector(".csa-story");
+    const packages = document.querySelector(".csa-packages");
+    expect(story).not.toBeNull();
+    expect(packages).not.toBeNull();
+    expect(story?.compareDocumentPosition(packages as Node) ?? 0).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(cta).not.toHaveAttribute("target");
-    expect(cta).not.toHaveAttribute("rel");
+
+    expect(getSiteContent("vi").csa.timeline.map(({ day }) => day)).toEqual([
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+    ]);
+    for (const day of ["T2", "T3", "T4", "T5", "T6"]) {
+      expect(screen.getByText(day)).toBeVisible();
+    }
     expect(vi.mocked(accountApi).mock.calls.map(([path]) => path)).toEqual([
       "membership-packages?page=1&locale=vi",
     ]);
     expect(document.querySelector('a[href^="/api/auth/login"]')).toBeNull();
 
     const benefits = screen.getByRole("region", { name: copy.eyebrow });
-    expect(benefits.querySelectorAll("li")).toHaveLength(4);
+    const benefitList = within(benefits).getByRole("list");
+    expect(benefitList.tagName).toBe("UL");
+    expect(within(benefitList).getAllByRole("listitem")).toHaveLength(4);
     expect(within(benefits).getByText("Nhận hàng hằng tuần")).toBeVisible();
     expect(
       within(benefits).getByText("Miễn phí giao hàng cho thành viên CSA"),
@@ -212,10 +254,31 @@ describe("public CSA Membership", () => {
     const copy = getSiteContent("en").csa;
     render(<CsaPage copy={copy} locale="en" />);
 
-    expect(await screen.findByRole("link", { name: "Buy now" })).toBeVisible();
-
+    const heroCta = await screen.findByRole("link", { name: "Buy now" });
+    expect(farmbriteCtas()).toHaveLength(1);
+    expect(farmbriteCtas()[0]).toBe(heroCta);
+    expect(heroCta).toBeVisible();
+    expect(heroCta).toHaveAttribute("href", FARM_BRITE_MEMBERSHIPS_URL);
+    expect(heroCta).not.toHaveAttribute("target");
+    expect(heroCta).not.toHaveAttribute("rel");
+    expect(
+      screen.getByRole("heading", {
+        name: "What does CSA offer beyond individual shopping?",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Individual shopping" }),
+    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: "CSA" })).toBeVisible();
+    expect(
+      screen.getByText("Choose products when you need them"),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Signing up in advance helps the farm plan ahead"),
+    ).toBeVisible();
     const benefits = screen.getByRole("region", { name: copy.eyebrow });
-    expect(benefits.querySelectorAll("li")).toHaveLength(4);
+    const benefitList = within(benefits).getByRole("list");
+    expect(within(benefitList).getAllByRole("listitem")).toHaveLength(4);
     expect(within(benefits).getByText("Receive products weekly")).toBeVisible();
     expect(
       within(benefits).getByText("Free delivery for CSA members"),
@@ -226,6 +289,42 @@ describe("public CSA Membership", () => {
     expect(
       within(benefits).getByText("From farm to table within 24 hours"),
     ).toBeVisible();
+  });
+
+  it("keeps only the Hero CTA in the empty catalog state", async () => {
+    vi.mocked(accountApi).mockResolvedValue(catalog([]));
+    render(<CsaPage copy={getSiteContent("en").csa} locale="en" />);
+
+    expect(
+      await screen.findByText("There are no packages available right now."),
+    ).toBeVisible();
+    const heroCta = screen.getByRole("link", { name: "Buy now" });
+    expect(heroCta).toBeVisible();
+    expect(farmbriteCtas()).toHaveLength(1);
+    expect(farmbriteCtas()[0]).toBe(heroCta);
+  });
+
+  it("keeps only the Hero CTA while packages load and after an error", async () => {
+    vi.mocked(accountApi).mockImplementation(
+      () => new Promise(() => undefined),
+    );
+    const loadingView = render(
+      <CsaPage copy={getSiteContent("en").csa} locale="en" />,
+    );
+
+    expect(screen.getByText("Loading packages…")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Buy now" })).toBeVisible();
+    expect(farmbriteCtas()).toHaveLength(1);
+    loadingView.unmount();
+
+    vi.mocked(accountApi).mockRejectedValue(new Error("Unavailable"));
+    render(<CsaPage copy={getSiteContent("en").csa} locale="en" />);
+
+    expect(
+      await screen.findByText("We could not load packages. Please try again."),
+    ).toBeVisible();
+    expect(screen.getByRole("link", { name: "Buy now" })).toBeVisible();
+    expect(farmbriteCtas()).toHaveLength(1);
   });
 
   it("paginates all active packages without loading every page", async () => {
