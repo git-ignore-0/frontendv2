@@ -2606,6 +2606,329 @@ tbody th {
   stroke-width: 2.4;
   animation: copy-confirmation 0.22s var(--ease);
 }
+.referral-share-trigger {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+.referral-share-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: max(0.75rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+  background: rgba(12, 31, 26, 0.72);
+}
+.referral-share-dialog {
+  position: relative;
+  width: min(100%, 38rem);
+  max-height: calc(100dvh - 1.5rem);
+  overflow-y: auto;
+  padding: clamp(1.15rem, 4vw, 1.75rem);
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  background: var(--paper);
+  box-shadow: 0 8px 24px rgba(12, 31, 26, 0.14);
+}
+.referral-share-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+.referral-share-close:hover,
+.referral-share-close:focus-visible {
+  background: color-mix(in srgb, var(--forest) 6%, transparent);
+  color: var(--forest);
+}
+.referral-share-dialog h2 {
+  margin: 0 2.75rem 0.5rem 0;
+  color: var(--forest);
+  font-family: var(--font-body), sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.referral-share-dialog > p {
+  margin: 0 0 1.15rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.referral-share-field {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.referral-share-field label {
+  color: var(--forest);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+.referral-share-copy-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+}
+.referral-share-field input,
+.referral-share-field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.5;
+}
+.referral-share-field input {
+  min-height: 48px;
+}
+.referral-share-field textarea {
+  min-height: 10rem;
+  resize: vertical;
+}
+.referral-share-field button {
+  min-height: 48px;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--forest);
+  border-radius: 0.65rem;
+  background: var(--forest);
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+}
+.referral-share-copy-message {
+  justify-self: end;
+}
+.referral-share-message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+.referral-platform-share {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+.referral-platform-share h3 {
+  margin: 0;
+  color: var(--forest);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+.referral-platform-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+.referral-share-field .referral-platform-button {
+  min-height: 48px;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid;
+  border-radius: 0.65rem;
+  border-color: color-mix(in srgb, var(--forest) 24%, var(--line));
+  background: color-mix(in srgb, var(--paper) 88%, white);
+  color: var(--forest);
+  font-weight: 800;
+  text-decoration: none;
+}
+.referral-platform-button:hover {
+  border-color: var(--forest);
+  background: color-mix(in srgb, var(--forest) 6%, var(--paper));
+}
+.referral-platform-button svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+.referral-platform-button:first-child svg {
+  fill: currentcolor;
+  stroke: none;
+}
+.referral-platform-button span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.referral-native-share:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.referral-share-feedback {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.referral-share-feedback.is-copied {
+  color: var(--forest);
+}
+.referral-share-feedback.is-failed {
+  color: var(--terra);
+}
+.referral-public-landing {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: clamp(1rem, 4vw, 3rem);
+  background:
+    radial-gradient(
+      circle at 85% 15%,
+      color-mix(in srgb, var(--straw) 38%, transparent) 0,
+      transparent 28rem
+    ),
+    var(--cream);
+}
+.referral-public-landing-shell {
+  width: min(100%, 70rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.95fr);
+  align-items: center;
+  gap: clamp(2rem, 7vw, 6rem);
+}
+.referral-public-landing-copy {
+  min-width: 0;
+}
+.referral-public-landing-copy .eyebrow {
+  margin-bottom: 1rem;
+}
+.referral-public-landing-copy h1 {
+  max-width: 12ch;
+  margin: 0;
+  color: var(--forest);
+  font-family: var(--font-display), serif;
+  font-size: clamp(2.4rem, 6vw, 5.3rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+.referral-public-landing-description {
+  max-width: 39rem;
+  margin: clamp(1.25rem, 3vw, 2rem) 0 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  line-height: 1.75;
+}
+.referral-public-landing-cta {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+  padding: 0.8rem 1.15rem;
+  border: 1px solid var(--forest);
+  border-radius: 0.65rem;
+  background: var(--forest);
+  color: white;
+  font-weight: 800;
+  transition:
+    border-color 0.18s var(--ease),
+    background-color 0.18s var(--ease),
+    transform 0.18s var(--ease);
+}
+.referral-public-landing-cta:hover {
+  border-color: var(--moss);
+  background: var(--moss);
+  transform: translateY(-1px);
+}
+.referral-public-landing-cta svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+.referral-public-landing-visual {
+  position: relative;
+  min-height: clamp(22rem, 42vw, 32rem);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--forest) 18%, transparent);
+  border-radius: clamp(1.25rem, 3vw, 2rem);
+  background: var(--forest);
+  color: var(--cream);
+  box-shadow: 0 24px 70px rgba(12, 31, 26, 0.16);
+}
+.referral-public-landing-sun {
+  position: absolute;
+  top: 14%;
+  right: 13%;
+  width: clamp(5rem, 11vw, 8rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--straw);
+}
+.referral-public-landing-field {
+  position: absolute;
+  right: -12%;
+  bottom: -18%;
+  left: -12%;
+  height: 58%;
+  border-radius: 50% 50% 0 0;
+  background: var(--moss);
+  transform: rotate(-5deg);
+}
+.referral-public-landing-field::after {
+  content: "";
+  position: absolute;
+  inset: 22% -8% -10%;
+  border-radius: 50% 50% 0 0;
+  background: var(--soil);
+  transform: rotate(9deg);
+}
+.referral-public-landing-sprout {
+  position: absolute;
+  z-index: 1;
+  top: 27%;
+  left: 18%;
+  width: clamp(8rem, 18vw, 13rem);
+  height: auto;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+.referral-public-landing-note {
+  position: absolute;
+  z-index: 2;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  margin: 0;
+  color: var(--cream);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
 .copy-status-error {
   margin: 0.75rem 0 0;
   color: var(--terra);
@@ -2622,6 +2945,23 @@ tbody th {
   .referral-code-control button.is-copied svg {
     transition: none;
     animation: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .referral-public-landing {
+    align-items: start;
+    padding-block: clamp(1.5rem, 8vw, 3rem);
+  }
+  .referral-public-landing-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+  .referral-public-landing-copy h1 {
+    max-width: 14ch;
+  }
+  .referral-public-landing-visual {
+    min-height: clamp(16rem, 82vw, 23rem);
   }
 }
 
@@ -3896,6 +4236,59 @@ tbody th {
   margin: 0;
   color: var(--terra);
 }
+.referral-confirmation {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+.referral-confirmation > p {
+  margin: 0;
+}
+.referral-confirmation label {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--forest);
+  font-weight: 800;
+}
+.referral-confirmation input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: var(--cream);
+  color: var(--ink);
+  font: inherit;
+}
+.referral-confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.referral-confirmation-actions button {
+  min-height: 48px;
+  padding-inline: 1rem;
+  border: 1px solid var(--forest);
+  border-radius: 0.65rem;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.referral-confirmation-actions button:first-child {
+  background: var(--forest);
+  color: white;
+}
+.referral-confirmation-actions button:last-child {
+  background: transparent;
+  color: var(--forest);
+}
+.referral-confirmation-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+.referral-confirmation > [role="alert"] {
+  color: var(--terra);
+}
 .referral-detail-page,
 .invited-people-page {
   max-width: 45rem;
@@ -4889,6 +5282,19 @@ tbody th {
   .referral-code-control code {
     padding: 0.25rem;
     text-align: center;
+  }
+  .referral-share-copy-row {
+    grid-template-columns: 1fr;
+  }
+  .referral-share-copy-message,
+  .referral-share-field button {
+    width: 100%;
+  }
+  .referral-share-message-actions {
+    display: grid;
+  }
+  .referral-platform-grid {
+    grid-template-columns: 1fr;
   }
   .referral-invited-summary {
     align-items: flex-start;

@@ -22,8 +22,7 @@ vi.mock("@/lib/auth/session", () => ({
   })),
   writeSession: vi.fn(),
 }));
-
-import { GET } from "@/app/api/account/[...path]/route";
+import { GET, POST } from "@/app/api/account/[...path]/route";
 import { readSession, writeSession } from "@/lib/auth/session";
 
 afterEach(() => {
@@ -102,4 +101,45 @@ describe("account BFF proxy", () => {
     expect(await current.json()).toEqual({ error: "unauthorized" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it("proxies successful and rejected submit-code responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(Response.json({ data: summaryResponse }))
+        .mockResolvedValueOnce(
+          Response.json({ error: "invalid_referral_code" }, { status: 400 }),
+        ),
+    );
+    const context = {
+      params: Promise.resolve({ path: ["submit-code"] }),
+    };
+
+    const successful = await POST(submitCodeRequest(), context);
+    expect(successful.status).toBe(200);
+
+    const failed = await POST(submitCodeRequest(), context);
+    expect(failed.status).toBe(400);
+  });
 });
+
+const summaryResponse = {
+  referral_code: "NFV2345678",
+  referrer: { id: "2", name: "Referrer" },
+  can_submit_referral_code: false,
+  points_balance: 0,
+  invited_count: 0,
+};
+
+function submitCodeRequest() {
+  return new NextRequest("https://site.example.test/api/account/submit-code", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Origin: "https://site.example.test",
+      "X-NFV-Public-Request": "1",
+    },
+    body: JSON.stringify({ code: "NFV2345678" }),
+  });
+}

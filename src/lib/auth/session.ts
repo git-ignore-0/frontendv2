@@ -22,6 +22,7 @@ export type OAuthFlow = {
   verifier: string;
   returnTo: string;
   locale: Locale;
+  referralCode?: string;
 };
 
 function key() {

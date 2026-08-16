@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import type { SiteContent } from "@/content/site-content";
 import {
@@ -13,6 +14,7 @@ import {
   referralErrorKey,
 } from "@/features/account/api";
 import { ReferralCodeButton } from "@/features/account/referral-code-button";
+import { ReferralShareDialog } from "@/features/account/referral-share-dialog";
 import {
   AccountDetailHeader,
   AccountEmptyState,
@@ -31,18 +33,24 @@ type Copy = SiteContent["account"];
 export function ReferralProgramPage({
   locale,
   copy,
+  pendingReferralCode,
+  publicSiteOrigin,
   returnTo,
 }: {
   locale: Locale;
   copy: Copy;
+  pendingReferralCode?: string;
+  publicSiteOrigin: string;
   returnTo?: string | string[] | null;
 }) {
+  const router = useRouter();
   const { load, setSummary, state, summary } = useAccountSummary();
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [confirmationDismissed, setConfirmationDismissed] = useState(false);
   const returnPath = `/account/${locale}/referral`;
   const currentLevelOnePath = buildAccountLevelOnePath({
     locale,
@@ -55,8 +63,10 @@ export function ReferralProgramPage({
     currentPath: returnPath,
   });
 
-  async function submitCode(event: FormEvent) {
-    event.preventDefault();
+  async function submitReferralCode(
+    submittedCode: string,
+    removePendingReferral: boolean,
+  ) {
     if (submittingRef.current) return;
     submittingRef.current = true;
     setSubmitting(true);
@@ -64,10 +74,11 @@ export function ReferralProgramPage({
     try {
       const payload = await accountApi<AccountSummary>("submit-code", {
         method: "POST",
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code: submittedCode }),
       });
       setSummary(payload.data);
       setCode("");
+      if (removePendingReferral) router.replace(currentLevelOnePath);
     } catch (error) {
       if (isAccountSessionError(error)) {
         setSessionExpired(true);
@@ -80,6 +91,25 @@ export function ReferralProgramPage({
       setSubmitting(false);
     }
   }
+
+  function submitCode(event: FormEvent) {
+    event.preventDefault();
+    void submitReferralCode(code, false);
+  }
+
+  function dismissConfirmation() {
+    setConfirmationDismissed(true);
+    setCodeError("");
+    router.replace(currentLevelOnePath);
+  }
+
+  const showConfirmation = Boolean(
+    pendingReferralCode &&
+    !confirmationDismissed &&
+    summary &&
+    !summary.referrer &&
+    summary.can_submit_referral_code,
+  );
 
   if (state === "signed-out" || sessionExpired) {
     return (
@@ -120,6 +150,12 @@ export function ReferralProgramPage({
               {copy.codeLabel}
             </p>
             <ReferralCodeButton code={summary.referral_code} copy={copy} />
+            <ReferralShareDialog
+              code={summary.referral_code}
+              copy={copy}
+              locale={locale}
+              origin={publicSiteOrigin}
+            />
             <div className="referral-invited-summary">
               <span>
                 {copy.invitedCount.replace(
@@ -139,11 +175,42 @@ export function ReferralProgramPage({
               aria-labelledby="referral-entry-title"
               className="referral-detail-section referral-entry-section"
             >
-              <h2 id="referral-entry-title">{copy.enterCodeTitle}</h2>
+              <h2 id="referral-entry-title">
+                {showConfirmation
+                  ? copy.applyReferralTitle
+                  : copy.enterCodeTitle}
+              </h2>
               {summary.referrer ? (
                 <p className="referrer-status">
                   {copy.referredBy.replace("{name}", summary.referrer.name)}
                 </p>
+              ) : showConfirmation && pendingReferralCode ? (
+                <div className="referral-confirmation">
+                  <p>{copy.applyReferralDescription}</p>
+                  <label>
+                    <span>{copy.invitationReferralCode}</span>
+                    <input readOnly value={pendingReferralCode} />
+                  </label>
+                  <div className="referral-confirmation-actions">
+                    <button
+                      disabled={submitting}
+                      onClick={() =>
+                        void submitReferralCode(pendingReferralCode, true)
+                      }
+                      type="button"
+                    >
+                      {submitting ? copy.submitting : copy.applyReferralCode}
+                    </button>
+                    <button
+                      disabled={submitting}
+                      onClick={dismissConfirmation}
+                      type="button"
+                    >
+                      {copy.notNow}
+                    </button>
+                  </div>
+                  {codeError ? <p role="alert">{codeError}</p> : null}
+                </div>
               ) : (
                 <form className="referral-entry" onSubmit={submitCode}>
                   <label>

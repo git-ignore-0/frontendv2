@@ -19,6 +19,10 @@ import { ReferralProgramPage } from "@/features/account/referral-program-page";
 import type { AccountSummary } from "@/features/account/types";
 
 const navigation = vi.hoisted(() => ({ back: vi.fn(), replace: vi.fn() }));
+const originalClipboard = Object.getOwnPropertyDescriptor(
+  navigator,
+  "clipboard",
+);
 
 vi.mock("next/navigation", () => ({
   useRouter: () => navigation,
@@ -33,6 +37,12 @@ vi.mock("@/features/account/api", async (importOriginal) => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
+  if (originalClipboard) {
+    Object.defineProperty(navigator, "clipboard", originalClipboard);
+  } else {
+    Reflect.deleteProperty(navigator, "clipboard");
+  }
 });
 
 const summary = {
@@ -42,6 +52,7 @@ const summary = {
   points_balance: 100,
   invited_count: 1,
 };
+const publicSiteOrigin = "https://www.naturalfarmingvietnam.com";
 
 function mockAccount() {
   vi.mocked(accountApi).mockImplementation(async (path) => {
@@ -89,12 +100,143 @@ function mockAccount() {
 }
 
 describe("public account pages", () => {
+  it("opens the English share dialog and copies the current link and edited message", async () => {
+    mockAccount();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(
+      <ReferralProgramPage
+        locale="en"
+        copy={getSiteContent("en").account}
+        publicSiteOrigin={publicSiteOrigin}
+      />,
+    );
+
+    const shareButton = await screen.findByRole("button", { name: "Share" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(shareButton);
+    const dialog = screen.getByRole("dialog", {
+      name: "Share your referral link",
+    });
+    const referralUrl =
+      "https://www.naturalfarmingvietnam.com/ref/NFV1234567?locale=en";
+    expect(screen.getByLabelText("Your referral link")).toHaveValue(
+      referralUrl,
+    );
+    expect(
+      (screen.getByLabelText("Message to share") as HTMLTextAreaElement).value,
+    ).toContain(`Check them out: ${referralUrl} 🌱`);
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(referralUrl));
+    expect(screen.getByText("Referral link copied.")).toBeInTheDocument();
+
+    const editedMessage = `My edited invitation ${referralUrl}`;
+    fireEvent.change(screen.getByLabelText("Message to share"), {
+      target: { value: editedMessage },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Copy message" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(editedMessage));
+    expect(screen.getByText("Share message copied.")).toBeInTheDocument();
+
+    fireEvent.mouseDown(dialog);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(shareButton).toHaveFocus();
+
+    fireEvent.click(shareButton);
+    expect(screen.getByLabelText("Message to share")).not.toHaveValue(
+      editedMessage,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Close share dialog" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("falls back when the Clipboard API rejects and reports copy success", async () => {
+    mockAccount();
+    const writeText = vi.fn().mockRejectedValue(new Error("Not allowed"));
+    const execCommand = vi.fn().mockReturnValue(true);
+    const originalExecCommand = Object.getOwnPropertyDescriptor(
+      document,
+      "execCommand",
+    );
+    Object.assign(navigator, { clipboard: { writeText } });
+    Object.defineProperty(document, "execCommand", {
+      configurable: true,
+      value: execCommand,
+    });
+
+    try {
+      render(
+        <ReferralProgramPage
+          locale="en"
+          copy={getSiteContent("en").account}
+          publicSiteOrigin={publicSiteOrigin}
+        />,
+      );
+      fireEvent.click(await screen.findByRole("button", { name: "Share" }));
+      const copyLinkButton = screen.getByRole("button", { name: "Copy link" });
+      copyLinkButton.focus();
+      fireEvent.click(copyLinkButton);
+
+      await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(execCommand).toHaveBeenCalledWith("copy"));
+      expect(screen.getByText("Referral link copied.")).toBeInTheDocument();
+      expect(
+        screen.queryByText(/could not copy the referral link/i),
+      ).not.toBeInTheDocument();
+      expect(copyLinkButton).toHaveFocus();
+    } finally {
+      if (originalExecCommand) {
+        Object.defineProperty(document, "execCommand", originalExecCommand);
+      } else {
+        Reflect.deleteProperty(document, "execCommand");
+      }
+    }
+  });
+
+  it("uses Vietnamese share labels, message, and referral URL", async () => {
+    mockAccount();
+    render(
+      <ReferralProgramPage
+        locale="vi"
+        copy={getSiteContent("vi").account}
+        publicSiteOrigin={publicSiteOrigin}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Chia sẻ" }));
+    const referralUrl =
+      "https://www.naturalfarmingvietnam.com/ref/NFV1234567?locale=vi";
+    expect(
+      screen.getByRole("dialog", { name: "Chia sẻ liên kết giới thiệu" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Liên kết giới thiệu của bạn")).toHaveValue(
+      referralUrl,
+    );
+    expect(
+      (screen.getByLabelText("Tin nhắn chia sẻ") as HTMLTextAreaElement).value,
+    ).toContain(`Xem thêm tại: ${referralUrl} 🌱`);
+    expect(
+      screen.getByRole("button", { name: "Sao chép liên kết" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Sao chép tin nhắn" }),
+    ).toBeInTheDocument();
+  });
+
   it("keeps referral details and guidance on one compact detail page", async () => {
     mockAccount();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     render(
-      <ReferralProgramPage locale="en" copy={getSiteContent("en").account} />,
+      <ReferralProgramPage
+        locale="en"
+        copy={getSiteContent("en").account}
+        publicSiteOrigin={publicSiteOrigin}
+      />,
     );
 
     expect(
@@ -127,6 +269,9 @@ describe("public account pages", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Copy code" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("NFV1234567"));
+    expect(
+      await screen.findByText("Referral code copied."),
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Enter a referral code"), {
       target: { value: "REFCODE123" },
@@ -140,12 +285,119 @@ describe("public account pages", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("requires confirmation before applying a referral link code", async () => {
+    let postCount = 0;
+    vi.mocked(accountApi).mockImplementation(async (_path, init) => {
+      if (init?.method !== "POST") return { data: summary };
+      postCount += 1;
+      return {
+        data: {
+          ...summary,
+          referrer: { id: "2", name: "Invitation owner" },
+          can_submit_referral_code: false,
+        },
+      };
+    });
+
+    render(
+      <ReferralProgramPage
+        locale="en"
+        copy={getSiteContent("en").account}
+        pendingReferralCode="NFV2345678"
+        publicSiteOrigin={publicSiteOrigin}
+        returnTo="/workshops/en"
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Apply referral code?" }),
+    ).toBeInTheDocument();
+    const invitationCode = screen.getByLabelText(
+      "Referral code from invitation",
+    );
+    expect(invitationCode).toHaveValue("NFV2345678");
+    expect(invitationCode).toHaveAttribute("readonly");
+    expect(screen.queryByLabelText("Enter a referral code")).toBeNull();
+    expect(postCount).toBe(0);
+
+    const apply = screen.getByRole("button", { name: "Apply code" });
+    fireEvent.click(apply);
+    fireEvent.click(apply);
+    expect(postCount).toBe(1);
+    expect(
+      await screen.findByText("You were referred by Invitation owner."),
+    ).toBeInTheDocument();
+    expect(accountApi).toHaveBeenCalledWith("submit-code", {
+      method: "POST",
+      body: JSON.stringify({ code: "NFV2345678" }),
+    });
+    expect(navigation.replace).toHaveBeenCalledWith(
+      "/account/en/referral?returnTo=%2Fworkshops%2Fen",
+    );
+  });
+
+  it("dismisses referral confirmation without submitting and supports Vietnamese labels", async () => {
+    mockAccount();
+    render(
+      <ReferralProgramPage
+        locale="vi"
+        copy={getSiteContent("vi").account}
+        pendingReferralCode="NFV2345678"
+        publicSiteOrigin={publicSiteOrigin}
+        returnTo="/vi"
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Áp dụng mã giới thiệu?" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Áp dụng mã" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Để sau" }));
+
+    expect(screen.getByLabelText("Nhập mã giới thiệu")).toBeInTheDocument();
+    expect(navigation.replace).toHaveBeenCalledWith(
+      "/account/vi/referral?returnTo=%2Fvi",
+    );
+    expect(accountApi).not.toHaveBeenCalledWith(
+      "submit-code",
+      expect.anything(),
+    );
+  });
+
+  it("keeps a failed referral confirmation available for retry", async () => {
+    vi.mocked(accountApi).mockImplementation(async (_path, init) => {
+      if (init?.method !== "POST") return { data: summary };
+      throw new AccountApiError("invalid_referral_code", 400);
+    });
+    render(
+      <ReferralProgramPage
+        locale="en"
+        copy={getSiteContent("en").account}
+        pendingReferralCode="NFV2345678"
+        publicSiteOrigin={publicSiteOrigin}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Apply code" }));
+    expect(
+      await screen.findByText("That referral code is not valid."),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Referral code from invitation")).toHaveValue(
+      "NFV2345678",
+    );
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
+
   it("uses the shared signed-out state when the referral session expires", async () => {
     vi.mocked(accountApi).mockRejectedValueOnce(
       new AccountApiError("session_expired", 401),
     );
     render(
-      <ReferralProgramPage locale="en" copy={getSiteContent("en").account} />,
+      <ReferralProgramPage
+        locale="en"
+        copy={getSiteContent("en").account}
+        publicSiteOrigin={publicSiteOrigin}
+      />,
     );
 
     expect(
@@ -175,7 +427,11 @@ describe("public account pages", () => {
     });
 
     render(
-      <ReferralProgramPage locale="en" copy={getSiteContent("en").account} />,
+      <ReferralProgramPage
+        locale="en"
+        copy={getSiteContent("en").account}
+        publicSiteOrigin={publicSiteOrigin}
+      />,
     );
     await screen.findByRole("heading", { name: "How it works" });
     const input = screen.getByLabelText("Enter a referral code");
@@ -223,7 +479,11 @@ describe("public account pages", () => {
     });
 
     render(
-      <ReferralProgramPage locale="en" copy={getSiteContent("en").account} />,
+      <ReferralProgramPage
+        locale="en"
+        copy={getSiteContent("en").account}
+        publicSiteOrigin={publicSiteOrigin}
+      />,
     );
     await screen.findByRole("heading", { name: "How it works" });
     const input = screen.getByLabelText("Enter a referral code");

@@ -11,10 +11,15 @@ import {
 } from "@/lib/auth/oauth";
 import { writeOAuthFlow } from "@/lib/auth/session";
 import { defaultLocale, isLocale, localizedPath } from "@/lib/i18n";
+import { isReferralCode } from "@/lib/referral-code";
 
 export async function beginOAuth(
   request: NextRequest,
-  options: { signup?: boolean } = {},
+  options: {
+    referralCode?: string;
+    returnTo?: string;
+    signup?: boolean;
+  } = {},
 ) {
   const requestedLocale = request.nextUrl.searchParams.get("locale");
   const locale =
@@ -23,12 +28,24 @@ export async function beginOAuth(
       : defaultLocale;
   const fallback = localizedPath(locale);
   const returnTo = safeReturnTo(
-    request.nextUrl.searchParams.get("returnTo"),
+    options.returnTo ?? request.nextUrl.searchParams.get("returnTo"),
     fallback,
   );
   const state = randomUrlSafe();
   const verifier = randomUrlSafe(48);
-  await writeOAuthFlow({ state, verifier, returnTo, locale });
+  const referralCode =
+    options.signup &&
+    options.referralCode &&
+    isReferralCode(options.referralCode)
+      ? options.referralCode
+      : undefined;
+  await writeOAuthFlow({
+    state,
+    verifier,
+    returnTo,
+    locale,
+    ...(referralCode ? { referralCode } : {}),
+  });
 
   const authorize = new URL(`${authOrigin()}/oauth/authorize`);
   authorize.search = new URLSearchParams({
@@ -41,6 +58,7 @@ export async function beginOAuth(
     code_challenge_method: "S256",
     ui_locales: locale,
     ...(options.signup ? { screen_hint: "signup" } : {}),
+    ...(referralCode ? { referral_code: referralCode } : {}),
   }).toString();
   return NextResponse.redirect(authorize);
 }

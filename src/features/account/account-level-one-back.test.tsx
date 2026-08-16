@@ -14,6 +14,7 @@ import { AccountMembershipPage } from "@/features/membership/account-membership-
 
 const navigation = vi.hoisted(() => ({ back: vi.fn(), replace: vi.fn() }));
 const copy = getSiteContent("en").account;
+const publicSiteOrigin = "https://www.naturalfarmingvietnam.com";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => navigation,
@@ -92,7 +93,12 @@ const levelOnePages = [
     name: "Referral",
     renderPage: (returnTo?: string | null) =>
       render(
-        <ReferralProgramPage copy={copy} locale="en" returnTo={returnTo} />,
+        <ReferralProgramPage
+          copy={copy}
+          locale="en"
+          publicSiteOrigin={publicSiteOrigin}
+          returnTo={returnTo}
+        />,
       ),
   },
   {
@@ -203,7 +209,12 @@ describe("level-one signed-out continuations", () => {
       new AccountApiError("session_expired", 401),
     );
     render(
-      <ReferralProgramPage copy={copy} locale="en" returnTo="/workshops/en" />,
+      <ReferralProgramPage
+        copy={copy}
+        locale="en"
+        publicSiteOrigin={publicSiteOrigin}
+        returnTo="/workshops/en"
+      />,
     );
 
     expect(

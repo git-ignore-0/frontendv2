@@ -17,7 +17,7 @@ const en = {
     primaryNavigation: "Primary navigation",
     mobileNavigation: "Mobile navigation",
     footerNavigation: "Footer navigation",
-    referralFab: "Invite friends, earn rewards",
+    referralFab: "Share with friends",
     homeLabel: "Natural Farming Vietnam home",
     nav: {
       home: "Home",
@@ -57,6 +57,15 @@ const en = {
       cta: "Return home",
     },
   },
+  referralShareLanding: {
+    eyebrow: "You’ve been invited",
+    title: "Naturally grown food, shared with care.",
+    description:
+      "Discover naturally grown food from Natural Farming Vietnam, where every purchase helps support and train the next generation of Vietnamese farmers.",
+    cta: "Explore Natural Farming Vietnam",
+    visualNote: "Living soil · Naturally grown",
+    imageAlt: "Natural Farming Vietnam invitation preview",
+  },
   account: {
     navigation: "Account navigation",
     points: "Points",
@@ -81,6 +90,34 @@ const en = {
     copiedButton: "Copied",
     copied: "Referral code copied.",
     copyFailed: "We could not copy the referral code. Please copy it manually.",
+    share: "Share",
+    shareDialogTitle: "Share your referral link",
+    shareDialogDescription:
+      "Share your personal link with friends. When they sign up through it, your referral code is applied automatically.",
+    closeShareDialog: "Close share dialog",
+    referralLinkLabel: "Your referral link",
+    copyLink: "Copy link",
+    linkCopied: "Referral link copied.",
+    linkCopyFailed:
+      "We could not copy the referral link. Please copy it manually.",
+    shareMessageLabel: "Message to share",
+    defaultShareMessage:
+      "I’ve been getting fresh produce from Natural Farming Vietnam and honestly, the quality is unmatched — everything’s grown naturally, with no shortcuts. Plus every purchase supports a farm that’s training the next generation of Vietnamese farmers. Check them out: {link} 🌱",
+    copyMessage: "Copy message",
+    shareViaApps: "Share via apps",
+    nativeShareFailed:
+      "Unable to open sharing options. Please copy the message instead.",
+    shareOn: "Share on",
+    facebook: "Facebook",
+    whatsapp: "WhatsApp",
+    email: "Email",
+    shareOnFacebook: "Share on Facebook",
+    shareViaWhatsApp: "Share via WhatsApp",
+    shareByEmail: "Share by email",
+    emailShareSubject: "Check out Natural Farming Vietnam",
+    messageCopied: "Share message copied.",
+    messageCopyFailed:
+      "We could not copy the message. Please select and copy it manually.",
     enterCode: "Enter a referral code",
     codePlaceholder: "Referral code",
     submitCode: "Submit code",
@@ -112,8 +149,8 @@ const en = {
     signIn: "Sign in",
     signInToRedeem: "Sign in to redeem {name}",
     signInToRedeemLabel: "Sign in to redeem",
-    referralProgramMetadataTitle: "Invite friends and earn rewards",
-    referralProgramTitle: "Invite friends, earn rewards",
+    referralProgramMetadataTitle: "Share with friends, earn rewards",
+    referralProgramTitle: "Share with friends, earn rewards",
     referralProgramIntro:
       "Share farm-fresh food with people you trust. When an eligible order is confirmed, you earn points to redeem for available produce.",
     programTitle: "How it works",
@@ -155,6 +192,12 @@ const en = {
     personalCodeLoading: "Loading your referral code…",
     personalCodeError: "We could not load your referral code.",
     enterCodeTitle: "Were you invited?",
+    applyReferralTitle: "Apply referral code?",
+    applyReferralDescription:
+      "You opened an invitation link. Confirm this code before it is applied to your account.",
+    invitationReferralCode: "Referral code from invitation",
+    applyReferralCode: "Apply code",
+    notNow: "Not now",
     rewardsMetadataTitle: "Reward catalog",
     catalogIntro:
       "This catalog reflects the rewards currently available from our team.",
@@ -592,7 +635,7 @@ const vi: SiteContent = {
     primaryNavigation: "Điều hướng chính",
     mobileNavigation: "Điều hướng di động",
     footerNavigation: "Điều hướng chân trang",
-    referralFab: "Giới thiệu bạn, nhận quà",
+    referralFab: "Chia sẻ với bạn bè",
     homeLabel: "Trang chủ Natural Farming Vietnam",
     nav: {
       home: "Trang chủ",
@@ -632,6 +675,15 @@ const vi: SiteContent = {
       cta: "Về trang chủ",
     },
   },
+  referralShareLanding: {
+    eyebrow: "Bạn được mời khám phá",
+    title: "Nông sản thuận tự nhiên, sẻ chia bằng sự quan tâm.",
+    description:
+      "Khám phá nông sản được canh tác tự nhiên từ Natural Farming Vietnam, nơi mỗi lần mua hàng góp phần hỗ trợ và đào tạo thế hệ nông dân Việt Nam tiếp theo.",
+    cta: "Khám phá Natural Farming Vietnam",
+    visualNote: "Đất sống · Canh tác tự nhiên",
+    imageAlt: "Ảnh xem trước lời mời Natural Farming Vietnam",
+  },
   account: {
     navigation: "Điều hướng tài khoản",
     points: "Điểm",
@@ -656,6 +708,34 @@ const vi: SiteContent = {
     copiedButton: "Đã sao chép",
     copied: "Đã sao chép mã giới thiệu.",
     copyFailed: "Không thể sao chép mã giới thiệu. Vui lòng sao chép thủ công.",
+    share: "Chia sẻ",
+    shareDialogTitle: "Chia sẻ liên kết giới thiệu",
+    shareDialogDescription:
+      "Chia sẻ liên kết cá nhân với bạn bè. Khi họ đăng ký qua liên kết này, mã giới thiệu của bạn sẽ được áp dụng tự động.",
+    closeShareDialog: "Đóng hộp thoại chia sẻ",
+    referralLinkLabel: "Liên kết giới thiệu của bạn",
+    copyLink: "Sao chép liên kết",
+    linkCopied: "Đã sao chép liên kết giới thiệu.",
+    linkCopyFailed:
+      "Không thể sao chép liên kết giới thiệu. Vui lòng sao chép thủ công.",
+    shareMessageLabel: "Tin nhắn chia sẻ",
+    defaultShareMessage:
+      "Mình đã mua nông sản từ Natural Farming Vietnam và thực sự chất lượng rất tốt — mọi thứ được canh tác tự nhiên, không có đường tắt. Hơn nữa, mỗi lần mua hàng là một lần góp phần đào tạo thế hệ nông dân Việt Nam tiếp theo. Xem thêm tại: {link} 🌱",
+    copyMessage: "Sao chép tin nhắn",
+    shareViaApps: "Chia sẻ qua ứng dụng",
+    nativeShareFailed:
+      "Không thể mở tùy chọn chia sẻ. Vui lòng sao chép tin nhắn để gửi.",
+    shareOn: "Chia sẻ qua",
+    facebook: "Facebook",
+    whatsapp: "WhatsApp",
+    email: "Email",
+    shareOnFacebook: "Chia sẻ trên Facebook",
+    shareViaWhatsApp: "Chia sẻ qua WhatsApp",
+    shareByEmail: "Chia sẻ qua email",
+    emailShareSubject: "Khám phá Natural Farming Vietnam",
+    messageCopied: "Đã sao chép tin nhắn chia sẻ.",
+    messageCopyFailed:
+      "Không thể sao chép tin nhắn. Vui lòng chọn và sao chép thủ công.",
     enterCode: "Nhập mã giới thiệu",
     codePlaceholder: "Mã giới thiệu",
     submitCode: "Gửi mã",
@@ -687,8 +767,8 @@ const vi: SiteContent = {
     signIn: "Đăng nhập",
     signInToRedeem: "Đăng nhập để đổi {name}",
     signInToRedeemLabel: "Đăng nhập để đổi quà",
-    referralProgramMetadataTitle: "Giới thiệu bạn nhận quà",
-    referralProgramTitle: "Giới thiệu bạn, nhận quà",
+    referralProgramMetadataTitle: "Chia sẻ với bạn bè, nhận quà",
+    referralProgramTitle: "Chia sẻ với bạn bè, nhận quà",
     referralProgramIntro:
       "Chia sẻ thực phẩm tươi từ nông trại với người bạn tin tưởng. Khi đơn hàng đủ điều kiện được xác nhận, bạn nhận điểm để đổi quà đang có.",
     programTitle: "Chương trình hoạt động thế nào?",
@@ -730,6 +810,12 @@ const vi: SiteContent = {
     personalCodeLoading: "Đang tải mã mời…",
     personalCodeError: "Không thể tải mã mời của bạn.",
     enterCodeTitle: "Bạn được ai đó giới thiệu?",
+    applyReferralTitle: "Áp dụng mã giới thiệu?",
+    applyReferralDescription:
+      "Bạn đã mở một liên kết giới thiệu. Hãy xác nhận mã này trước khi áp dụng vào tài khoản.",
+    invitationReferralCode: "Mã giới thiệu từ liên kết mời",
+    applyReferralCode: "Áp dụng mã",
+    notNow: "Để sau",
     rewardsMetadataTitle: "Danh sách quà",
     catalogIntro:
       "Danh mục này được cập nhật theo các phần quà hiện đang được đội ngũ cung cấp.",
