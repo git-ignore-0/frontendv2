@@ -132,6 +132,244 @@ function catalog(
 }
 
 describe("public CSA Membership", () => {
+  it.each(["en", "vi"] as const)(
+    "renders the %s comparison sections between packages and the weekly timeline",
+    async (locale) => {
+      vi.mocked(accountApi).mockResolvedValue(catalog());
+      const copy = getSiteContent(locale).csa;
+      render(<CsaPage copy={copy} locale={locale} />);
+
+      const packages = screen.getByRole("region", {
+        name: copy.packagesTitle,
+      });
+      const comparisons = copy.comparisons.map((comparison) =>
+        screen.getByRole("region", { name: comparison.title }),
+      );
+      const timeline = screen.getByRole("region", {
+        name: copy.timelineTitle,
+      });
+
+      expect(screen.getByRole("heading", { level: 1, name: copy.title })).toBe(
+        document.querySelector(".csa-hero h1"),
+      );
+      for (const title of [
+        copy.packagesTitle,
+        copy.timelineTitle,
+        copy.faqTitle,
+      ]) {
+        const heading = screen.getByRole("heading", { level: 2, name: title });
+        expect(heading).toHaveClass("csa-section-title");
+        expect(heading.closest(".csa-section-heading")).not.toBeNull();
+      }
+      const packageIntro = screen.getByText(copy.packagesSubtitle);
+      const timelineIntro = screen.getByText(copy.substitutionLine);
+      expect(packageIntro.tagName).toBe("P");
+      expect(packageIntro).toHaveClass("csa-section-intro");
+      expect(timelineIntro.tagName).toBe("P");
+      expect(timelineIntro).toHaveClass("csa-section-intro");
+
+      expect(packages.compareDocumentPosition(comparisons[0])).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      expect(comparisons[0].compareDocumentPosition(comparisons[1])).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      expect(comparisons[1].compareDocumentPosition(timeline)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+
+      for (const [index, comparison] of copy.comparisons.entries()) {
+        const section = comparisons[index];
+        expect(within(section).getByText(comparison.eyebrow)).toHaveClass(
+          "csa-section-kicker",
+        );
+        expect(section).toHaveAttribute(
+          "aria-labelledby",
+          `csa-comparison-${comparison.id}`,
+        );
+        expect(section.querySelector("header")).toHaveClass(
+          "csa-section-heading",
+        );
+        expect(
+          within(section).getByRole("heading", {
+            level: 2,
+            name: comparison.title,
+          }),
+        ).toBeVisible();
+        expect(
+          within(section).getByRole("heading", {
+            level: 2,
+            name: comparison.title,
+          }),
+        ).toHaveClass("csa-section-title");
+        const intro = within(section).getByText(comparison.intro);
+        expect(intro.tagName).toBe("P");
+        expect(intro).toHaveClass("csa-section-intro");
+        expect(
+          within(section).getByRole("heading", {
+            level: 3,
+            name: comparison.left.label,
+          }),
+        ).toBeVisible();
+        expect(
+          within(section).getByRole("heading", {
+            level: 3,
+            name: comparison.right.label,
+          }),
+        ).toBeVisible();
+
+        const lists = within(section).getAllByRole("list");
+        expect(lists).toHaveLength(2);
+        expect(within(lists[0]).getAllByRole("listitem")).toHaveLength(
+          comparison.left.items.length,
+        );
+        expect(within(lists[1]).getAllByRole("listitem")).toHaveLength(
+          comparison.right.items.length,
+        );
+        expect(section).not.toHaveTextContent(
+          /Every purchase from Natural Farming/i,
+        );
+        expect(section).not.toHaveTextContent(
+          /Choose natural\. Choose transparent/i,
+        );
+        expect(section).not.toHaveTextContent(/Every CSA membership plants/i);
+        expect(section).not.toHaveTextContent(/Be the catalyst/i);
+      }
+
+      expect(comparisons[0].querySelector("blockquote")).toBeNull();
+      const csaComparison = copy.comparisons[1];
+      expect("pullQuote" in csaComparison).toBe(true);
+      if (!("pullQuote" in csaComparison))
+        throw new Error("Missing pull quote");
+      expect(comparisons[1].querySelector("blockquote")).toHaveTextContent(
+        csaComparison.pullQuote.lead,
+      );
+      expect(comparisons[1]).toHaveTextContent(csaComparison.pullQuote.accent);
+      const quote = comparisons[1].querySelector("blockquote");
+      expect(quote).toHaveClass("csa-comparison-quote");
+      expect(quote?.querySelector('[aria-hidden="true"]')).toHaveTextContent(
+        csaComparison.pullQuote.mark,
+      );
+      expect(
+        quote?.querySelector(".csa-comparison-quote-term"),
+      ).toHaveTextContent(csaComparison.pullQuote.accentTerm);
+    },
+  );
+
+  it.each(["en", "vi"] as const)(
+    "renders the %s weekly timeline carousel in order and navigates it",
+    async (locale) => {
+      vi.mocked(accountApi).mockResolvedValue(catalog());
+      const copy = getSiteContent(locale).csa;
+      render(<CsaPage copy={copy} locale={locale} />);
+
+      const timeline = screen.getByRole("region", {
+        name: copy.timelineTitle,
+      });
+      const cards = within(timeline).getAllByRole("listitem");
+      const previous = within(timeline).getByRole("button", {
+        name: copy.timelinePrevious,
+      });
+      const next = within(timeline).getByRole("button", {
+        name: copy.timelineNext,
+      });
+
+      expect(cards).toHaveLength(5);
+      expect(previous).toBeDisabled();
+      expect(next).toBeEnabled();
+      const heading = within(timeline).getByRole("heading", {
+        name: copy.timelineTitle,
+      });
+      const substitutionLine = within(timeline).getByText(
+        copy.substitutionLine,
+      );
+
+      expect(heading.compareDocumentPosition(substitutionLine)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      expect(substitutionLine.compareDocumentPosition(cards[0])).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      expect(timeline.querySelector(".csa-timeline-progress")).toBeNull();
+      for (const [index, step] of copy.timeline.entries()) {
+        expect(cards[index]).not.toHaveTextContent(step.day);
+        expect(cards[index]).toHaveTextContent(step.title);
+        expect(cards[index]).toHaveTextContent(step.description);
+        expect(within(cards[index]).getByAltText(step.alt)).toBeVisible();
+      }
+      expect(substitutionLine).toBeVisible();
+      for (const index of ["01", "02", "03", "04", "05"]) {
+        expect(within(timeline).queryByText(index, { exact: true })).toBeNull();
+      }
+
+      fireEvent.click(next);
+      expect(previous).toBeEnabled();
+      for (let index = 1; index < copy.timeline.length; index += 1) {
+        fireEvent.click(next);
+      }
+      expect(next).toBeDisabled();
+
+      fireEvent.click(previous);
+      expect(next).toBeEnabled();
+    },
+  );
+
+  it.each(["en", "vi"] as const)(
+    "renders all %s CSA FAQ questions and answers with an accessible accordion",
+    async (locale) => {
+      vi.mocked(accountApi).mockResolvedValue(catalog());
+      const copy = getSiteContent(locale).csa;
+      render(<CsaPage copy={copy} locale={locale} />);
+
+      expect(
+        screen.getByRole("heading", { name: copy.faqTitle }),
+      ).toBeVisible();
+      expect(
+        screen
+          .getAllByRole("button")
+          .filter((button) => button.id.startsWith("csa-faq-trigger-")),
+      ).toHaveLength(8);
+
+      for (const [index, faq] of copy.faqItems.entries()) {
+        const trigger = screen.getByRole("button", { name: faq.question });
+        const panel = document.getElementById(
+          trigger.getAttribute("aria-controls") as string,
+        );
+
+        expect(trigger).toHaveAttribute("id", `csa-faq-trigger-${index}`);
+        expect(trigger).toHaveAttribute("type", "button");
+        expect(trigger).toHaveAttribute(
+          "aria-controls",
+          `csa-faq-panel-${index}`,
+        );
+        expect(panel).toHaveAttribute("aria-labelledby", trigger.id);
+        expect(panel).toHaveTextContent(faq.answer);
+        expect(trigger).toHaveAttribute("aria-expanded", String(index === 0));
+      }
+
+      const firstTrigger = screen.getByRole("button", {
+        name: copy.faqItems[0].question,
+      });
+      const secondTrigger = screen.getByRole("button", {
+        name: copy.faqItems[1].question,
+      });
+      const firstPanel = document.getElementById(
+        firstTrigger.getAttribute("aria-controls") as string,
+      );
+      const secondPanel = document.getElementById(
+        secondTrigger.getAttribute("aria-controls") as string,
+      );
+
+      fireEvent.click(secondTrigger);
+
+      expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
+      expect(firstPanel).toHaveAttribute("hidden");
+      expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+      expect(secondPanel).not.toHaveAttribute("hidden");
+      expect(secondPanel).toHaveTextContent(copy.faqItems[1].answer);
+    },
+  );
+
   it("renders ordered price options, exact integer money, savings, and one best badge", async () => {
     vi.mocked(accountApi).mockResolvedValue(catalog());
     render(<CsaPage copy={getSiteContent("en").csa} locale="en" />);
@@ -196,36 +434,16 @@ describe("public CSA Membership", () => {
     expect(heroCta).toHaveAttribute("href", FARM_BRITE_MEMBERSHIPS_URL);
     expect(heroCta).not.toHaveAttribute("target");
     expect(heroCta).not.toHaveAttribute("rel");
-    expect(screen.getByText("VÌ SAO CHỌN CSA?")).toBeVisible();
-    expect(
-      screen.getByRole("heading", {
-        name: "CSA mang lại điều gì khác với mua lẻ?",
-      }),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("heading", { name: "Mua sản phẩm lẻ" }),
-    ).toBeVisible();
-    expect(screen.getByRole("heading", { name: "CSA" })).toBeVisible();
-    expect(screen.getByText("Chọn sản phẩm khi cần")).toBeVisible();
-    expect(
-      screen.getByText("Đăng ký trước giúp nông trại chủ động hơn"),
-    ).toBeVisible();
-    const story = document.querySelector(".csa-story");
-    const packages = document.querySelector(".csa-packages");
-    expect(story).not.toBeNull();
-    expect(packages).not.toBeNull();
-    expect(story?.compareDocumentPosition(packages as Node) ?? 0).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
+    expect(document.querySelector(".csa-story")).toBeNull();
 
     expect(getSiteContent("vi").csa.timeline.map(({ day }) => day)).toEqual([
-      "T2",
-      "T3",
-      "T4",
-      "T5",
-      "T6",
+      "THỨ HAI",
+      "THỨ BA",
+      "THỨ TƯ",
+      "THỨ NĂM",
+      "THỨ SÁU",
     ]);
-    for (const day of ["T2", "T3", "T4", "T5", "T6"]) {
+    for (const day of ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu"]) {
       expect(screen.getByText(day)).toBeVisible();
     }
     expect(vi.mocked(accountApi).mock.calls.map(([path]) => path)).toEqual([
@@ -233,20 +451,23 @@ describe("public CSA Membership", () => {
     ]);
     expect(document.querySelector('a[href^="/api/auth/login"]')).toBeNull();
 
-    const benefits = screen.getByRole("region", { name: copy.eyebrow });
-    const benefitList = within(benefits).getByRole("list");
+    const hero = heroCta.closest("header");
+    expect(hero).not.toBeNull();
+    const benefitList = within(hero as HTMLElement).getByRole("list");
     expect(benefitList.tagName).toBe("UL");
-    expect(within(benefitList).getAllByRole("listitem")).toHaveLength(4);
-    expect(within(benefits).getByText("Nhận hàng hằng tuần")).toBeVisible();
+    expect(within(benefitList).getAllByRole("listitem")).toHaveLength(3);
     expect(
-      within(benefits).getByText("Miễn phí giao hàng cho thành viên CSA"),
+      within(hero as HTMLElement).getByText("Không sử dụng hóa chất"),
     ).toBeVisible();
     expect(
-      within(benefits).getByText("Sản phẩm được cập nhật đầu tuần"),
+      within(hero as HTMLElement).getByText("Người nông dân bạn biết rõ tên"),
     ).toBeVisible();
     expect(
-      within(benefits).getByText("Từ nông trại đến bàn ăn trong 24 giờ"),
+      within(hero as HTMLElement).getByText(
+        "Giao hàng trong vòng 24 giờ sau thu hoạch",
+      ),
     ).toBeVisible();
+    expect(document.querySelector(".csa-benefits")).toBeNull();
   });
 
   it("keeps the English Farmbrite CTA localized and verifies benefits", async () => {
@@ -261,34 +482,23 @@ describe("public CSA Membership", () => {
     expect(heroCta).toHaveAttribute("href", FARM_BRITE_MEMBERSHIPS_URL);
     expect(heroCta).not.toHaveAttribute("target");
     expect(heroCta).not.toHaveAttribute("rel");
+    expect(document.querySelector(".csa-story")).toBeNull();
+    const hero = heroCta.closest("header");
+    expect(hero).not.toBeNull();
+    const benefitList = within(hero as HTMLElement).getByRole("list");
+    expect(within(benefitList).getAllByRole("listitem")).toHaveLength(3);
     expect(
-      screen.getByRole("heading", {
-        name: "What does CSA offer beyond individual shopping?",
-      }),
+      within(hero as HTMLElement).getByText("No chemical inputs"),
     ).toBeVisible();
     expect(
-      screen.getByRole("heading", { name: "Individual shopping" }),
-    ).toBeVisible();
-    expect(screen.getByRole("heading", { name: "CSA" })).toBeVisible();
-    expect(
-      screen.getByText("Choose products when you need them"),
+      within(hero as HTMLElement).getByText("A farmer you know by name"),
     ).toBeVisible();
     expect(
-      screen.getByText("Signing up in advance helps the farm plan ahead"),
+      within(hero as HTMLElement).getByText(
+        "Delivered within 24 hours of harvest",
+      ),
     ).toBeVisible();
-    const benefits = screen.getByRole("region", { name: copy.eyebrow });
-    const benefitList = within(benefits).getByRole("list");
-    expect(within(benefitList).getAllByRole("listitem")).toHaveLength(4);
-    expect(within(benefits).getByText("Receive products weekly")).toBeVisible();
-    expect(
-      within(benefits).getByText("Free delivery for CSA members"),
-    ).toBeVisible();
-    expect(
-      within(benefits).getByText("Products updated early in the week"),
-    ).toBeVisible();
-    expect(
-      within(benefits).getByText("From farm to table within 24 hours"),
-    ).toBeVisible();
+    expect(document.querySelector(".csa-benefits")).toBeNull();
   });
 
   it("keeps only the Hero CTA in the empty catalog state", async () => {
@@ -422,7 +632,7 @@ describe("Account Membership", () => {
     );
     expect(
       await screen.findByRole("link", { name: "View CSA packages" }),
-    ).toHaveAttribute("href", "/en/csa");
+    ).toHaveAttribute("href", "/csa/en");
     expect(accountApi).toHaveBeenCalledWith("memberships/current?locale=en", {
       signal: expect.any(AbortSignal),
     });

@@ -3,8 +3,10 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ChevronDownIcon } from "@/components/icons";
 import type { SiteContent } from "@/content/site-content";
 import { accountApi } from "@/features/account/api";
+import { CsaComparisonSection } from "@/features/membership/csa-comparison-section";
 import type {
   MembershipPackage,
   MembershipPackagePriceOption,
@@ -19,6 +21,10 @@ import type { Locale } from "@/lib/i18n";
 
 const FARM_BRITE_MEMBERSHIPS_URL =
   "https://store.farmbrite.com/store/nntn/products?category=Memberships";
+const timelineScrollBehavior = {
+  reduced: "auto",
+  standard: "smooth",
+} as const;
 
 type Copy = SiteContent["csa"];
 
@@ -91,6 +97,8 @@ function BenefitIcon({ type }: { type: string }) {
 }
 
 export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [activeTimelineIndex, setActiveTimelineIndex] = useState(0);
   const [packages, setPackages] = useState<MembershipPackage[]>([]);
   const [packagesMeta, setPackagesMeta] = useState<PaginationMeta | null>(null);
   const [packagesPage, setPackagesPage] = useState(1);
@@ -101,6 +109,43 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
     controller: AbortController;
     sequence: number;
   } | null>(null);
+  const timelineCarousel = useRef<HTMLOListElement>(null);
+
+  const updateActiveTimelineIndex = () => {
+    const carousel = timelineCarousel.current;
+    if (!carousel) return;
+
+    const cards = Array.from(carousel.children);
+    const closestCardIndex = cards.reduce(
+      (closestIndex, card, index) =>
+        Math.abs((card as HTMLElement).offsetLeft - carousel.scrollLeft) <
+        Math.abs(
+          (cards[closestIndex] as HTMLElement).offsetLeft - carousel.scrollLeft,
+        )
+          ? index
+          : closestIndex,
+      0,
+    );
+    setActiveTimelineIndex(closestCardIndex);
+  };
+
+  const moveTimeline = (direction: -1 | 1) => {
+    const nextIndex = Math.max(
+      0,
+      Math.min(copy.timeline.length - 1, activeTimelineIndex + direction),
+    );
+    const nextCard = timelineCarousel.current?.children.item(nextIndex);
+    if (!(nextCard instanceof HTMLElement)) return;
+
+    nextCard.scrollIntoView?.({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? timelineScrollBehavior.reduced
+        : timelineScrollBehavior.standard,
+      block: "nearest",
+      inline: "start",
+    });
+    setActiveTimelineIndex(nextIndex);
+  };
 
   const loadPackages = useCallback(async () => {
     activePackagesRequest.current?.controller.abort();
@@ -148,6 +193,14 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
             <p className="csa-hero-kicker">{copy.eyebrow}</p>
             <h1>{copy.title}</h1>
             <p className="csa-hero-lead">{copy.intro}</p>
+            <ul className="csa-hero-benefits">
+              {copy.benefits.map((benefit) => (
+                <li key={benefit.label}>
+                  <BenefitIcon type={benefit.icon} />
+                  <span>{benefit.label}</span>
+                </li>
+              ))}
+            </ul>
             <div className="csa-hero-actions">
               <a
                 className="csa-package-action csa-hero-action"
@@ -170,53 +223,15 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
         </header>
 
         <main>
-          <section className="csa-benefits" aria-label={copy.eyebrow}>
-            <ul>
-              {copy.benefits.map((benefit) => (
-                <li key={benefit.label}>
-                  <BenefitIcon type={benefit.icon} />
-                  <span>{benefit.label}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="csa-story" aria-labelledby="csa-story-title">
-            <div className="csa-story-media">
-              <Image
-                src="/images/bean-sprouts.webp"
-                alt={copy.storyAlt}
-                fill
-                sizes="(min-width: 768px) 45vw, calc(100vw - 2rem)"
-              />
-            </div>
-            <div className="csa-story-content">
-              <p className="csa-story-kicker">{copy.storyEyebrow}</p>
-              <h2 id="csa-story-title">{copy.storyTitle}</h2>
-              <p className="csa-story-intro">{copy.storyIntro}</p>
-              <div className="csa-story-comparison">
-                {copy.storyComparisons.map((column) => (
-                  <div className="csa-story-column" key={column.label}>
-                    <h3>{column.label}</h3>
-                    <ul>
-                      {column.items.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-              <p className="csa-story-note">{copy.storyNote}</p>
-            </div>
-          </section>
-
           <section
             className="csa-packages"
             aria-labelledby="csa-packages-title"
           >
-            <header>
-              <h2 id="csa-packages-title">{copy.packagesTitle}</h2>
-              <p>{copy.packagesSubtitle}</p>
+            <header className="csa-section-heading">
+              <h2 className="csa-section-title" id="csa-packages-title">
+                {copy.packagesTitle}
+              </h2>
+              <p className="csa-section-intro">{copy.packagesSubtitle}</p>
             </header>
             {packagesError ? (
               <div className="csa-inline-state" role="alert">
@@ -408,19 +423,116 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
             )}
           </section>
 
+          {copy.comparisons.map((comparison) => (
+            <CsaComparisonSection key={comparison.eyebrow} copy={comparison} />
+          ))}
+
           <section
             className="csa-timeline"
             aria-labelledby="csa-timeline-title"
           >
-            <h2 id="csa-timeline-title">{copy.timelineTitle}</h2>
-            <ol>
-              {copy.timeline.map((step) => (
-                <li key={step.day}>
-                  <span className="csa-timeline-day">{step.day}</span>
-                  <p>{step.description}</p>
-                </li>
-              ))}
-            </ol>
+            <div className="csa-timeline-heading">
+              <div className="csa-section-heading csa-timeline-heading-copy">
+                <h2 className="csa-section-title" id="csa-timeline-title">
+                  {copy.timelineTitle}
+                </h2>
+                <p className="csa-section-intro csa-timeline-supporting">
+                  {copy.substitutionLine}
+                </p>
+              </div>
+              <nav aria-label={copy.timelineLabel} className="csa-timeline-nav">
+                <button
+                  type="button"
+                  onClick={() => moveTimeline(-1)}
+                  disabled={activeTimelineIndex === 0}
+                  aria-label={copy.timelinePrevious}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="m14 6-6 6 6 6" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveTimeline(1)}
+                  disabled={activeTimelineIndex === copy.timeline.length - 1}
+                  aria-label={copy.timelineNext}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="m10 6 6 6-6 6" />
+                  </svg>
+                </button>
+              </nav>
+            </div>
+            <div
+              className="csa-timeline-carousel"
+              aria-label={copy.timelineLabel}
+            >
+              <ol ref={timelineCarousel} onScroll={updateActiveTimelineIndex}>
+                {copy.timeline.map((step) => (
+                  <li key={step.day}>
+                    <div className="csa-timeline-card-media">
+                      <Image
+                        src={step.image}
+                        alt={step.alt}
+                        fill
+                        sizes="(min-width: 1024px) 25vw, (min-width: 768px) 36vw, 64vw"
+                      />
+                    </div>
+                    <div className="csa-timeline-card-content">
+                      <h3>{step.title}</h3>
+                      <p>{step.description}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+
+          <section className="csa-faq" aria-labelledby="csa-faq-title">
+            <header className="csa-section-heading">
+              <h2 className="csa-section-title" id="csa-faq-title">
+                {copy.faqTitle}
+              </h2>
+            </header>
+            <div className="store-faq">
+              {copy.faqItems.map((faq, index) => {
+                const triggerId = `csa-faq-trigger-${index}`;
+                const panelId = `csa-faq-panel-${index}`;
+                const isOpen = openFaqIndex === index;
+
+                return (
+                  <div className="store-faq-item" key={faq.question}>
+                    <button
+                      id={triggerId}
+                      type="button"
+                      className="store-faq-trigger"
+                      onClick={() =>
+                        setOpenFaqIndex((currentIndex) =>
+                          currentIndex === index ? null : index,
+                        )
+                      }
+                      aria-expanded={isOpen}
+                      aria-controls={panelId}
+                    >
+                      <span className="store-faq-question">{faq.question}</span>
+                      <span className="store-faq-icon">
+                        <ChevronDownIcon className="store-icon" />
+                      </span>
+                    </button>
+                    <div
+                      id={panelId}
+                      className="store-faq-content"
+                      aria-labelledby={triggerId}
+                      hidden={!isOpen}
+                    >
+                      <div className="store-faq-content-inner">
+                        <p>{faq.answer}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </section>
         </main>
       </div>

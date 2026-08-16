@@ -32,6 +32,21 @@ describe("StorePage", () => {
     ).toBeVisible();
   });
 
+  it.each([
+    ["en", ["CSA & Membership", "All Products", "Live plants"]],
+    ["vi", ["CSA & Thành Viên", "Tất Cả Sản Phẩm", "Cây sống và cây giống"]],
+  ] as const)("renders the %s Store card titles", (locale, cardTitles) => {
+    render(
+      <StorePage copy={getSiteContent(locale).storeGuide} locale={locale} />,
+    );
+
+    for (const title of cardTitles) {
+      expect(
+        screen.getByRole("heading", { level: 3, name: title }),
+      ).toBeVisible();
+    }
+  });
+
   it("uses the three exact Farmbrite URLs and keeps Farmbrite and Zalo in the same tab", () => {
     const copy = getSiteContent("en").storeGuide;
     render(<StorePage copy={copy} locale="en" />);
@@ -49,14 +64,34 @@ describe("StorePage", () => {
     expect(zaloLink).not.toHaveAttribute("rel");
   });
 
-  it("routes the CSA promo internally", () => {
-    const copy = getSiteContent("vi").storeGuide;
-    render(<StorePage copy={copy} locale="vi" />);
+  it.each([
+    [
+      "en",
+      "New to CSA? Choose your plan and join the family.",
+      "Get Started",
+      "/csa/en",
+    ],
+    [
+      "vi",
+      "Mới biết đến CSA? Chọn gói của bạn và trở thành một phần của gia đình.",
+      "Bắt Đầu Ngay",
+      "/csa/vi",
+    ],
+  ] as const)(
+    "renders the %s CSA promo as an accessible internal primary link",
+    (locale, promo, cta, href) => {
+      render(
+        <StorePage copy={getSiteContent(locale).storeGuide} locale={locale} />,
+      );
 
-    expect(
-      screen.getByRole("link", { name: copy.csaPromoLink }),
-    ).toHaveAttribute("href", "/vi/csa");
-  });
+      const link = screen.getByRole("link", { name: cta });
+
+      expect(screen.getByText(promo)).toBeVisible();
+      expect(link).toHaveAttribute("href", href);
+      expect(link).not.toHaveAttribute("target");
+      expect(screen.queryByText("Explore CSA")).not.toBeInTheDocument();
+    },
+  );
 
   it("opens the first FAQ initially and hides every closed answer from assistive technology", () => {
     const copy = getSiteContent("en").storeGuide;

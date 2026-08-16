@@ -144,9 +144,12 @@ export function StorePage({ locale, copy }: { locale: Locale; copy: Copy }) {
             </div>
 
             <div className="store-csa-promo">
-              <span>{copy.csaPromo}</span>
-              <Link href={`/${locale}/csa`} className="store-csa-promo-link">
-                {copy.csaPromoLink} <Arrow />
+              <p>{copy.csaPromo}</p>
+              <Link
+                href={`/csa/${locale}`}
+                className="store-btn store-btn-primary store-csa-promo-link"
+              >
+                {copy.csaPromoLink}
               </Link>
             </div>
           </section>

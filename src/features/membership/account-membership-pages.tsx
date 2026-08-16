@@ -35,7 +35,7 @@ import {
   formatMembershipUnits,
   membershipUnitLabel,
 } from "@/features/membership/format";
-import type { Locale } from "@/lib/i18n";
+import { localizedPath, type Locale } from "@/lib/i18n";
 
 type Copy = SiteContent["account"];
 
@@ -169,7 +169,10 @@ export function AccountMembershipPage({
       ) : !membership ? (
         <div className="membership-account-empty">
           <AccountEmptyState message={copy.membershipEmpty} />
-          <Link className="membership-inline-link" href={`/${locale}/csa`}>
+          <Link
+            className="membership-inline-link"
+            href={localizedPath(locale, "/csa")}
+          >
             {copy.viewCsa}
             <AccountArrowIcon />
           </Link>

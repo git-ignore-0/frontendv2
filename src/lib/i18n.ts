@@ -21,12 +21,15 @@ export function localizedPath(locale: Locale, path = "") {
 
 export function replacePathLocale(pathname: string, locale: Locale) {
   const localePattern = locales.join("|");
-  const csaPattern = new RegExp(`^/(?:${localePattern})/csa$`);
+  const csaPattern = new RegExp(`^/csa/(?:${localePattern})$`);
+  const legacyCsaPattern = new RegExp(`^/(?:${localePattern})/csa$`);
   const accountPattern = new RegExp(`^/account/(?:${localePattern})(?=/|$)`);
   const prefixPattern = new RegExp(`^/(${localePattern})(?=/|$)`);
   const suffixPattern = new RegExp(`/(?:${localePattern})$`);
 
-  if (csaPattern.test(pathname)) return `/${locale}/csa`;
+  if (csaPattern.test(pathname) || legacyCsaPattern.test(pathname)) {
+    return localizedPath(locale, "/csa");
+  }
 
   if (accountPattern.test(pathname)) {
     return pathname.replace(accountPattern, `/account/${locale}`);

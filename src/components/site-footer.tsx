@@ -41,7 +41,7 @@ export function SiteFooter({
           <Link href={localizedPath(locale, "/testimonials")}>
             {tTestimonials.launcher}
           </Link>
-          <Link href={`/${locale}/csa`}>{t.nav.csa}</Link>
+          <Link href={localizedPath(locale, "/csa")}>{t.nav.csa}</Link>
           <Link href={localizedPath(locale, "/privacy-policy")}>
             {t.nav.privacy}
           </Link>

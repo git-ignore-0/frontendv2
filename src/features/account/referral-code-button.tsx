@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 import type { SiteContent } from "@/content/site-content";
 
@@ -29,9 +29,11 @@ function CheckIcon() {
 export function ReferralCodeButton({
   code,
   copy,
+  shareAction,
 }: {
   code: string;
   copy: Copy;
+  shareAction: ReactNode;
 }) {
   const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
   const feedback = feedbackProps(status);
@@ -54,18 +56,19 @@ export function ReferralCodeButton({
 
   return (
     <div className="referral-code-control">
-      <button
-        aria-label={status === "copied" ? copy.copiedButton : copy.copy}
-        className={buttonClass(status)}
-        onClick={() => void copyCode()}
-        type="button"
-      >
-        <code>{code}</code>
-        <span>
+      <code>{code}</code>
+      <div className="referral-code-actions">
+        <button
+          aria-label={status === "copied" ? copy.copiedButton : copy.copy}
+          className={`account-primary-action referral-code-copy-button ${buttonClass(status) ?? ""}`}
+          onClick={() => void copyCode()}
+          type="button"
+        >
           {status === "copied" ? <CheckIcon /> : null}
           {status === "copied" ? copy.copiedButton : copy.copy}
-        </span>
-      </button>
+        </button>
+        {shareAction}
+      </div>
       <p aria-live="polite" className={feedback.className} role={feedback.role}>
         {status === "copied"
           ? copy.copied

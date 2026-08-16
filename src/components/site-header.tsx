@@ -317,7 +317,7 @@ export function SiteHeader({
     ["/csa", t.nav.csa],
   ] as const;
   const linkHref = (path: (typeof links)[number][0]) =>
-    path === "/csa" ? `/${locale}/csa` : localizedPath(locale, path);
+    localizedPath(locale, path);
 
   useEffect(() => {
     setMobileMenuOpen(false);

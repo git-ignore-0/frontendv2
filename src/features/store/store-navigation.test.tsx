@@ -41,6 +41,11 @@ describe("Store navigation", () => {
     expect(storeLink).toHaveAttribute("href", "/store/en");
     expect(storeLink).not.toHaveAttribute("target");
     expect(storeLink).not.toHaveAttribute("rel");
+
+    expect(screen.getByRole("link", { name: "CSA" })).toHaveAttribute(
+      "href",
+      "/csa/en",
+    );
   });
 
   it("keeps the Home Store CTA internal when the backend Store URL is missing", async () => {

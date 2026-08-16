@@ -27,12 +27,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   );
   const csaPages = locales.map((locale) => ({
-    url: `${base}/${locale}/csa`,
+    url: `${base}${localizedPath(locale, "/csa")}`,
     changeFrequency: "weekly" as const,
     priority: 0.9,
     alternates: {
       languages: Object.fromEntries(
-        locales.map((language) => [language, `${base}/${language}/csa`]),
+        locales.map((language) => [
+          language,
+          `${base}${localizedPath(language, "/csa")}`,
+        ]),
       ),
     },
   }));

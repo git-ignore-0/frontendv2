@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -250,8 +251,11 @@ describe("public account pages", () => {
     expect(
       screen.getByRole("heading", { name: "Conditions for earning points" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("100")).toBeInTheDocument();
-    expect(screen.getByText("+50")).toBeInTheDocument();
+    expect(screen.getByText("100 points")).toBeInTheDocument();
+    expect(screen.getByText("+50 points")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "See what you can redeem →" }),
+    ).toHaveAttribute("href", "/account/en/rewards");
     expect(
       screen.getByText(/paid, delivered and worth at least 300,000₫/i),
     ).toBeInTheDocument();
@@ -264,6 +268,21 @@ describe("public account pages", () => {
     expect(
       screen.getByRole("link", { name: "People invited" }),
     ).toHaveAttribute("href", "/account/en/invited");
+    const codeControl = screen
+      .getByText("NFV1234567")
+      .closest(".referral-code-control");
+    expect(codeControl).not.toBeNull();
+    expect(codeControl?.querySelector(":scope > code")).toHaveTextContent(
+      "NFV1234567",
+    );
+    expect(
+      codeControl?.querySelector(":scope > .referral-code-actions"),
+    ).toBeInTheDocument();
+    expect(
+      within(codeControl as HTMLElement)
+        .getAllByRole("button")
+        .map((button) => button.textContent?.trim()),
+    ).toEqual(["Copy code", "Share"]);
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(navigation.replace).toHaveBeenCalledWith("/en");
 
@@ -283,6 +302,28 @@ describe("public account pages", () => {
     expect(
       screen.queryByLabelText("Enter a referral code"),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders the localized referral earnings card and rewards link", async () => {
+    mockAccount();
+    render(
+      <ReferralProgramPage
+        locale="vi"
+        copy={getSiteContent("vi").account}
+        publicSiteOrigin={publicSiteOrigin}
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Bạn nhận được gì" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("100 điểm")).toBeInTheDocument();
+    expect(screen.getByText("+50 điểm")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: "Xem các phần thưởng có thể đổi →",
+      }),
+    ).toHaveAttribute("href", "/account/vi/rewards");
   });
 
   it("requires confirmation before applying a referral link code", async () => {

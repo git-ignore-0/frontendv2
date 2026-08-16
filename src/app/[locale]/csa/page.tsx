@@ -1,18 +1,7 @@
-import { notFound } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
-import { getSiteContent } from "@/content/site-content";
-import { CsaPage } from "@/features/membership/csa-page";
-import { isLocale } from "@/lib/i18n";
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  if (!isLocale(locale)) return {};
-  return { title: getSiteContent(locale).csa.metadataTitle };
-}
+import { localizedPath } from "@/lib/i18n";
+import { requireLocale } from "@/lib/require-locale";
 
 export default async function CsaRoute({
   params,
@@ -20,6 +9,5 @@ export default async function CsaRoute({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  if (!isLocale(locale)) notFound();
-  return <CsaPage copy={getSiteContent(locale).csa} locale={locale} />;
+  permanentRedirect(localizedPath(requireLocale(locale), "/csa"));
 }

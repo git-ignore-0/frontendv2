@@ -71,7 +71,7 @@ describe("useHeaderMembershipDestination", () => {
     await act(async () => result.current.load());
     expect(result.current.hasCurrentMembership).toBe(true);
 
-    rerender({ pathname: "/en/csa" });
+    rerender({ pathname: "/csa/en" });
 
     expect(result.current.hasCurrentMembership).toBe(false);
     expect(result.current.membershipHref).toBeUndefined();
@@ -138,7 +138,7 @@ describe("useHeaderMembershipDestination", () => {
   it.each([
     {
       label: "path",
-      next: { pathname: "/en/csa", userId: "user-a" },
+      next: { pathname: "/csa/en", userId: "user-a" },
     },
     {
       label: "user",

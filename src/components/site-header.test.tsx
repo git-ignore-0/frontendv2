@@ -56,6 +56,15 @@ function renderHeader(locale: "en" | "vi" = "en") {
 }
 
 describe("site header navigation", () => {
+  it("switches the CSA locale within the canonical route", () => {
+    navigation.pathname = "/csa/en";
+    renderHeader();
+
+    expect(
+      screen.getByRole("link", { name: "Language: Tiếng Việt" }),
+    ).toHaveAttribute("href", "/csa/vi");
+  });
+
   it("omits Plants and Animals from the desktop primary navigation", () => {
     renderHeader();
 
@@ -81,7 +90,7 @@ describe("site header navigation", () => {
       primaryNavigation.querySelector('a[href="/workshops/en"]'),
     ).toHaveTextContent("Workshops");
     expect(
-      primaryNavigation.querySelector('a[href="/en/csa"]'),
+      primaryNavigation.querySelector('a[href="/csa/en"]'),
     ).toHaveTextContent("CSA");
     expect(
       primaryNavigation.querySelector('a[href="/store/en"]'),
@@ -136,7 +145,7 @@ describe("site header navigation", () => {
       mobileNavigation.querySelector('a[href="/workshops/en"]'),
     ).toHaveTextContent("Workshops");
     expect(
-      mobileNavigation.querySelector('a[href="/en/csa"]'),
+      mobileNavigation.querySelector('a[href="/csa/en"]'),
     ).toHaveTextContent("CSA");
     expect(
       mobileNavigation.querySelector('a[href="/store/en"]'),
@@ -427,7 +436,7 @@ describe("site header session projection", () => {
     },
   );
 
-  it.each(["/workshops/en", "/en/csa"])(
+  it.each(["/workshops/en", "/csa/en"])(
     "adds the current pathname to every level-one destination from %s",
     async (pathname) => {
       navigation.pathname = pathname;

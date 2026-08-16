@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import type { SiteContent } from "@/content/site-content";
@@ -149,12 +150,17 @@ export function ReferralProgramPage({
             <p className="referral-section-label" id="personal-referral-title">
               {copy.codeLabel}
             </p>
-            <ReferralCodeButton code={summary.referral_code} copy={copy} />
-            <ReferralShareDialog
+            <ReferralCodeButton
               code={summary.referral_code}
               copy={copy}
-              locale={locale}
-              origin={publicSiteOrigin}
+              shareAction={
+                <ReferralShareDialog
+                  code={summary.referral_code}
+                  copy={copy}
+                  locale={locale}
+                  origin={publicSiteOrigin}
+                />
+              }
             />
             <div className="referral-invited-summary">
               <span>
@@ -259,20 +265,31 @@ export function ReferralProgramPage({
         aria-labelledby="referral-rewards-title"
         className="referral-detail-section referral-earnings-section"
       >
-        <header className="referral-section-heading">
+        <div className="referral-earnings-card">
           <h2 id="referral-rewards-title">{copy.programRewardsTitle}</h2>
-          <p>{copy.programRewardsIntro}</p>
-        </header>
-        <dl className="referral-earnings-list">
-          <div>
-            <dt>{copy.successfulReferralLabel}</dt>
-            <dd>{copy.successfulReferralPoints}</dd>
-          </div>
-          <div>
-            <dt>{copy.secondOrderBonusLabel}</dt>
-            <dd>{copy.secondOrderBonus}</dd>
-          </div>
-        </dl>
+          <dl className="referral-earnings-list">
+            <div>
+              <dt>{copy.successfulReferralPoints}</dt>
+              <dd>
+                <span aria-hidden="true">—</span>
+                {copy.successfulReferralLabel}
+              </dd>
+            </div>
+            <div>
+              <dt>{copy.secondOrderBonus}</dt>
+              <dd>
+                <span aria-hidden="true">—</span>
+                {copy.secondOrderBonusLabel}
+              </dd>
+            </div>
+          </dl>
+          <footer className="referral-earnings-footer">
+            <p>{copy.programRewardsIntro}</p>
+            <Link href={`/account/${locale}/rewards`}>
+              {copy.programRewardsCta}
+            </Link>
+          </footer>
+        </div>
       </section>
 
       <section
