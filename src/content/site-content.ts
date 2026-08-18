@@ -1,5 +1,13 @@
 import type { Locale } from "@/lib/i18n";
 
+type StoreCardCta = {
+  label: string;
+  href: string;
+  kind: "primary" | "secondary" | "secondary-filled" | "ghost";
+  type: "internal" | "external";
+  openInNewTab?: boolean;
+};
+
 const en = {
   common: {
     skip: "Skip to content",
@@ -93,7 +101,7 @@ const en = {
     share: "Share",
     shareDialogTitle: "Share your referral link",
     shareDialogDescription:
-      "Share your personal link with friends. When they sign up through it, your referral code is applied automatically.",
+      "Use the copy link or copy message below to share with your friends by pasting into your messaging app or email.",
     closeShareDialog: "Close share dialog",
     referralLinkLabel: "Your referral link",
     copyLink: "Copy link",
@@ -601,13 +609,32 @@ const en = {
   storeGuide: {
     title: "Shop Natural Farming Vietnam",
     intro:
-      "Choose the best way to browse and order fresh products through our Farmbrite store.",
+      "We are using an incredible farm management software’s online store module. This software help us and our farmers coordinate seeds, plantings, harvesting, even animal care. But their store is a bit limited in functions. Please forgive the lack of bells and whistles for now. So to help, we’ll have some guidance below:",
     howToShopTitle: "Explore options from the farm",
     csaCard: {
       title: "CSA & Membership",
       body: "See the items available this week and choose products marked |C using your CSA or Membership allowance.",
-      cta: "View this week’s CSA items",
-      url: "https://store.farmbrite.com/store/nntn/products?category=CSA",
+      ctas: [
+        {
+          label: "New to CSA? For more information",
+          href: "/csa/en",
+          kind: "secondary",
+          type: "internal",
+        },
+        {
+          label: "Ready to purchase CSA",
+          href: "https://store.farmbrite.com/store/nntn/products?category=Memberships",
+          kind: "ghost",
+          type: "external",
+          openInNewTab: true,
+        },
+        {
+          label: "View this week’s CSA items",
+          href: "https://store.farmbrite.com/store/nntn/products?category=CSA",
+          kind: "primary",
+          type: "external",
+        },
+      ] satisfies StoreCardCta[],
     },
     individualCard: {
       title: "All Products",
@@ -621,8 +648,6 @@ const en = {
       cta: "Browse live plants",
       url: "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
     },
-    csaPromo: "New to CSA? Choose your plan and join the family.",
-    csaPromoLink: "Get Started",
     faqTitle: "Ordering questions",
     faqItems: [
       {
@@ -809,7 +834,7 @@ const vi: SiteContent = {
     share: "Chia sẻ",
     shareDialogTitle: "Chia sẻ liên kết giới thiệu",
     shareDialogDescription:
-      "Chia sẻ liên kết cá nhân với bạn bè. Khi họ đăng ký qua liên kết này, mã giới thiệu của bạn sẽ được áp dụng tự động.",
+      "Hãy dùng nút sao chép liên kết hoặc sao chép tin nhắn bên dưới để chia sẻ với bạn bè bằng cách dán vào ứng dụng nhắn tin hoặc email.",
     closeShareDialog: "Đóng hộp thoại chia sẻ",
     referralLinkLabel: "Liên kết giới thiệu của bạn",
     copyLink: "Sao chép liên kết",
@@ -1318,13 +1343,32 @@ const vi: SiteContent = {
   storeGuide: {
     title: "Cửa hàng Natural Farming Vietnam",
     intro:
-      "Chọn cách phù hợp để xem và đặt sản phẩm tươi từ cửa hàng Farmbrite của chúng tôi.",
+      "Chúng tôi đang sử dụng mô-đun cửa hàng trực tuyến của một phần mềm quản lý nông trại tuyệt vời. Phần mềm này giúp chúng tôi và các nông dân phối hợp việc gieo hạt, canh tác, thu hoạch, thậm chí chăm sóc vật nuôi. Tuy nhiên, cửa hàng hiện còn hạn chế về tính năng. Mong bạn thông cảm vì hiện tại cửa hàng chưa có đầy đủ tiện ích. Để hỗ trợ bạn, chúng tôi sẽ cung cấp một số hướng dẫn bên dưới:",
     howToShopTitle: "Khám phá các lựa chọn từ trang trại",
     csaCard: {
       title: "CSA & Thành Viên",
       body: "Xem các sản phẩm có sẵn trong tuần và chọn sản phẩm có ký hiệu |C bằng quyền lợi CSA hoặc Membership của bạn.",
-      cta: "Xem sản phẩm CSA tuần này",
-      url: "https://store.farmbrite.com/store/nntn/products?category=CSA",
+      ctas: [
+        {
+          label: "Mới biết đến CSA? Xem thêm thông tin",
+          href: "/csa/vi",
+          kind: "secondary",
+          type: "internal",
+        },
+        {
+          label: "Sẵn sàng mua CSA",
+          href: "https://store.farmbrite.com/store/nntn/products?category=Memberships",
+          kind: "ghost",
+          type: "external",
+          openInNewTab: true,
+        },
+        {
+          label: "Xem sản phẩm CSA tuần này",
+          href: "https://store.farmbrite.com/store/nntn/products?category=CSA",
+          kind: "primary",
+          type: "external",
+        },
+      ],
     },
     individualCard: {
       title: "Tất Cả Sản Phẩm",
@@ -1338,9 +1382,6 @@ const vi: SiteContent = {
       cta: "Xem cây sống và cây giống",
       url: "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
     },
-    csaPromo:
-      "Mới biết đến CSA? Chọn gói của bạn và trở thành một phần của gia đình.",
-    csaPromoLink: "Bắt Đầu Ngay",
     faqTitle: "Câu hỏi về đặt hàng",
     faqItems: [
       {

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { SiteContent } from "@/content/site-content";
-import type { Locale } from "@/lib/i18n";
 import {
   BasketIcon,
   BagIcon,
@@ -58,8 +57,9 @@ function AccordionItem({
   );
 }
 
-export function StorePage({ locale, copy }: { locale: Locale; copy: Copy }) {
+export function StorePage({ copy }: { copy: Copy }) {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [informationCta, purchaseCta, weeklyCta] = copy.csaCard.ctas;
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -88,7 +88,7 @@ export function StorePage({ locale, copy }: { locale: Locale; copy: Copy }) {
             </h2>
 
             <div className="store-cards">
-              <div className="store-card">
+              <div className="store-card store-card-csa">
                 <div className="store-card-icon-wrapper">
                   <BasketIcon className="store-icon-large" />
                 </div>
@@ -103,13 +103,30 @@ export function StorePage({ locale, copy }: { locale: Locale; copy: Copy }) {
                     </span>
                   ))}
                 </p>
-                <a
-                  href={copy.csaCard.url}
-                  className="store-btn store-btn-primary"
-                >
-                  {copy.csaCard.cta}
-                  <Arrow />
-                </a>
+                <div className="store-csa-actions">
+                  <Link
+                    href={informationCta.href}
+                    className={`store-btn store-btn-${informationCta.kind} store-card-cta store-csa-action`}
+                  >
+                    {informationCta.label}
+                  </Link>
+                  <a
+                    href={purchaseCta.href}
+                    className={`store-btn store-btn-${purchaseCta.kind} store-card-cta store-csa-action`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {purchaseCta.label}
+                    <Arrow />
+                  </a>
+                  <a
+                    href={weeklyCta.href}
+                    className={`store-btn store-btn-${weeklyCta.kind} store-card-cta store-csa-action`}
+                  >
+                    {weeklyCta.label}
+                    <Arrow />
+                  </a>
+                </div>
               </div>
 
               <div className="store-card">
@@ -120,7 +137,7 @@ export function StorePage({ locale, copy }: { locale: Locale; copy: Copy }) {
                 <p>{copy.individualCard.body}</p>
                 <a
                   href={copy.individualCard.url}
-                  className="store-btn store-btn-secondary"
+                  className="store-btn store-btn-secondary store-card-cta"
                 >
                   {copy.individualCard.cta}
                   <Arrow />
@@ -135,22 +152,12 @@ export function StorePage({ locale, copy }: { locale: Locale; copy: Copy }) {
                 <p>{copy.livePlantsCard.body}</p>
                 <a
                   href={copy.livePlantsCard.url}
-                  className="store-btn store-btn-secondary"
+                  className="store-btn store-btn-secondary store-card-cta"
                 >
                   {copy.livePlantsCard.cta}
                   <Arrow />
                 </a>
               </div>
-            </div>
-
-            <div className="store-csa-promo">
-              <p>{copy.csaPromo}</p>
-              <Link
-                href={`/csa/${locale}`}
-                className="store-btn store-btn-primary store-csa-promo-link"
-              >
-                {copy.csaPromoLink}
-              </Link>
             </div>
           </section>
 

@@ -120,6 +120,11 @@ describe("public account pages", () => {
     const dialog = screen.getByRole("dialog", {
       name: "Share your referral link",
     });
+    expect(
+      screen.getByText(
+        "Use the copy link or copy message below to share with your friends by pasting into your messaging app or email.",
+      ),
+    ).toBeInTheDocument();
     const referralUrl =
       "https://www.naturalfarmingvietnam.com/ref/NFV1234567?locale=en";
     expect(screen.getByLabelText("Your referral link")).toHaveValue(
@@ -259,6 +264,16 @@ describe("public account pages", () => {
     expect(
       screen.getByText(/paid, delivered and worth at least 300,000₫/i),
     ).toBeInTheDocument();
+    const eligibilitySection = screen
+      .getByRole("heading", { name: "Conditions for earning points" })
+      .closest("section");
+    expect(eligibilitySection).not.toBeNull();
+    expect(
+      within(eligibilitySection as HTMLElement).getByRole("list"),
+    ).toBeInTheDocument();
+    expect(
+      within(eligibilitySection as HTMLElement).getAllByRole("listitem"),
+    ).toHaveLength(5);
     expect(
       screen.queryByRole("link", { name: "Redeem rewards" }),
     ).not.toBeInTheDocument();

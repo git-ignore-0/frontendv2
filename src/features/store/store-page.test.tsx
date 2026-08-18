@@ -17,15 +17,15 @@ const farmbriteUrls = [
   "https://store.farmbrite.com/store/nntn",
   "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
 ];
+const membershipUrl =
+  "https://store.farmbrite.com/store/nntn/products?category=Memberships";
 
 describe("StorePage", () => {
   it.each([
     ["en", "Shop Natural Farming Vietnam"],
     ["vi", "Cửa hàng Natural Farming Vietnam"],
   ] as const)("renders the translated %s Store heading", (locale, heading) => {
-    render(
-      <StorePage copy={getSiteContent(locale).storeGuide} locale={locale} />,
-    );
+    render(<StorePage copy={getSiteContent(locale).storeGuide} />);
 
     expect(
       screen.getByRole("heading", { level: 1, name: heading }),
@@ -33,12 +33,28 @@ describe("StorePage", () => {
   });
 
   it.each([
+    [
+      "en",
+      "We are using an incredible farm management software’s online store module.",
+    ],
+    [
+      "vi",
+      "Chúng tôi đang sử dụng mô-đun cửa hàng trực tuyến của một phần mềm quản lý nông trại tuyệt vời.",
+    ],
+  ] as const)(
+    "renders the translated %s Store introduction",
+    (locale, intro) => {
+      render(<StorePage copy={getSiteContent(locale).storeGuide} />);
+
+      expect(screen.getByText(intro, { exact: false })).toBeVisible();
+    },
+  );
+
+  it.each([
     ["en", ["CSA & Membership", "All Products", "Live plants"]],
     ["vi", ["CSA & Thành Viên", "Tất Cả Sản Phẩm", "Cây sống và cây giống"]],
   ] as const)("renders the %s Store card titles", (locale, cardTitles) => {
-    render(
-      <StorePage copy={getSiteContent(locale).storeGuide} locale={locale} />,
-    );
+    render(<StorePage copy={getSiteContent(locale).storeGuide} />);
 
     for (const title of cardTitles) {
       expect(
@@ -47,15 +63,97 @@ describe("StorePage", () => {
     }
   });
 
-  it("uses the three exact Farmbrite URLs and keeps Farmbrite and Zalo in the same tab", () => {
-    const copy = getSiteContent("en").storeGuide;
-    render(<StorePage copy={copy} locale="en" />);
+  it.each([
+    [
+      "en",
+      "CSA & Membership",
+      "New to CSA? For more information",
+      "Ready to purchase CSA",
+      "View this week’s CSA items",
+      "/csa/en",
+    ],
+    [
+      "vi",
+      "CSA & Thành Viên",
+      "Mới biết đến CSA? Xem thêm thông tin",
+      "Sẵn sàng mua CSA",
+      "Xem sản phẩm CSA tuần này",
+      "/csa/vi",
+    ],
+  ] as const)(
+    "renders the %s CSA card with its three CTA links",
+    (
+      locale,
+      cardTitle,
+      informationCta,
+      purchaseCta,
+      weeklyCta,
+      internalHref,
+    ) => {
+      render(<StorePage copy={getSiteContent(locale).storeGuide} />);
 
-    for (const href of farmbriteUrls) {
-      const link = document.querySelector(`a[href="${href}"]`);
-      expect(link).toBeInTheDocument();
-      expect(link).not.toHaveAttribute("target");
-      expect(link).not.toHaveAttribute("rel");
+      const card = screen.getByRole("heading", { level: 3, name: cardTitle })
+        .parentElement as HTMLElement;
+      const actionGroup = card.querySelector(".store-csa-actions");
+      const links = within(card).getAllByRole("link");
+
+      expect(actionGroup).toBeInTheDocument();
+      expect(
+        within(actionGroup as HTMLElement).getAllByRole("link"),
+      ).toHaveLength(3);
+      expect(
+        within(actionGroup as HTMLElement).queryByRole("separator"),
+      ).not.toBeInTheDocument();
+      expect(links).toHaveLength(3);
+      const [informationLink, purchaseLink, weeklyLink] = links;
+      expect(informationLink).toHaveAccessibleName(informationCta);
+      expect(purchaseLink).toHaveAccessibleName(purchaseCta);
+      expect(weeklyLink).toHaveAccessibleName(weeklyCta);
+      for (const link of links) {
+        expect(link).toHaveClass("store-csa-action");
+        expect(link).toHaveClass("store-card-cta");
+      }
+      expect(informationLink).toHaveAttribute("href", internalHref);
+      expect(informationLink).not.toHaveAttribute("target");
+      expect(purchaseLink).toHaveAttribute("href", membershipUrl);
+      expect(purchaseLink).toHaveAttribute("target", "_blank");
+      expect(purchaseLink).toHaveAttribute("rel", "noopener noreferrer");
+      expect(informationLink).toHaveClass("store-btn-secondary");
+      expect(purchaseLink).toHaveClass("store-btn-ghost");
+      expect(weeklyLink).toHaveAttribute("href", farmbriteUrls[0]);
+      expect(weeklyLink).not.toHaveAttribute("target");
+      expect(weeklyLink).toHaveClass("store-btn-primary");
+      expect(weeklyLink).not.toHaveClass("store-btn-secondary-filled");
+    },
+  );
+
+  it("keeps the All Products and Live plants CTAs on the shared CSA height contract", () => {
+    const copy = getSiteContent("en").storeGuide;
+    render(<StorePage copy={copy} />);
+
+    const csaCard = screen.getByRole("heading", {
+      level: 3,
+      name: copy.csaCard.title,
+    }).parentElement as HTMLElement;
+    const allProductsCard = screen.getByRole("heading", {
+      level: 3,
+      name: copy.individualCard.title,
+    }).parentElement as HTMLElement;
+    const livePlantsCard = screen.getByRole("heading", {
+      level: 3,
+      name: copy.livePlantsCard.title,
+    }).parentElement as HTMLElement;
+
+    const allProductsLink = within(allProductsCard).getByRole("link");
+    const livePlantsLink = within(livePlantsCard).getByRole("link");
+    const csaCtas = within(csaCard).getAllByRole("link");
+
+    expect(within(allProductsCard).getAllByRole("link")).toHaveLength(1);
+    expect(within(livePlantsCard).getAllByRole("link")).toHaveLength(1);
+    expect(allProductsLink).toHaveAttribute("href", farmbriteUrls[1]);
+    expect(livePlantsLink).toHaveAttribute("href", farmbriteUrls[2]);
+    for (const cta of [...csaCtas, allProductsLink, livePlantsLink]) {
+      expect(cta).toHaveClass("store-card-cta");
     }
 
     const zaloLink = screen.getByRole("link", { name: copy.zaloCta });
@@ -64,38 +162,9 @@ describe("StorePage", () => {
     expect(zaloLink).not.toHaveAttribute("rel");
   });
 
-  it.each([
-    [
-      "en",
-      "New to CSA? Choose your plan and join the family.",
-      "Get Started",
-      "/csa/en",
-    ],
-    [
-      "vi",
-      "Mới biết đến CSA? Chọn gói của bạn và trở thành một phần của gia đình.",
-      "Bắt Đầu Ngay",
-      "/csa/vi",
-    ],
-  ] as const)(
-    "renders the %s CSA promo as an accessible internal primary link",
-    (locale, promo, cta, href) => {
-      render(
-        <StorePage copy={getSiteContent(locale).storeGuide} locale={locale} />,
-      );
-
-      const link = screen.getByRole("link", { name: cta });
-
-      expect(screen.getByText(promo)).toBeVisible();
-      expect(link).toHaveAttribute("href", href);
-      expect(link).not.toHaveAttribute("target");
-      expect(screen.queryByText("Explore CSA")).not.toBeInTheDocument();
-    },
-  );
-
   it("opens the first FAQ initially and hides every closed answer from assistive technology", () => {
     const copy = getSiteContent("en").storeGuide;
-    render(<StorePage copy={copy} locale="en" />);
+    render(<StorePage copy={copy} />);
 
     const firstTrigger = screen.getByRole("button", {
       name: copy.faqItems[0].question,

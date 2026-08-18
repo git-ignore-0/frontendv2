@@ -23,5 +23,5 @@ export default async function StoreRoute({
   if (!isLocale(locale)) notFound();
 
   const copy = getSiteContent(locale).storeGuide;
-  return <StorePage copy={copy} locale={locale} />;
+  return <StorePage copy={copy} />;
 }
