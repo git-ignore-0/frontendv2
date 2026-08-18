@@ -37,7 +37,13 @@ export async function LocaleShell({
       />
       <main id="main">{children}</main>
       <TestimonialsWidget locale={locale as Locale} />
-      <ReferralFloatingAction locale={locale as Locale} label={t.referralFab} />
+      <div className="csa-fab-stack">
+        <div className="csa-fab-buy-slot" data-csa-fab-buy-slot />
+        <ReferralFloatingAction
+          locale={locale as Locale}
+          label={t.referralFab}
+        />
+      </div>
       <SiteFooter locale={locale as Locale} settings={settings} />
     </div>
   );

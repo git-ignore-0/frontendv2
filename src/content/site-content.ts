@@ -483,7 +483,8 @@ const en = {
     totalPrice: "Total",
     saving: "Save {amount}",
     bestSavings: "Best savings",
-    buyOnFarmbrite: "Buy now",
+    buyNow: "Buy now",
+    floatingBuyNow: "Buy now",
     expire: "Unused quantity does not carry over to the next month",
     rollover:
       "Unused quantity carries over only within a multi-month membership",
@@ -1217,7 +1218,8 @@ const vi: SiteContent = {
     totalPrice: "Tổng tiền",
     saving: "Tiết kiệm {amount}",
     bestSavings: "Tiết kiệm nhất",
-    buyOnFarmbrite: "Mua ngay",
+    buyNow: "Mua ngay",
+    floatingBuyNow: "Mua ngay",
     expire: "Số lượng chưa dùng không cộng sang tháng sau",
     rollover:
       "Số lượng chưa dùng chỉ được cộng sang tháng sau trong gói nhiều tháng",

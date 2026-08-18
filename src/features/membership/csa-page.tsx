@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ChevronDownIcon } from "@/components/icons";
 import type { SiteContent } from "@/content/site-content";
 import { accountApi } from "@/features/account/api";
 import { CsaComparisonSection } from "@/features/membership/csa-comparison-section";
+import { CsaFloatingBuyNow } from "@/features/membership/csa-floating-buy-now";
 import type {
   MembershipPackage,
   MembershipPackagePriceOption,
@@ -17,10 +19,7 @@ import {
   formatMembershipUnits,
   membershipUnitLabel,
 } from "@/features/membership/format";
-import type { Locale } from "@/lib/i18n";
-
-const FARM_BRITE_MEMBERSHIPS_URL =
-  "https://store.farmbrite.com/store/nntn/products?category=Memberships";
+import { localizedPath, type Locale } from "@/lib/i18n";
 const timelineScrollBehavior = {
   reduced: "auto",
   standard: "smooth",
@@ -110,6 +109,7 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
     sequence: number;
   } | null>(null);
   const timelineCarousel = useRef<HTMLOListElement>(null);
+  const heroBuyNow = useRef<HTMLAnchorElement>(null);
 
   const updateActiveTimelineIndex = () => {
     const carousel = timelineCarousel.current;
@@ -202,12 +202,13 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
               ))}
             </ul>
             <div className="csa-hero-actions">
-              <a
+              <Link
                 className="csa-package-action csa-hero-action"
-                href={FARM_BRITE_MEMBERSHIPS_URL}
+                href={localizedPath(locale, "/store")}
+                ref={heroBuyNow}
               >
-                {copy.buyOnFarmbrite}
-              </a>
+                {copy.buyNow}
+              </Link>
             </div>
           </div>
           <div className="csa-hero-media">
@@ -536,6 +537,11 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
           </section>
         </main>
       </div>
+      <CsaFloatingBuyNow
+        label={copy.floatingBuyNow}
+        locale={locale}
+        targetRef={heroBuyNow}
+      />
     </div>
   );
 }

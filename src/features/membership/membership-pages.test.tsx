@@ -23,18 +23,16 @@ import {
 } from "@/features/membership/account-membership-pages";
 import { CsaPage } from "@/features/membership/csa-page";
 
-const FARM_BRITE_MEMBERSHIPS_URL =
-  "https://store.farmbrite.com/store/nntn/products?category=Memberships";
+const navigation = vi.hoisted(() => ({
+  back: vi.fn(),
+  pathname: "/csa/en",
+  replace: vi.fn(),
+}));
 
-function farmbriteCtas() {
-  return document.querySelectorAll<HTMLAnchorElement>(
-    `a[href="${FARM_BRITE_MEMBERSHIPS_URL}"]`,
-  );
-}
-
-const navigation = vi.hoisted(() => ({ back: vi.fn(), replace: vi.fn() }));
-
-vi.mock("next/navigation", () => ({ useRouter: () => navigation }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => navigation.pathname,
+  useRouter: () => navigation,
+}));
 vi.mock("@/features/account/api", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@/features/account/api")>();
@@ -421,7 +419,7 @@ describe("public CSA Membership", () => {
     expect(screen.queryByText("Best savings")).toBeNull();
   });
 
-  it("opens the Farmbrite CTA in the same tab and makes no request/payment/login call", async () => {
+  it("opens the Store CTA in the same tab and makes no request/payment/login call", async () => {
     vi.mocked(accountApi).mockResolvedValue(catalog());
     const copy = getSiteContent("vi").csa;
     render(<CsaPage copy={copy} locale="vi" />);
@@ -429,9 +427,7 @@ describe("public CSA Membership", () => {
     const heroCta = await screen.findByRole("link", {
       name: "Mua ngay",
     });
-    expect(farmbriteCtas()).toHaveLength(1);
-    expect(farmbriteCtas()[0]).toBe(heroCta);
-    expect(heroCta).toHaveAttribute("href", FARM_BRITE_MEMBERSHIPS_URL);
+    expect(heroCta).toHaveAttribute("href", "/store/vi");
     expect(heroCta).not.toHaveAttribute("target");
     expect(heroCta).not.toHaveAttribute("rel");
     expect(document.querySelector(".csa-story")).toBeNull();
@@ -470,16 +466,14 @@ describe("public CSA Membership", () => {
     expect(document.querySelector(".csa-benefits")).toBeNull();
   });
 
-  it("keeps the English Farmbrite CTA localized and verifies benefits", async () => {
+  it("keeps the English Store CTA localized and verifies benefits", async () => {
     vi.mocked(accountApi).mockResolvedValue(catalog());
     const copy = getSiteContent("en").csa;
     render(<CsaPage copy={copy} locale="en" />);
 
     const heroCta = await screen.findByRole("link", { name: "Buy now" });
-    expect(farmbriteCtas()).toHaveLength(1);
-    expect(farmbriteCtas()[0]).toBe(heroCta);
     expect(heroCta).toBeVisible();
-    expect(heroCta).toHaveAttribute("href", FARM_BRITE_MEMBERSHIPS_URL);
+    expect(heroCta).toHaveAttribute("href", "/store/en");
     expect(heroCta).not.toHaveAttribute("target");
     expect(heroCta).not.toHaveAttribute("rel");
     expect(document.querySelector(".csa-story")).toBeNull();
@@ -510,8 +504,7 @@ describe("public CSA Membership", () => {
     ).toBeVisible();
     const heroCta = screen.getByRole("link", { name: "Buy now" });
     expect(heroCta).toBeVisible();
-    expect(farmbriteCtas()).toHaveLength(1);
-    expect(farmbriteCtas()[0]).toBe(heroCta);
+    expect(heroCta).toHaveAttribute("href", "/store/en");
   });
 
   it("keeps only the Hero CTA while packages load and after an error", async () => {
@@ -524,7 +517,6 @@ describe("public CSA Membership", () => {
 
     expect(screen.getByText("Loading packages…")).toBeVisible();
     expect(screen.getByRole("link", { name: "Buy now" })).toBeVisible();
-    expect(farmbriteCtas()).toHaveLength(1);
     loadingView.unmount();
 
     vi.mocked(accountApi).mockRejectedValue(new Error("Unavailable"));
@@ -534,7 +526,6 @@ describe("public CSA Membership", () => {
       await screen.findByText("We could not load packages. Please try again."),
     ).toBeVisible();
     expect(screen.getByRole("link", { name: "Buy now" })).toBeVisible();
-    expect(farmbriteCtas()).toHaveLength(1);
   });
 
   it("paginates all active packages without loading every page", async () => {

@@ -1457,6 +1457,74 @@ a:hover .arrow {
   box-shadow: 0 16px 38px rgba(23, 63, 52, 0.3);
   transform: translateY(-2px);
 }
+.csa-fab-stack {
+  display: contents;
+}
+.csa-fab-stack:has(.csa-floating-buy-now) {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.625rem;
+}
+.csa-fab-stack:has(.csa-floating-buy-now) .csa-fab-buy-slot {
+  display: flex;
+}
+.csa-fab-stack:has(.csa-floating-buy-now) .csa-floating-buy-now,
+.csa-fab-stack:has(.csa-floating-buy-now) .referral-floating-action {
+  position: static;
+  right: auto;
+  bottom: auto;
+}
+.csa-floating-buy-now {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 40;
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 1rem 0.45rem 0.75rem;
+  border: 1px solid color-mix(in srgb, white 24%, var(--moss));
+  border-radius: 999px;
+  background: var(--moss);
+  box-shadow: 0 12px 32px rgba(23, 63, 52, 0.24);
+  color: white;
+  font-size: 0.84rem;
+  font-weight: 850;
+  line-height: 1.25;
+  transition:
+    opacity 0.2s var(--ease),
+    transform 0.2s var(--ease),
+    box-shadow 0.2s var(--ease),
+    background-color 0.2s var(--ease);
+}
+.csa-floating-buy-now[data-visible="false"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.75rem);
+}
+.csa-floating-buy-now:hover {
+  background: color-mix(in srgb, var(--moss) 82%, var(--forest));
+  box-shadow: 0 16px 38px rgba(23, 63, 52, 0.3);
+  transform: translateY(-0.125rem);
+}
+.csa-floating-buy-now:focus-visible {
+  outline: 3px solid var(--straw);
+  outline-offset: 3px;
+}
+.csa-floating-buy-now:active {
+  transform: translateY(0);
+}
+.csa-floating-buy-now svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+}
 .referral-floating-action-icon {
   width: 42px;
   height: 42px;
@@ -3692,6 +3760,14 @@ tbody th {
   .csa-hero-action:focus-visible {
     transform: none;
   }
+  .csa-floating-buy-now {
+    transition: none;
+  }
+  .csa-floating-buy-now[data-visible="false"],
+  .csa-floating-buy-now:hover,
+  .csa-floating-buy-now:active {
+    transform: none;
+  }
 }
 .csa-package-action:disabled {
   background: color-mix(in srgb, var(--muted) 18%, white);
@@ -5298,6 +5374,9 @@ tbody th {
   [data-locale-shell]:has(.referral-floating-action) .footer {
     padding-bottom: calc(5.75rem + env(safe-area-inset-bottom));
   }
+  [data-locale-shell]:has(.csa-floating-buy-now) .footer {
+    padding-bottom: calc(10rem + env(safe-area-inset-bottom));
+  }
   .account-primary-action {
     width: 100%;
   }
@@ -5362,6 +5441,13 @@ tbody th {
     bottom: max(0.75rem, env(safe-area-inset-bottom));
     max-width: calc(100vw - 1.5rem);
     font-size: 0.78rem;
+  }
+  .csa-floating-buy-now {
+    font-size: 0.78rem;
+  }
+  .csa-fab-stack:has(.csa-floating-buy-now) {
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
   .referral-code-control code {
     padding: 0;
@@ -5464,7 +5550,8 @@ tbody th {
   }
 }
 @media print {
-  .referral-floating-action {
+  .referral-floating-action,
+  .csa-floating-buy-now {
     display: none;
   }
 }
