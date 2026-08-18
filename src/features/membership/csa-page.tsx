@@ -237,6 +237,10 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
         </header>
 
         <main>
+          {copy.comparisons.map((comparison) => (
+            <CsaComparisonSection key={comparison.eyebrow} copy={comparison} />
+          ))}
+
           <section
             className="csa-packages"
             aria-labelledby="csa-packages-title"
@@ -437,21 +441,15 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
             )}
           </section>
 
-          {copy.comparisons.map((comparison) => (
-            <CsaComparisonSection key={comparison.eyebrow} copy={comparison} />
-          ))}
-
           <section
             className="csa-timeline"
             aria-labelledby="csa-timeline-title"
           >
-            <div className="csa-section-heading csa-timeline-heading">
+            <div className="csa-section-heading">
               <h2 className="store-section-title" id="csa-timeline-title">
                 {copy.timelineTitle}
               </h2>
-              <p className="csa-section-intro csa-timeline-supporting">
-                {copy.substitutionLine}
-              </p>
+              <p className="csa-section-intro">{copy.substitutionLine}</p>
             </div>
             <div className="csa-timeline-carousel">
               <ol

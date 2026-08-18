@@ -131,7 +131,7 @@ function catalog(
 
 describe("public CSA Membership", () => {
   it.each(["en", "vi"] as const)(
-    "renders the %s comparison sections between packages and the weekly timeline",
+    "renders the %s packages between the comparison sections and the weekly timeline",
     async (locale) => {
       vi.mocked(accountApi).mockResolvedValue(catalog());
       const copy = getSiteContent(locale).csa;
@@ -168,13 +168,13 @@ describe("public CSA Membership", () => {
       expect(timelineIntro.tagName).toBe("P");
       expect(timelineIntro).toHaveClass("csa-section-intro");
 
-      expect(packages.compareDocumentPosition(comparisons[0])).toBe(
-        Node.DOCUMENT_POSITION_FOLLOWING,
-      );
       expect(comparisons[0].compareDocumentPosition(comparisons[1])).toBe(
         Node.DOCUMENT_POSITION_FOLLOWING,
       );
-      expect(comparisons[1].compareDocumentPosition(timeline)).toBe(
+      expect(comparisons[1].compareDocumentPosition(packages)).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      expect(packages.compareDocumentPosition(timeline)).toBe(
         Node.DOCUMENT_POSITION_FOLLOWING,
       );
 
