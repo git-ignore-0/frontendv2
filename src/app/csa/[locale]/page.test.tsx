@@ -26,12 +26,12 @@ describe("canonical CSA route", () => {
     [
       "en",
       "Fresh food each week, supporting farmers for a better future.",
-      "FAQ",
+      "Ordering FAQ",
     ],
     [
       "vi",
       "Thực phẩm tươi mỗi tuần, cùng nông dân vun bồi một tương lai tốt hơn.",
-      "Câu hỏi thường gặp",
+      "Câu Hỏi Thường Gặp Về Đặt Hàng",
     ],
   ] as const)("renders the %s CSA page", async (locale, title, faqTitle) => {
     vi.mocked(accountApi).mockResolvedValue({

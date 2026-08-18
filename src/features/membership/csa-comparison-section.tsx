@@ -90,7 +90,7 @@ export function CsaComparisonSection({
     <section className="csa-comparison" aria-labelledby={sectionId}>
       <header className="csa-section-heading">
         <p className="csa-section-kicker">{copy.eyebrow}</p>
-        <h2 className="csa-section-title" id={sectionId}>
+        <h2 className="store-section-title" id={sectionId}>
           {copy.title}
         </h2>
         <p className="csa-section-intro">{copy.intro}</p>

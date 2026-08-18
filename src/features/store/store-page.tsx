@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { SiteContent } from "@/content/site-content";
+import { ZaloHelpSection } from "@/components/zalo-help";
 import {
   BasketIcon,
   BagIcon,
   SproutIcon,
-  MessageCircleIcon,
   ChevronDownIcon,
   Arrow,
 } from "@/components/icons";
@@ -181,16 +181,12 @@ export function StorePage({ copy }: { copy: Copy }) {
             </div>
           </section>
 
-          <section className="store-help">
-            <div className="store-help-content">
-              <h2>{copy.zaloTitle}</h2>
-              <p>{copy.zaloBody}</p>
-            </div>
-            <a href={copy.zaloUrl} className="store-help-btn">
-              <MessageCircleIcon className="store-icon" />
-              {copy.zaloCta}
-            </a>
-          </section>
+          <ZaloHelpSection
+            title={copy.zaloTitle}
+            body={copy.zaloBody}
+            cta={copy.zaloCta}
+            url={copy.zaloUrl}
+          />
         </div>
       </div>
     </div>

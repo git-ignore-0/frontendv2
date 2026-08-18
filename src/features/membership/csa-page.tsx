@@ -3,8 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 
 import { ChevronDownIcon } from "@/components/icons";
+import { ZaloHelpSection } from "@/components/zalo-help";
 import type { SiteContent } from "@/content/site-content";
 import { accountApi } from "@/features/account/api";
 import { CsaComparisonSection } from "@/features/membership/csa-comparison-section";
@@ -20,10 +22,6 @@ import {
   membershipUnitLabel,
 } from "@/features/membership/format";
 import { localizedPath, type Locale } from "@/lib/i18n";
-const timelineScrollBehavior = {
-  reduced: "auto",
-  standard: "smooth",
-} as const;
 
 type Copy = SiteContent["csa"];
 
@@ -97,7 +95,6 @@ function BenefitIcon({ type }: { type: string }) {
 
 export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
-  const [activeTimelineIndex, setActiveTimelineIndex] = useState(0);
   const [packages, setPackages] = useState<MembershipPackage[]>([]);
   const [packagesMeta, setPackagesMeta] = useState<PaginationMeta | null>(null);
   const [packagesPage, setPackagesPage] = useState(1);
@@ -108,43 +105,59 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
     controller: AbortController;
     sequence: number;
   } | null>(null);
-  const timelineCarousel = useRef<HTMLOListElement>(null);
   const heroBuyNow = useRef<HTMLAnchorElement>(null);
+  const timelineCarousel = useRef<HTMLOListElement>(null);
+  const timelineDrag = useRef({
+    pointerId: 0,
+    startX: 0,
+    scrollLeft: 0,
+    dragging: false,
+  });
 
-  const updateActiveTimelineIndex = () => {
+  const handleTimelinePointerDown = (
+    event: ReactPointerEvent<HTMLOListElement>,
+  ) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
     const carousel = timelineCarousel.current;
-    if (!carousel) return;
-
-    const cards = Array.from(carousel.children);
-    const closestCardIndex = cards.reduce(
-      (closestIndex, card, index) =>
-        Math.abs((card as HTMLElement).offsetLeft - carousel.scrollLeft) <
-        Math.abs(
-          (cards[closestIndex] as HTMLElement).offsetLeft - carousel.scrollLeft,
-        )
-          ? index
-          : closestIndex,
-      0,
-    );
-    setActiveTimelineIndex(closestCardIndex);
+    if (!carousel || typeof event.pointerId !== "number") return;
+    timelineDrag.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      scrollLeft: carousel.scrollLeft,
+      dragging: true,
+    };
+    carousel.classList.add("is-dragging");
+    carousel.setPointerCapture?.(event.pointerId);
+    carousel.style.scrollSnapType = "none";
+    carousel.style.scrollBehavior = "auto";
   };
 
-  const moveTimeline = (direction: -1 | 1) => {
-    const nextIndex = Math.max(
-      0,
-      Math.min(copy.timeline.length - 1, activeTimelineIndex + direction),
-    );
-    const nextCard = timelineCarousel.current?.children.item(nextIndex);
-    if (!(nextCard instanceof HTMLElement)) return;
+  const handleTimelinePointerMove = (
+    event: ReactPointerEvent<HTMLOListElement>,
+  ) => {
+    const carousel = timelineCarousel.current;
+    const drag = timelineDrag.current;
+    if (!carousel || !drag.dragging || event.pointerId !== drag.pointerId) {
+      return;
+    }
+    carousel.scrollLeft = drag.scrollLeft - (event.clientX - drag.startX);
+  };
 
-    nextCard.scrollIntoView?.({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? timelineScrollBehavior.reduced
-        : timelineScrollBehavior.standard,
-      block: "nearest",
-      inline: "start",
-    });
-    setActiveTimelineIndex(nextIndex);
+  const handleTimelinePointerEnd = (
+    event: ReactPointerEvent<HTMLOListElement>,
+  ) => {
+    const carousel = timelineCarousel.current;
+    const drag = timelineDrag.current;
+    if (!carousel || !drag.dragging || event.pointerId !== drag.pointerId) {
+      return;
+    }
+    drag.dragging = false;
+    carousel.classList.remove("is-dragging");
+    if (carousel.hasPointerCapture?.(event.pointerId)) {
+      carousel.releasePointerCapture?.(event.pointerId);
+    }
+    carousel.style.scrollSnapType = "";
+    carousel.style.scrollBehavior = "";
   };
 
   const loadPackages = useCallback(async () => {
@@ -229,7 +242,7 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
             aria-labelledby="csa-packages-title"
           >
             <header className="csa-section-heading">
-              <h2 className="csa-section-title" id="csa-packages-title">
+              <h2 className="store-section-title" id="csa-packages-title">
                 {copy.packagesTitle}
               </h2>
               <p className="csa-section-intro">{copy.packagesSubtitle}</p>
@@ -432,43 +445,26 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
             className="csa-timeline"
             aria-labelledby="csa-timeline-title"
           >
-            <div className="csa-timeline-heading">
-              <div className="csa-section-heading csa-timeline-heading-copy">
-                <h2 className="csa-section-title" id="csa-timeline-title">
-                  {copy.timelineTitle}
-                </h2>
-                <p className="csa-section-intro csa-timeline-supporting">
-                  {copy.substitutionLine}
-                </p>
-              </div>
-              <nav aria-label={copy.timelineLabel} className="csa-timeline-nav">
-                <button
-                  type="button"
-                  onClick={() => moveTimeline(-1)}
-                  disabled={activeTimelineIndex === 0}
-                  aria-label={copy.timelinePrevious}
-                >
-                  <svg aria-hidden="true" viewBox="0 0 24 24">
-                    <path d="m14 6-6 6 6 6" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveTimeline(1)}
-                  disabled={activeTimelineIndex === copy.timeline.length - 1}
-                  aria-label={copy.timelineNext}
-                >
-                  <svg aria-hidden="true" viewBox="0 0 24 24">
-                    <path d="m10 6 6 6-6 6" />
-                  </svg>
-                </button>
-              </nav>
+            <div className="csa-section-heading csa-timeline-heading">
+              <h2 className="store-section-title" id="csa-timeline-title">
+                {copy.timelineTitle}
+              </h2>
+              <p className="csa-section-intro csa-timeline-supporting">
+                {copy.substitutionLine}
+              </p>
             </div>
-            <div
-              className="csa-timeline-carousel"
-              aria-label={copy.timelineLabel}
-            >
-              <ol ref={timelineCarousel} onScroll={updateActiveTimelineIndex}>
+            <div className="csa-timeline-carousel">
+              <ol
+                ref={timelineCarousel}
+                aria-label={copy.timelineLabel}
+                tabIndex={0}
+                onPointerDown={handleTimelinePointerDown}
+                onPointerMove={handleTimelinePointerMove}
+                onPointerUp={handleTimelinePointerEnd}
+                onPointerCancel={handleTimelinePointerEnd}
+                onLostPointerCapture={handleTimelinePointerEnd}
+                onDragStart={(event) => event.preventDefault()}
+              >
                 {copy.timeline.map((step) => (
                   <li key={step.day}>
                     <div className="csa-timeline-card-media">
@@ -476,7 +472,7 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
                         src={step.image}
                         alt={step.alt}
                         fill
-                        sizes="(min-width: 1024px) 25vw, (min-width: 768px) 36vw, 64vw"
+                        sizes="(min-width: 1024px) 18vw, (min-width: 768px) 28vw, 58vw"
                       />
                     </div>
                     <div className="csa-timeline-card-content">
@@ -489,12 +485,10 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
             </div>
           </section>
 
-          <section className="csa-faq" aria-labelledby="csa-faq-title">
-            <header className="csa-section-heading">
-              <h2 className="csa-section-title" id="csa-faq-title">
-                {copy.faqTitle}
-              </h2>
-            </header>
+          <section className="store-section" aria-labelledby="csa-faq-title">
+            <h2 id="csa-faq-title" className="store-section-title">
+              {copy.faqTitle}
+            </h2>
             <div className="store-faq">
               {copy.faqItems.map((faq, index) => {
                 const triggerId = `csa-faq-trigger-${index}`;
@@ -535,6 +529,13 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
               })}
             </div>
           </section>
+
+          <ZaloHelpSection
+            title={copy.zaloTitle}
+            body={copy.zaloBody}
+            cta={copy.zaloCta}
+            url={copy.zaloUrl}
+          />
         </main>
       </div>
       <CsaFloatingBuyNow

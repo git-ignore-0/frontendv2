@@ -150,15 +150,17 @@ describe("public CSA Membership", () => {
       expect(screen.getByRole("heading", { level: 1, name: copy.title })).toBe(
         document.querySelector(".csa-hero h1"),
       );
-      for (const title of [
-        copy.packagesTitle,
-        copy.timelineTitle,
-        copy.faqTitle,
-      ]) {
+      for (const title of [copy.packagesTitle, copy.timelineTitle]) {
         const heading = screen.getByRole("heading", { level: 2, name: title });
-        expect(heading).toHaveClass("csa-section-title");
+        expect(heading).toHaveClass("store-section-title");
         expect(heading.closest(".csa-section-heading")).not.toBeNull();
       }
+      const faqHeading = screen.getByRole("heading", {
+        level: 2,
+        name: copy.faqTitle,
+      });
+      expect(faqHeading).toHaveClass("store-section-title");
+      expect(faqHeading.closest(".store-section")).not.toBeNull();
       const packageIntro = screen.getByText(copy.packagesSubtitle);
       const timelineIntro = screen.getByText(copy.substitutionLine);
       expect(packageIntro.tagName).toBe("P");
@@ -199,7 +201,7 @@ describe("public CSA Membership", () => {
             level: 2,
             name: comparison.title,
           }),
-        ).toHaveClass("csa-section-title");
+        ).toHaveClass("store-section-title");
         const intro = within(section).getByText(comparison.intro);
         expect(intro.tagName).toBe("P");
         expect(intro).toHaveClass("csa-section-intro");
@@ -255,7 +257,7 @@ describe("public CSA Membership", () => {
   );
 
   it.each(["en", "vi"] as const)(
-    "renders the %s weekly timeline carousel in order and navigates it",
+    "renders the %s weekly timeline carousel in order without navigation buttons",
     async (locale) => {
       vi.mocked(accountApi).mockResolvedValue(catalog());
       const copy = getSiteContent(locale).csa;
@@ -265,16 +267,19 @@ describe("public CSA Membership", () => {
         name: copy.timelineTitle,
       });
       const cards = within(timeline).getAllByRole("listitem");
-      const previous = within(timeline).getByRole("button", {
-        name: copy.timelinePrevious,
-      });
-      const next = within(timeline).getByRole("button", {
-        name: copy.timelineNext,
-      });
 
       expect(cards).toHaveLength(5);
-      expect(previous).toBeDisabled();
-      expect(next).toBeEnabled();
+      const list = within(timeline).getByRole("list", {
+        name: copy.timelineLabel,
+      });
+      expect(list).toHaveAttribute("tabindex", "0");
+      expect(
+        within(timeline).queryByRole("button", { name: "Previous day" }),
+      ).toBeNull();
+      expect(
+        within(timeline).queryByRole("button", { name: "Next day" }),
+      ).toBeNull();
+      expect(timeline.querySelector(".csa-timeline-nav")).toBeNull();
       const heading = within(timeline).getByRole("heading", {
         name: copy.timelineTitle,
       });
@@ -299,16 +304,51 @@ describe("public CSA Membership", () => {
       for (const index of ["01", "02", "03", "04", "05"]) {
         expect(within(timeline).queryByText(index, { exact: true })).toBeNull();
       }
+    },
+  );
 
-      fireEvent.click(next);
-      expect(previous).toBeEnabled();
-      for (let index = 1; index < copy.timeline.length; index += 1) {
-        fireEvent.click(next);
-      }
-      expect(next).toBeDisabled();
+  it.each(["en", "vi"] as const)(
+    "supports dragging the %s timeline carousel with the pointer",
+    async (locale) => {
+      vi.mocked(accountApi).mockResolvedValue(catalog());
+      const copy = getSiteContent(locale).csa;
+      render(<CsaPage copy={copy} locale={locale} />);
 
-      fireEvent.click(previous);
-      expect(next).toBeEnabled();
+      const list = screen.getByRole("list", { name: copy.timelineLabel });
+
+      fireEvent.pointerDown(list, {
+        pointerId: 1,
+        pointerType: "mouse",
+        button: 0,
+        clientX: 120,
+      });
+      expect(list).toHaveClass("is-dragging");
+      expect(list.style.scrollSnapType).toBe("none");
+
+      fireEvent.pointerMove(list, {
+        pointerId: 1,
+        clientX: 80,
+      });
+      fireEvent.pointerUp(list, { pointerId: 1 });
+      expect(list).not.toHaveClass("is-dragging");
+      expect(list.style.scrollSnapType).toBe("");
+      expect(list.style.scrollBehavior).toBe("");
+    },
+  );
+
+  it.each(["en", "vi"] as const)(
+    "renders the %s CSA Zalo help section with a labelled link",
+    async (locale) => {
+      vi.mocked(accountApi).mockResolvedValue(catalog());
+      const copy = getSiteContent(locale).csa;
+      render(<CsaPage copy={copy} locale={locale} />);
+
+      const section = screen.getByLabelText(copy.zaloTitle);
+      expect(section).toBeVisible();
+      const zaloLink = screen.getByRole("link", { name: copy.zaloCta });
+      expect(zaloLink).toHaveAttribute("href", copy.zaloUrl);
+      expect(zaloLink).not.toHaveAttribute("target");
+      expect(zaloLink).not.toHaveAttribute("rel");
     },
   );
 

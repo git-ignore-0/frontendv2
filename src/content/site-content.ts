@@ -382,8 +382,6 @@ const en = {
     ],
     timelineTitle: "How does a typical week work?",
     timelineLabel: "Weekly CSA timeline",
-    timelinePrevious: "Previous day",
-    timelineNext: "Next day",
     timeline: [
       {
         day: "MON",
@@ -423,7 +421,7 @@ const en = {
     ],
     substitutionLine:
       "If something on your list runs low before harvest day, we'll substitute with something equally fresh and let you know — nothing shows up as a surprise.",
-    faqTitle: "FAQ",
+    faqTitle: "Ordering FAQ",
     faqItems: [
       {
         question: "What if an item runs out?",
@@ -485,11 +483,16 @@ const en = {
     bestSavings: "Best savings",
     buyNow: "Buy now",
     floatingBuyNow: "Buy now",
-    expire: "Unused quantity does not carry over to the next month",
+    expire: "Unused quantity carries over if you renew your membership.",
     rollover:
       "Unused quantity carries over only within a multi-month membership",
     includedProducts: "Quantity you can use each month",
     cycle: "month",
+    zaloTitle: "Need help with your CSA membership?",
+    zaloBody:
+      "Message Natural Farming Vietnam on Zalo for help choosing a plan, ordering, or changing an existing membership.",
+    zaloCta: "Contact us on Zalo",
+    zaloUrl: "https://zalo.me/84988158285",
   },
   home: {
     heroEyebrow: "Living Soil · From soil, life begins",
@@ -649,7 +652,7 @@ const en = {
       cta: "Browse live plants",
       url: "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
     },
-    faqTitle: "Ordering questions",
+    faqTitle: "Ordering FAQ",
     faqItems: [
       {
         question: "How do I choose my weekly CSA items?",
@@ -1116,8 +1119,6 @@ const vi: SiteContent = {
     ],
     timelineTitle: "Một tuần giao nhận diễn ra như thế nào?",
     timelineLabel: "Lịch giao nhận CSA hằng tuần",
-    timelinePrevious: "Ngày trước",
-    timelineNext: "Ngày tiếp theo",
     timeline: [
       {
         day: "THỨ HAI",
@@ -1157,7 +1158,7 @@ const vi: SiteContent = {
     ],
     substitutionLine:
       "Nếu một sản phẩm trong danh sách của bạn không đủ trước ngày thu hoạch, chúng tôi sẽ thay thế bằng một sản phẩm tươi ngon tương đương và thông báo cho bạn — không có gì bất ngờ cả.",
-    faqTitle: "Câu hỏi thường gặp",
+    faqTitle: "Câu Hỏi Thường Gặp Về Đặt Hàng",
     faqItems: [
       {
         question: "Nếu một sản phẩm hết hàng thì sao?",
@@ -1220,11 +1221,17 @@ const vi: SiteContent = {
     bestSavings: "Tiết kiệm nhất",
     buyNow: "Mua ngay",
     floatingBuyNow: "Mua ngay",
-    expire: "Số lượng chưa dùng không cộng sang tháng sau",
+    expire:
+      "Số lượng chưa sử dụng sẽ được chuyển tiếp nếu bạn gia hạn gói thành viên.",
     rollover:
       "Số lượng chưa dùng chỉ được cộng sang tháng sau trong gói nhiều tháng",
     includedProducts: "Số lượng bạn có thể dùng mỗi tháng",
     cycle: "tháng",
+    zaloTitle: "Cần hỗ trợ về gói CSA?",
+    zaloBody:
+      "Nhắn Natural Farming Vietnam trên Zalo nếu bạn cần hỗ trợ chọn gói, đặt hàng hoặc thay đổi Membership hiện có.",
+    zaloCta: "Liên hệ qua Zalo",
+    zaloUrl: "https://zalo.me/84988158285",
   },
   home: {
     heroEyebrow: "Đất sống · Từ đất, sự sống bắt đầu",
@@ -1384,7 +1391,7 @@ const vi: SiteContent = {
       cta: "Xem cây sống và cây giống",
       url: "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
     },
-    faqTitle: "Câu hỏi về đặt hàng",
+    faqTitle: "Câu Hỏi Thường Gặp Về Đặt Hàng",
     faqItems: [
       {
         question: "Làm thế nào để chọn sản phẩm CSA hàng tuần?",
