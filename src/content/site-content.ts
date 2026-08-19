@@ -377,10 +377,10 @@ const en = {
           ],
         },
         pullQuote: {
-          lead: "With à la carte, you're a customer — looking for the best organic deal you can find.",
+          lead: "",
           accent:
-            "With CSA, you become part of the family — building a better future for the farmer, for yourself, and for generations to come.",
-          accentTerm: "family",
+            "Farmers from 6 different provinces currently producing for the Natural Farming Vietnam family!",
+          accentTerm: "6 different provinces",
           mark: "“",
         },
         conclusion: {
@@ -1123,10 +1123,10 @@ const vi: SiteContent = {
           ],
         },
         pullQuote: {
-          lead: "Với à la carte, bạn là một khách hàng — đang tìm kiếm ưu đãi hữu cơ tốt nhất có thể.",
+          lead: "",
           accent:
-            "Với CSA, bạn trở thành một phần của gia đình — cùng xây dựng một tương lai tốt đẹp hơn cho người nông dân, cho chính bạn, và cho các thế hệ sau.",
-          accentTerm: "gia đình",
+            "Những người nông dân từ 6 tỉnh thành khác nhau đang cùng sản xuất cho gia đình Natural Farming Vietnam!",
+          accentTerm: "6 tỉnh thành khác nhau",
           mark: "“",
         },
         conclusion: {

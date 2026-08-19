@@ -237,12 +237,17 @@ describe("public CSA Membership", () => {
       expect("pullQuote" in csaComparison).toBe(true);
       if (!("pullQuote" in csaComparison))
         throw new Error("Missing pull quote");
-      expect(comparisons[1].querySelector("blockquote")).toHaveTextContent(
-        csaComparison.pullQuote.lead,
-      );
-      expect(comparisons[1]).toHaveTextContent(csaComparison.pullQuote.accent);
       const quote = comparisons[1].querySelector("blockquote");
       expect(quote).toHaveClass("csa-comparison-quote");
+      const leadParagraph = quote?.querySelector(
+        "p:not(.csa-comparison-quote-accent)",
+      );
+      if (csaComparison.pullQuote.lead) {
+        expect(leadParagraph).toHaveTextContent(csaComparison.pullQuote.lead);
+      } else {
+        expect(leadParagraph).toBeNull();
+      }
+      expect(quote).toHaveTextContent(csaComparison.pullQuote.accent);
       expect(quote?.querySelector('[aria-hidden="true"]')).toHaveTextContent(
         csaComparison.pullQuote.mark,
       );

@@ -3492,16 +3492,37 @@ tbody th {
 }
 .csa-comparison-quote {
   position: relative;
-  max-width: 48rem;
-  margin: clamp(2.5rem, 5vw, 4rem) auto 0;
+  max-width: 42rem;
+  margin: clamp(3.5rem, 6vw, 5rem) auto 0;
+  padding: 2.5rem 1.5rem 1.5rem;
   text-align: center;
-  animation: csa-comparison-quote-enter 0.36s var(--ease-out) both;
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--forest) 12%, transparent);
+  border-radius: 1.25rem;
+  box-shadow: 0 16px 40px -12px rgba(23, 63, 52, 0.15);
+  animation: csa-comparison-quote-enter 0.5s var(--ease-out) both;
 }
 .csa-comparison-quote-mark {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3.5rem;
+  height: 3.5rem;
+  background: var(--forest);
+  color: var(--straw);
+  font-size: 3.5rem;
+  line-height: 1;
+  font-family: Georgia, serif;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px var(--cream);
+  padding-top: 1.2rem;
 }
 .csa-comparison-quote p {
-  margin: 0 0 0.5rem;
+  margin: 0;
   color: var(--muted);
   font-size: clamp(1.05rem, 2.2vw, 1.15rem);
   line-height: 1.6;
@@ -3509,11 +3530,12 @@ tbody th {
 .csa-comparison-quote .csa-comparison-quote-accent {
   margin-top: 0;
   color: var(--forest);
-  font-size: clamp(1.15rem, 2.5vw, 1.35rem);
-  font-weight: 700;
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  font-weight: 600;
+  line-height: 1.6;
 }
 .csa-comparison-quote-term {
-  color: var(--terra);
+  color: inherit;
 }
 .csa-comparison-conclusion {
   position: relative;
@@ -4290,9 +4312,11 @@ tbody th {
     box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
     border: 1px solid color-mix(in srgb, var(--moss) 20%, transparent);
   }
-  .csa-comparison-conclusion,
-  .csa-comparison-quote {
+  .csa-comparison-conclusion {
     margin-top: clamp(1.5rem, 4vw, 2rem);
+  }
+  .csa-comparison-quote {
+    margin-top: clamp(3rem, 6vw, 4rem);
   }
 }
 @media (min-width: 768px) {

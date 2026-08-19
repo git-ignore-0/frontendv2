@@ -50,7 +50,7 @@ function PullQuote({
       <span aria-hidden="true" className="csa-comparison-quote-mark">
         {copy.mark}
       </span>
-      <p>{copy.lead}</p>
+      {copy.lead ? <p>{copy.lead}</p> : null}
       <p className="csa-comparison-quote-accent">
         {canEmphasizeTerm ? (
           <>
@@ -218,8 +218,8 @@ export function CsaComparisonSection({
           variant="right"
         />
       </div>
-      {copy.pullQuote ? <PullQuote copy={copy.pullQuote} /> : null}
       {copy.conclusion ? <Conclusion copy={copy.conclusion} /> : null}
+      {copy.pullQuote ? <PullQuote copy={copy.pullQuote} /> : null}
     </section>
   );
 }
