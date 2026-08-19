@@ -75,7 +75,9 @@ export function CsaFloatingBuyNow({
       ref={actionRef}
       tabIndex={visible ? undefined : -1}
     >
-      <BagIcon />
+      <span className="csa-floating-buy-now-icon">
+        <BagIcon />
+      </span>
       <span>{label}</span>
     </Link>
   );

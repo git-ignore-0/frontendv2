@@ -59,7 +59,9 @@ export function TestimonialsWidget({ locale }: { locale: Locale }) {
         onClick={openDrawer}
         type="button"
       >
-        <MessageCircleIcon />
+        <span className="testimonials-launcher-icon">
+          <MessageCircleIcon />
+        </span>
         <span>{copy.launcher}</span>
       </button>
       <button
@@ -69,7 +71,9 @@ export function TestimonialsWidget({ locale }: { locale: Locale }) {
         onClick={openDrawer}
         type="button"
       >
-        <MessageCircleIcon />
+        <span className="testimonials-launcher-icon">
+          <MessageCircleIcon />
+        </span>
         <span>{copy.launcher}</span>
       </button>
 

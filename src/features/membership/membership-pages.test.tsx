@@ -303,6 +303,61 @@ describe("public CSA Membership", () => {
   );
 
   it.each(["en", "vi"] as const)(
+    "supports the %s CSA comparison tabs with linked panels and keyboard navigation",
+    async (locale) => {
+      vi.mocked(accountApi).mockResolvedValue(catalog());
+      const copy = getSiteContent(locale).csa;
+      render(<CsaPage copy={copy} locale={locale} />);
+
+      const comparison = copy.comparisons[0];
+      const section = screen.getByRole("region", {
+        name: comparison.title,
+      });
+      const [leftTab, rightTab] = within(section).getAllByRole("tab");
+      const [leftPanel, rightPanel] = within(section).getAllByRole("tabpanel");
+
+      expect(leftTab).toHaveAttribute("aria-selected", "true");
+      expect(leftTab).toHaveAttribute("tabindex", "0");
+      expect(rightTab).toHaveAttribute("aria-selected", "false");
+      expect(rightTab).toHaveAttribute("tabindex", "-1");
+      expect(leftTab).toHaveAttribute("aria-controls", leftPanel.id);
+      expect(rightTab).toHaveAttribute("aria-controls", rightPanel.id);
+      expect(leftPanel).toHaveAttribute("aria-labelledby", leftTab.id);
+      expect(rightPanel).toHaveAttribute("aria-labelledby", rightTab.id);
+      expect(leftPanel).toHaveAttribute("tabindex", "0");
+      expect(rightPanel).toHaveAttribute("tabindex", "-1");
+
+      leftTab.focus();
+      fireEvent.keyDown(leftTab, { key: "ArrowRight" });
+      expect(rightTab).toHaveFocus();
+      expect(rightTab).toHaveAttribute("aria-selected", "true");
+      expect(leftTab).toHaveAttribute("aria-selected", "false");
+      expect(rightPanel).toHaveAttribute("tabindex", "0");
+      expect(leftPanel).toHaveAttribute("tabindex", "-1");
+
+      fireEvent.keyDown(rightTab, { key: "ArrowRight" });
+      expect(leftTab).toHaveFocus();
+      expect(leftTab).toHaveAttribute("aria-selected", "true");
+
+      fireEvent.keyDown(leftTab, { key: "End" });
+      expect(rightTab).toHaveFocus();
+      expect(rightTab).toHaveAttribute("aria-selected", "true");
+
+      fireEvent.keyDown(rightTab, { key: "Home" });
+      expect(leftTab).toHaveFocus();
+      expect(leftTab).toHaveAttribute("aria-selected", "true");
+
+      fireEvent.keyDown(leftTab, { key: "ArrowLeft" });
+      expect(rightTab).toHaveFocus();
+      expect(rightTab).toHaveAttribute("aria-selected", "true");
+
+      fireEvent.click(leftTab);
+      expect(leftTab).toHaveAttribute("aria-selected", "true");
+      expect(rightTab).toHaveAttribute("aria-selected", "false");
+    },
+  );
+
+  it.each(["en", "vi"] as const)(
     "renders the %s CSA Zalo help section with a labelled link",
     async (locale) => {
       vi.mocked(accountApi).mockResolvedValue(catalog());

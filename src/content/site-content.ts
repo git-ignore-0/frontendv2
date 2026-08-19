@@ -383,6 +383,10 @@ const en = {
           accentTerm: "family",
           mark: "“",
         },
+        conclusion: {
+          lead: "Every CSA membership plants something bigger than a delivery.",
+          accent: "Be the catalyst — join the CSA today.",
+        },
       },
     ],
     timelineTitle: "How does a typical week work?",
@@ -1124,6 +1128,11 @@ const vi: SiteContent = {
             "Với CSA, bạn trở thành một phần của gia đình — cùng xây dựng một tương lai tốt đẹp hơn cho người nông dân, cho chính bạn, và cho các thế hệ sau.",
           accentTerm: "gia đình",
           mark: "“",
+        },
+        conclusion: {
+          lead: "Mỗi gói thành viên CSA gieo trồng điều gì đó lớn hơn một lần giao hàng.",
+          accent:
+            "Hãy là người tạo ra sự thay đổi — tham gia CSA ngay hôm nay.",
         },
       },
     ],
