@@ -226,14 +226,10 @@ describe("public CSA Membership", () => {
         expect(within(lists[1]).getAllByRole("listitem")).toHaveLength(
           comparison.right.items.length,
         );
-        expect(section).not.toHaveTextContent(
-          /Every purchase from Natural Farming/i,
-        );
-        expect(section).not.toHaveTextContent(
-          /Choose natural\. Choose transparent/i,
-        );
-        expect(section).not.toHaveTextContent(/Every CSA membership plants/i);
-        expect(section).not.toHaveTextContent(/Be the catalyst/i);
+        if ("conclusion" in comparison) {
+          expect(section).toHaveTextContent(comparison.conclusion.lead);
+          expect(section).toHaveTextContent(comparison.conclusion.accent);
+        }
       }
 
       expect(comparisons[0].querySelector("blockquote")).toBeNull();

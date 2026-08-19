@@ -1967,6 +1967,7 @@ a:hover .arrow {
     transform 0.2s var(--ease),
     padding-inline 0.2s var(--ease);
 }
+
 .principle:hover {
   background: color-mix(in srgb, var(--straw) 10%, transparent);
   transform: translateX(0.2rem);
@@ -3368,6 +3369,29 @@ tbody th {
 .csa-comparison-column.is-right h3 {
   color: var(--forest);
 }
+.csa-comparison .csa-section-heading {
+  text-align: center;
+  margin-inline: auto;
+  max-width: 48rem;
+  margin-bottom: clamp(2rem, 4.5vw, 3.5rem);
+}
+.csa-comparison .csa-section-kicker {
+  color: var(--terra);
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.75rem;
+}
+.csa-comparison .store-section-title {
+  font-family: var(--font-body), sans-serif;
+  font-size: clamp(1.35rem, 2.8vw, 1.75rem);
+  letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
+}
+.csa-comparison .csa-section-intro {
+  margin-inline: auto;
+  max-width: none;
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+}
 .csa-comparison-column ul {
   display: grid;
   margin: 0;
@@ -3380,7 +3404,7 @@ tbody th {
   align-items: start;
   gap: 0.65rem;
   min-width: 0;
-  padding-block: 0.9rem;
+  padding-block: 0.6rem;
   border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
   color: var(--muted);
   font-size: 0.95rem;
@@ -3469,6 +3493,31 @@ tbody th {
 }
 .csa-comparison-quote-term {
   color: var(--moss);
+}
+.csa-comparison-conclusion {
+  position: relative;
+  margin: clamp(2rem, 5vw, 3.5rem) auto 0;
+  padding: clamp(1.25rem, 3vw, 1.5rem);
+  border-radius: 1rem;
+  background: var(--forest);
+  color: var(--paper);
+  text-align: center;
+  box-shadow:
+    0 15px 35px -5px rgba(17, 49, 27, 0.2),
+    0 10px 15px -5px rgba(17, 49, 27, 0.1);
+}
+.csa-comparison-conclusion-lead {
+  margin: 0 auto 0.5rem;
+  max-width: 48rem;
+  font-size: clamp(0.9rem, 1.8vw, 1.05rem);
+  line-height: 1.6;
+  color: var(--paper);
+}
+.csa-comparison-conclusion-accent {
+  margin: 0;
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  font-weight: 700;
+  color: var(--straw);
 }
 .csa-package-list {
   display: flex;
@@ -4173,18 +4222,29 @@ tbody th {
     grid-template-columns: minmax(0, 1fr) 2.5rem minmax(0, 1fr);
     align-items: stretch;
     gap: clamp(1.5rem, 4vw, 3rem);
+    max-width: 64rem;
+    margin-inline: auto;
+  }
+  .csa-comparison-conclusion {
+    max-width: 64rem;
   }
   .csa-comparison-divider {
     align-self: stretch;
+    align-items: start;
     min-height: auto;
+  }
+  .csa-comparison-divider span {
+    top: 0;
+    margin-top: 0.2rem;
   }
   .csa-comparison-divider::before {
     position: absolute;
-    top: 0;
+    top: 2rem;
     bottom: 0;
     left: 50%;
     width: 1px;
     height: auto;
+    background: var(--forest);
   }
 }
 @media (min-width: 1024px) {

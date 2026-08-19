@@ -18,6 +18,10 @@ export type ComparisonSectionCopy = {
     accentTerm: string;
     mark: string;
   };
+  conclusion?: {
+    lead: string;
+    accent: string;
+  };
 };
 
 function PullQuote({
@@ -50,6 +54,19 @@ function PullQuote({
         )}
       </p>
     </blockquote>
+  );
+}
+
+function Conclusion({
+  copy,
+}: {
+  copy: NonNullable<ComparisonSectionCopy["conclusion"]>;
+}) {
+  return (
+    <div className="csa-comparison-conclusion">
+      <p className="csa-comparison-conclusion-lead">{copy.lead}</p>
+      <p className="csa-comparison-conclusion-accent">{copy.accent}</p>
+    </div>
   );
 }
 
@@ -103,6 +120,7 @@ export function CsaComparisonSection({
         <ComparisonColumn column={copy.right} variant="right" />
       </div>
       {copy.pullQuote ? <PullQuote copy={copy.pullQuote} /> : null}
+      {copy.conclusion ? <Conclusion copy={copy.conclusion} /> : null}
     </section>
   );
 }

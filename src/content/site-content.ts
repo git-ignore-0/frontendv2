@@ -347,6 +347,11 @@ const en = {
             "Protects farmland from chemicals and strengthens your community's food supply.",
           ],
         },
+        conclusion: {
+          lead: "Every purchase from Natural Farming Vietnam — à la carte or CSA — is a vote for cleaner food, a thriving farmer, and a stronger community.",
+          accent:
+            "Choose natural. Choose transparent. Choose Natural Farming Vietnam.",
+        },
       },
       {
         id: "why-csa",
@@ -1083,6 +1088,11 @@ const vi: SiteContent = {
             "Mỗi lần mua hàng, dù là à la carte hay CSA, đều hỗ trợ một gia đình nông dân thật mà bạn có thể biết rõ tên.",
             "Bảo vệ đất nông nghiệp khỏi hóa chất và củng cố nguồn thực phẩm cho cộng đồng của bạn.",
           ],
+        },
+        conclusion: {
+          lead: "Mỗi lần mua hàng từ Natural Farming Vietnam — dù là à la carte hay CSA — là một lá phiếu cho thực phẩm sạch hơn, cho người nông dân phát triển, và cho một cộng đồng vững mạnh hơn.",
+          accent:
+            "Chọn tự nhiên. Chọn minh bạch. Chọn Natural Farming Vietnam.",
         },
       },
       {
