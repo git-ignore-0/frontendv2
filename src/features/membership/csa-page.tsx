@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PointerEvent as ReactPointerEvent } from "react";
 
 import { ChevronDownIcon } from "@/components/icons";
 import { ZaloHelpSection } from "@/components/zalo-help";
@@ -106,59 +105,6 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
     sequence: number;
   } | null>(null);
   const heroBuyNow = useRef<HTMLAnchorElement>(null);
-  const timelineCarousel = useRef<HTMLOListElement>(null);
-  const timelineDrag = useRef({
-    pointerId: 0,
-    startX: 0,
-    scrollLeft: 0,
-    dragging: false,
-  });
-
-  const handleTimelinePointerDown = (
-    event: ReactPointerEvent<HTMLOListElement>,
-  ) => {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-    const carousel = timelineCarousel.current;
-    if (!carousel || typeof event.pointerId !== "number") return;
-    timelineDrag.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      scrollLeft: carousel.scrollLeft,
-      dragging: true,
-    };
-    carousel.classList.add("is-dragging");
-    carousel.setPointerCapture?.(event.pointerId);
-    carousel.style.scrollSnapType = "none";
-    carousel.style.scrollBehavior = "auto";
-  };
-
-  const handleTimelinePointerMove = (
-    event: ReactPointerEvent<HTMLOListElement>,
-  ) => {
-    const carousel = timelineCarousel.current;
-    const drag = timelineDrag.current;
-    if (!carousel || !drag.dragging || event.pointerId !== drag.pointerId) {
-      return;
-    }
-    carousel.scrollLeft = drag.scrollLeft - (event.clientX - drag.startX);
-  };
-
-  const handleTimelinePointerEnd = (
-    event: ReactPointerEvent<HTMLOListElement>,
-  ) => {
-    const carousel = timelineCarousel.current;
-    const drag = timelineDrag.current;
-    if (!carousel || !drag.dragging || event.pointerId !== drag.pointerId) {
-      return;
-    }
-    drag.dragging = false;
-    carousel.classList.remove("is-dragging");
-    if (carousel.hasPointerCapture?.(event.pointerId)) {
-      carousel.releasePointerCapture?.(event.pointerId);
-    }
-    carousel.style.scrollSnapType = "";
-    carousel.style.scrollBehavior = "";
-  };
 
   const loadPackages = useCallback(async () => {
     activePackagesRequest.current?.controller.abort();
@@ -451,36 +397,23 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
               </h2>
               <p className="csa-section-intro">{copy.substitutionLine}</p>
             </div>
-            <div className="csa-timeline-carousel">
-              <ol
-                ref={timelineCarousel}
-                aria-label={copy.timelineLabel}
-                tabIndex={0}
-                onPointerDown={handleTimelinePointerDown}
-                onPointerMove={handleTimelinePointerMove}
-                onPointerUp={handleTimelinePointerEnd}
-                onPointerCancel={handleTimelinePointerEnd}
-                onLostPointerCapture={handleTimelinePointerEnd}
-                onDragStart={(event) => event.preventDefault()}
-              >
-                {copy.timeline.map((step) => (
-                  <li key={step.day}>
-                    <div className="csa-timeline-card-media">
-                      <Image
-                        src={step.image}
-                        alt={step.alt}
-                        fill
-                        sizes="(min-width: 1024px) 18vw, (min-width: 768px) 28vw, 58vw"
-                      />
-                    </div>
-                    <div className="csa-timeline-card-content">
-                      <h3>{step.title}</h3>
-                      <p>{step.description}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
+
+            <ol
+              className="csa-horizontal-timeline"
+              aria-label={copy.timelineLabel}
+            >
+              {copy.timeline.map((step) => (
+                <li key={step.day} className="csa-h-timeline-item">
+                  <div className="csa-h-timeline-thumb">
+                    <Image src={step.image} alt={step.alt} fill sizes="6rem" />
+                  </div>
+                  <div className="csa-h-timeline-text">
+                    <h3>{step.title}</h3>
+                    <p>{step.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </section>
 
           <section className="store-section" aria-labelledby="csa-faq-title">

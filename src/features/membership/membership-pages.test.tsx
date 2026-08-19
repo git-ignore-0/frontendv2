@@ -257,7 +257,7 @@ describe("public CSA Membership", () => {
   );
 
   it.each(["en", "vi"] as const)(
-    "renders the %s weekly timeline carousel in order without navigation buttons",
+    "renders the %s weekly timeline as an ordered list without carousel controls",
     async (locale) => {
       vi.mocked(accountApi).mockResolvedValue(catalog());
       const copy = getSiteContent(locale).csa;
@@ -266,13 +266,12 @@ describe("public CSA Membership", () => {
       const timeline = screen.getByRole("region", {
         name: copy.timelineTitle,
       });
-      const cards = within(timeline).getAllByRole("listitem");
-
-      expect(cards).toHaveLength(5);
       const list = within(timeline).getByRole("list", {
         name: copy.timelineLabel,
       });
-      expect(list).toHaveAttribute("tabindex", "0");
+      const cards = within(list).getAllByRole("listitem");
+
+      expect(cards).toHaveLength(5);
       expect(
         within(timeline).queryByRole("button", { name: "Previous day" }),
       ).toBeNull();
@@ -304,35 +303,6 @@ describe("public CSA Membership", () => {
       for (const index of ["01", "02", "03", "04", "05"]) {
         expect(within(timeline).queryByText(index, { exact: true })).toBeNull();
       }
-    },
-  );
-
-  it.each(["en", "vi"] as const)(
-    "supports dragging the %s timeline carousel with the pointer",
-    async (locale) => {
-      vi.mocked(accountApi).mockResolvedValue(catalog());
-      const copy = getSiteContent(locale).csa;
-      render(<CsaPage copy={copy} locale={locale} />);
-
-      const list = screen.getByRole("list", { name: copy.timelineLabel });
-
-      fireEvent.pointerDown(list, {
-        pointerId: 1,
-        pointerType: "mouse",
-        button: 0,
-        clientX: 120,
-      });
-      expect(list).toHaveClass("is-dragging");
-      expect(list.style.scrollSnapType).toBe("none");
-
-      fireEvent.pointerMove(list, {
-        pointerId: 1,
-        clientX: 80,
-      });
-      fireEvent.pointerUp(list, { pointerId: 1 });
-      expect(list).not.toHaveClass("is-dragging");
-      expect(list.style.scrollSnapType).toBe("");
-      expect(list.style.scrollBehavior).toBe("");
     },
   );
 
