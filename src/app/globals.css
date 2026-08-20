@@ -3562,6 +3562,69 @@ tbody th {
   font-weight: 700;
   color: var(--straw);
 }
+.csa-comparison-conclusion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: clamp(1rem, 2.5vw, 1.25rem);
+}
+.csa-conclusion-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.4rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    transform 0.15s var(--ease);
+  cursor: pointer;
+}
+.csa-conclusion-btn:hover {
+  transform: translateY(-1px);
+}
+.csa-conclusion-btn:active {
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .csa-conclusion-btn {
+    transition:
+      background 0.18s var(--ease),
+      color 0.18s var(--ease),
+      border-color 0.18s var(--ease),
+      box-shadow 0.18s var(--ease);
+  }
+  .csa-conclusion-btn:hover,
+  .csa-conclusion-btn:active {
+    transform: none;
+  }
+}
+.csa-conclusion-btn--primary {
+  background: var(--straw);
+  color: var(--forest);
+  border: 1.5px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.csa-conclusion-btn--primary:hover {
+  background: #f0da8a;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+.csa-conclusion-btn--ghost {
+  background: transparent;
+  color: var(--paper);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+}
+.csa-conclusion-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.7);
+}
 .csa-package-list {
   display: flex;
   gap: 0.9rem;

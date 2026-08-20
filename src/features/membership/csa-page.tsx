@@ -92,7 +92,15 @@ function BenefitIcon({ type }: { type: string }) {
   }
 }
 
-export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
+export function CsaPage({
+  locale,
+  copy,
+  farmsUrl,
+}: {
+  locale: Locale;
+  copy: Copy;
+  farmsUrl?: string;
+}) {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [packages, setPackages] = useState<MembershipPackage[]>([]);
   const [packagesMeta, setPackagesMeta] = useState<PaginationMeta | null>(null);
@@ -184,7 +192,11 @@ export function CsaPage({ locale, copy }: { locale: Locale; copy: Copy }) {
 
         <main>
           {copy.comparisons.map((comparison) => (
-            <CsaComparisonSection key={comparison.eyebrow} copy={comparison} />
+            <CsaComparisonSection
+              key={comparison.eyebrow}
+              copy={comparison}
+              farmsUrl={farmsUrl}
+            />
           ))}
 
           <section

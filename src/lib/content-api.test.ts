@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   contentApiOrigin,
+  farmsUrlFromSettings,
   getFeaturedTestimonials,
   getSiteSettings,
   getTestimonial,
@@ -59,6 +60,31 @@ describe("content API", () => {
       "https://forum.example.com",
     );
     expect(linkFromSettings(settings, "store")).toBeUndefined();
+  });
+
+  it("returns only a valid HTTP(S) farms URL", () => {
+    expect(farmsUrlFromSettings(settings)).toBeUndefined();
+    const withFarms = (url: string): PublicSiteSettings => ({
+      ...settings,
+      links: [
+        ...settings.links,
+        {
+          id: 2,
+          kind: "farms",
+          label: "See our farms",
+          url,
+          position: 2,
+        },
+      ],
+    });
+
+    expect(farmsUrlFromSettings(withFarms("https://farms.example.com"))).toBe(
+      "https://farms.example.com",
+    );
+    expect(
+      farmsUrlFromSettings(withFarms("ftp://farms.example.com")),
+    ).toBeUndefined();
+    expect(farmsUrlFromSettings(withFarms("not a URL"))).toBeUndefined();
   });
 
   it("loads every workshop page", async () => {

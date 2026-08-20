@@ -2,6 +2,15 @@
 
 import { useRef, useState, type KeyboardEvent } from "react";
 
+import { EXTERNAL_LINK_PROPS, validExternalHttpUrl } from "@/lib/external-url";
+
+export type ComparisonAction = {
+  label: string;
+  variant: "primary" | "ghost";
+  kind?: "farms";
+  href?: string;
+};
+
 export type ComparisonSectionCopy = {
   id: string;
   eyebrow: string;
@@ -25,6 +34,7 @@ export type ComparisonSectionCopy = {
   conclusion?: {
     lead: string;
     accent: string;
+    actions?: readonly ComparisonAction[];
   };
 };
 
@@ -32,6 +42,11 @@ type ComparisonTab = "left" | "right";
 
 const comparisonTabs: ComparisonTab[] = ["left", "right"];
 const activeTabClassName = "is-active";
+
+const ACTION_CLASSES = {
+  ghost: "csa-conclusion-btn csa-conclusion-btn--ghost",
+  primary: "csa-conclusion-btn csa-conclusion-btn--primary",
+} as const;
 
 function PullQuote({
   copy,
@@ -68,13 +83,36 @@ function PullQuote({
 
 function Conclusion({
   copy,
+  farmsUrl,
 }: {
   copy: NonNullable<ComparisonSectionCopy["conclusion"]>;
+  farmsUrl?: string;
 }) {
+  const validFarmsUrl = validExternalHttpUrl(farmsUrl);
+
   return (
     <div className="csa-comparison-conclusion">
       <p className="csa-comparison-conclusion-lead">{copy.lead}</p>
       <p className="csa-comparison-conclusion-accent">{copy.accent}</p>
+      {copy.actions && copy.actions.length > 0 ? (
+        <div className="csa-comparison-conclusion-actions">
+          {copy.actions.map((action) => {
+            const isFarmsAction = action.kind === "farms";
+            const href = isFarmsAction ? validFarmsUrl : action.href;
+            if (!href) return null;
+            return (
+              <a
+                key={action.label}
+                className={ACTION_CLASSES[action.variant]}
+                href={href}
+                {...(isFarmsAction ? EXTERNAL_LINK_PROPS : {})}
+              >
+                {action.label}
+              </a>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -119,8 +157,10 @@ function ComparisonColumn({
 
 export function CsaComparisonSection({
   copy,
+  farmsUrl,
 }: {
   copy: ComparisonSectionCopy;
+  farmsUrl?: string;
 }) {
   const [activeTab, setActiveTab] = useState<ComparisonTab>("left");
   const tabRefs = useRef<Record<ComparisonTab, HTMLButtonElement | null>>({
@@ -218,7 +258,9 @@ export function CsaComparisonSection({
           variant="right"
         />
       </div>
-      {copy.conclusion ? <Conclusion copy={copy.conclusion} /> : null}
+      {copy.conclusion ? (
+        <Conclusion copy={copy.conclusion} farmsUrl={farmsUrl} />
+      ) : null}
       {copy.pullQuote ? <PullQuote copy={copy.pullQuote} /> : null}
     </section>
   );

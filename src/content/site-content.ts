@@ -1,3 +1,4 @@
+import type { ComparisonAction } from "@/features/membership/csa-comparison-section";
 import type { Locale } from "@/lib/i18n";
 
 type StoreCardCta = {
@@ -351,6 +352,10 @@ const en = {
           lead: "Every purchase from Natural Farming Vietnam — à la carte or CSA — is a vote for cleaner food, a thriving farmer, and a stronger community.",
           accent:
             "Choose natural. Choose transparent. Choose Natural Farming Vietnam.",
+          actions: [
+            { label: "See our farms", kind: "farms", variant: "primary" },
+            { label: "Meet the farmers", href: "#", variant: "ghost" },
+          ] as const,
         },
       },
       {
@@ -745,11 +750,13 @@ const en = {
   },
 } as const;
 
-type LocalizedShape<T> = T extends string
-  ? string
-  : T extends readonly (infer Item)[]
-    ? readonly LocalizedShape<Item>[]
-    : { [Key in keyof T]: LocalizedShape<T[Key]> };
+type LocalizedShape<T> = T extends ComparisonAction
+  ? ComparisonAction
+  : T extends string
+    ? string
+    : T extends readonly (infer Item)[]
+      ? readonly LocalizedShape<Item>[]
+      : { [Key in keyof T]: LocalizedShape<T[Key]> };
 
 export type SiteContent = LocalizedShape<typeof en>;
 export type CommonDictionary = SiteContent["common"];
@@ -1097,6 +1104,18 @@ const vi: SiteContent = {
           lead: "Mỗi lần mua hàng từ Natural Farming Vietnam — dù là à la carte hay CSA — là một lá phiếu cho thực phẩm sạch hơn, cho người nông dân phát triển, và cho một cộng đồng vững mạnh hơn.",
           accent:
             "Chọn tự nhiên. Chọn minh bạch. Chọn Natural Farming Vietnam.",
+          actions: [
+            {
+              label: "Xem nông trại của chúng tôi",
+              kind: "farms",
+              variant: "primary",
+            },
+            {
+              label: "Gặp gỡ những người nông dân",
+              href: "#",
+              variant: "ghost",
+            },
+          ] as const,
         },
       },
       {

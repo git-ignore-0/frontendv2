@@ -3,11 +3,20 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import CsaRoute, { generateMetadata } from "@/app/csa/[locale]/page";
 import { accountApi } from "@/features/account/api";
+import { farmsUrlFromSettings, getSiteSettings } from "@/lib/content-api";
 
 vi.mock("@/features/account/api", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@/features/account/api")>();
   return { ...actual, accountApi: vi.fn() };
+});
+vi.mock("@/lib/content-api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/content-api")>();
+  return {
+    ...actual,
+    farmsUrlFromSettings: vi.fn(),
+    getSiteSettings: vi.fn(),
+  };
 });
 
 afterEach(() => {
@@ -34,6 +43,14 @@ describe("canonical CSA route", () => {
       "Câu Hỏi Thường Gặp Về Đặt Hàng",
     ],
   ] as const)("renders the %s CSA page", async (locale, title, faqTitle) => {
+    vi.mocked(getSiteSettings).mockResolvedValue({
+      email: "",
+      is_email_enabled: false,
+      phone_display: "",
+      is_phone_enabled: false,
+      links: [],
+    });
+    vi.mocked(farmsUrlFromSettings).mockReturnValue(undefined);
     vi.mocked(accountApi).mockResolvedValue({
       data: [],
       meta: { page: 1, page_size: 30, total: 0 },
@@ -46,6 +63,32 @@ describe("canonical CSA route", () => {
     ).toBeVisible();
     expect(screen.getByRole("heading", { name: faqTitle })).toBeVisible();
   });
+
+  it.each(["en", "vi"] as const)(
+    "passes the configured farms URL to the %s page",
+    async (locale) => {
+      const settings = {
+        email: "",
+        is_email_enabled: false,
+        phone_display: "",
+        is_phone_enabled: false,
+        links: [],
+      };
+      vi.mocked(getSiteSettings).mockResolvedValue(settings);
+      vi.mocked(farmsUrlFromSettings).mockReturnValue(
+        "https://farms.example.com/visit",
+      );
+
+      const result = await CsaRoute({
+        params: Promise.resolve({ locale }),
+      });
+
+      expect(getSiteSettings).toHaveBeenCalledWith(locale);
+      expect(farmsUrlFromSettings).toHaveBeenCalledWith(settings);
+      expect(result.props.farmsUrl).toBe("https://farms.example.com/visit");
+      expect(result.props.locale).toBe(locale);
+    },
+  );
 
   it.each([
     ["en", "Community Supported Agriculture"],

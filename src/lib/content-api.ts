@@ -1,6 +1,10 @@
 import "server-only";
 
+import { validExternalHttpUrl } from "@/lib/external-url";
 import type { Locale } from "@/lib/i18n";
+
+export type PublicExternalLinkKind =
+  "facebook" | "youtube" | "store" | "forum" | "farms" | "other";
 
 export type PublicSiteSettings = {
   email: string;
@@ -9,7 +13,7 @@ export type PublicSiteSettings = {
   is_phone_enabled: boolean;
   links: Array<{
     id: number;
-    kind: string;
+    kind: PublicExternalLinkKind;
     label: string;
     url: string;
     position: number;
@@ -211,8 +215,15 @@ export async function getWorkshopPreview(token: string, locale: Locale) {
   }
 }
 
-export function linkFromSettings(settings: PublicSiteSettings, kind: string) {
+export function linkFromSettings(
+  settings: PublicSiteSettings,
+  kind: PublicExternalLinkKind,
+) {
   return settings.links.find((item) => item.kind === kind)?.url;
+}
+
+export function farmsUrlFromSettings(settings: PublicSiteSettings) {
+  return validExternalHttpUrl(linkFromSettings(settings, "farms"));
 }
 
 export async function getFeaturedTestimonials(locale: Locale) {

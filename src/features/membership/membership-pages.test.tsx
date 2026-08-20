@@ -561,6 +561,93 @@ describe("public CSA Membership", () => {
     expect(document.querySelector(".csa-benefits")).toBeNull();
   });
 
+  it.each([
+    ["en", "See our farms", "Meet the farmers"],
+    ["vi", "Xem nông trại của chúng tôi", "Gặp gỡ những người nông dân"],
+  ] as const)(
+    "uses the configured farms URL without changing other %s comparison actions",
+    async (locale, farmsLabel, farmersLabel) => {
+      vi.mocked(accountApi).mockResolvedValue(catalog());
+      const copy = getSiteContent(locale).csa;
+      render(
+        <CsaPage
+          copy={copy}
+          farmsUrl="https://farms.example.com/visit"
+          locale={locale}
+        />,
+      );
+
+      const farmsLink = screen.getByRole("link", { name: farmsLabel });
+      expect(farmsLink).toHaveAttribute(
+        "href",
+        "https://farms.example.com/visit",
+      );
+      expect(farmsLink).toHaveAttribute("target", "_blank");
+      expect(farmsLink).toHaveAttribute("rel", "noopener noreferrer");
+
+      const farmersLink = screen.getByRole("link", { name: farmersLabel });
+      expect(farmersLink).toHaveAttribute("href", "#");
+      expect(farmersLink).not.toHaveAttribute("target");
+      expect(farmersLink).not.toHaveAttribute("rel");
+
+      for (const comparison of copy.comparisons.slice(1)) {
+        const section = screen.getByRole("region", {
+          name: comparison.title,
+        });
+        expect(
+          within(section).queryByRole("link", { name: farmsLabel }),
+        ).toBeNull();
+        expect(
+          within(section).queryByRole("link", { name: farmersLabel }),
+        ).toBeNull();
+      }
+    },
+  );
+
+  it.each([
+    ["en", "See our farms", "Meet the farmers", undefined],
+    ["en", "See our farms", "Meet the farmers", ""],
+    ["en", "See our farms", "Meet the farmers", "ftp://farms.example.com"],
+    ["en", "See our farms", "Meet the farmers", "javascript:alert(1)"],
+    [
+      "vi",
+      "Xem nông trại của chúng tôi",
+      "Gặp gỡ những người nông dân",
+      undefined,
+    ],
+    ["vi", "Xem nông trại của chúng tôi", "Gặp gỡ những người nông dân", ""],
+    [
+      "vi",
+      "Xem nông trại của chúng tôi",
+      "Gặp gỡ những người nông dân",
+      "ftp://farms.example.com",
+    ],
+    [
+      "vi",
+      "Xem nông trại của chúng tôi",
+      "Gặp gỡ những người nông dân",
+      "javascript:alert(1)",
+    ],
+  ] as const)(
+    "hides every unavailable farms URL in %s without changing the farmers action",
+    async (locale, farmsLabel, farmersLabel, farmsUrl) => {
+      vi.mocked(accountApi).mockResolvedValue(catalog());
+      render(
+        <CsaPage
+          copy={getSiteContent(locale).csa}
+          farmsUrl={farmsUrl}
+          locale={locale}
+        />,
+      );
+
+      expect(screen.queryByRole("link", { name: farmsLabel })).toBeNull();
+      const farmersLink = screen.getByRole("link", { name: farmersLabel });
+      expect(farmersLink).toHaveAttribute("href", "#");
+      expect(farmersLink).not.toHaveAttribute("target");
+      expect(farmersLink).not.toHaveAttribute("rel");
+    },
+  );
+
   it("keeps only the Hero CTA in the empty catalog state", async () => {
     vi.mocked(accountApi).mockResolvedValue(catalog([]));
     render(<CsaPage copy={getSiteContent("en").csa} locale="en" />);
