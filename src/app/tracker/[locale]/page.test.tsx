@@ -26,6 +26,8 @@ const farm: PublicTrackerFarm = {
   id: "farm-1",
   name: "Green Valley Farm",
   location: "Da Lat",
+  description: "",
+  image: null,
   signup_count: 14,
   sort_order: 0,
 };
@@ -146,6 +148,8 @@ describe("tracker route", () => {
         "Không thể tải hành trình nông trại",
       );
     });
-    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Growth details for/i }),
+    ).not.toBeInTheDocument();
   });
 });

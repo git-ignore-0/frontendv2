@@ -31,6 +31,25 @@ const settings: PublicSiteSettings = {
   ],
 };
 
+function trackerFarmPayload(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "11111111-1111-4111-8111-111111111111",
+    name: "Green Farm",
+    location: "Da Lat",
+    description: "A family farm.",
+    image: {
+      id: "22222222-2222-4222-8222-222222222222",
+      url: "https://cdn.example.com/farms/green-farm.webp",
+      width: 1200,
+      height: 900,
+      alt: "Green Farm in Da Lat",
+    },
+    signup_count: 14,
+    sort_order: 2,
+    ...overrides,
+  };
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
@@ -123,14 +142,26 @@ describe("content API", () => {
         ok: true,
         json: async () => ({
           data: [
-            {
-              id: `farm-${locale}`,
+            trackerFarmPayload({
+              id:
+                locale === "en"
+                  ? "11111111-1111-4111-8111-111111111111"
+                  : "33333333-3333-4333-8333-333333333333",
               name: locale === "en" ? "Green Farm" : "Nông trại Xanh",
               location: locale === "en" ? "Da Lat" : "Đà Lạt",
-              signup_count: 14,
-              sort_order: 2,
-              is_visible: true,
-            },
+              description:
+                locale === "en" ? "A family farm." : "Nông trại gia đình.",
+              image: {
+                id: "22222222-2222-4222-8222-222222222222",
+                url: "https://cdn.example.com/farms/green-farm.webp",
+                width: 1200,
+                height: 900,
+                alt:
+                  locale === "en"
+                    ? "Green Farm in Da Lat"
+                    : "Nông trại Xanh ở Đà Lạt",
+              },
+            }),
           ],
         }),
       });
@@ -146,9 +177,24 @@ describe("content API", () => {
       );
       expect(result).toEqual([
         {
-          id: `farm-${locale}`,
+          id:
+            locale === "en"
+              ? "11111111-1111-4111-8111-111111111111"
+              : "33333333-3333-4333-8333-333333333333",
           name: locale === "en" ? "Green Farm" : "Nông trại Xanh",
           location: locale === "en" ? "Da Lat" : "Đà Lạt",
+          description:
+            locale === "en" ? "A family farm." : "Nông trại gia đình.",
+          image: {
+            id: "22222222-2222-4222-8222-222222222222",
+            url: "https://cdn.example.com/farms/green-farm.webp",
+            width: 1200,
+            height: 900,
+            alt:
+              locale === "en"
+                ? "Green Farm in Da Lat"
+                : "Nông trại Xanh ở Đà Lạt",
+          },
           signup_count: 14,
           sort_order: 2,
         },
@@ -166,6 +212,93 @@ describe("content API", () => {
     );
 
     await expect(getTrackerFarms("en")).resolves.toEqual([]);
+  });
+
+  it.each([
+    ["null", null],
+    ["missing", undefined],
+  ])(
+    "normalizes a %s tracker description to an empty string",
+    async (_case, description) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            data: [trackerFarmPayload({ description, image: null })],
+          }),
+        }),
+      );
+
+      await expect(getTrackerFarmsResult("en")).resolves.toEqual({
+        ok: true,
+        farms: [expect.objectContaining({ description: "", image: null })],
+      });
+    },
+  );
+
+  it.each([
+    [
+      "a missing image field",
+      {
+        id: "22222222-2222-4222-8222-222222222222",
+        width: 1200,
+        height: 900,
+        alt: "Green Farm",
+      },
+    ],
+    [
+      "an invalid image id",
+      {
+        id: 42,
+        url: "https://cdn.example.com/farms/green-farm.webp",
+        width: 1200,
+        height: 900,
+        alt: "Green Farm",
+      },
+    ],
+    [
+      "an invalid image URL",
+      {
+        id: "22222222-2222-4222-8222-222222222222",
+        url: "not-a-url",
+        width: 1200,
+        height: 900,
+        alt: "Green Farm",
+      },
+    ],
+    [
+      "an invalid image width",
+      {
+        id: "22222222-2222-4222-8222-222222222222",
+        url: "https://cdn.example.com/farms/green-farm.webp",
+        width: 0,
+        height: 900,
+        alt: "Green Farm",
+      },
+    ],
+    [
+      "an invalid image height",
+      {
+        id: "22222222-2222-4222-8222-222222222222",
+        url: "https://cdn.example.com/farms/green-farm.webp",
+        width: 1200,
+        height: -1,
+        alt: "Green Farm",
+      },
+    ],
+  ])("rejects a tracker payload with %s", async (_case, image) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [trackerFarmPayload({ image })],
+        }),
+      }),
+    );
+
+    await expect(getTrackerFarmsResult("en")).resolves.toEqual({ ok: false });
   });
 
   it("distinguishes a successful empty tracker response from failure", async () => {

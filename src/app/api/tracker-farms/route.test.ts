@@ -38,6 +38,8 @@ describe("tracker retry proxy", () => {
       id: "farm-1",
       name: "Green Farm",
       location: "Da Lat",
+      description: "",
+      image: null,
       signup_count: 14,
       sort_order: 0,
     };

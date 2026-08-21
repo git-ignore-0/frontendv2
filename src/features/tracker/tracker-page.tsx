@@ -1,7 +1,12 @@
+"use client";
+
+import { useState } from "react";
+
 import type { PublicTrackerFarm } from "@/lib/content-api";
 
 import { MilestoneLegend } from "./milestone-legend";
 import { TrackerFarmGrid } from "./tracker-farm-grid";
+import { TrackerFarmerDialog } from "./tracker-farmer-dialog";
 import { TrackerField } from "./tracker-field";
 import { TrackerHeader } from "./tracker-header";
 import { TrackerLiveNote } from "./tracker-live-note";
@@ -26,6 +31,18 @@ export function TrackerPage({
 }) {
   const farmModels = farms.map(createTrackerFarmViewModel);
   const stats = state === "loading" ? null : calculateTrackerStats(farms);
+  const [selectedFarm, setSelectedFarm] = useState<ReturnType<
+    typeof createTrackerFarmViewModel
+  > | null>(null);
+  const [dialogOpener, setDialogOpener] = useState<HTMLElement | null>(null);
+
+  const openFarm = (
+    farm: ReturnType<typeof createTrackerFarmViewModel>,
+    opener: HTMLElement,
+  ) => {
+    setDialogOpener(opener);
+    setSelectedFarm(farm);
+  };
 
   return (
     <main className="tracker-page">
@@ -42,11 +59,25 @@ export function TrackerPage({
           <TrackerState copy={copy} state="empty" />
         ) : (
           <>
-            <TrackerField copy={copy} farms={farmModels} />
-            <TrackerFarmGrid copy={copy} farms={farmModels} />
+            <TrackerField
+              copy={copy}
+              farms={farmModels}
+              onActivate={openFarm}
+            />
+            <TrackerFarmGrid
+              copy={copy}
+              farms={farmModels}
+              onActivate={openFarm}
+            />
           </>
         )}
       </div>
+      <TrackerFarmerDialog
+        copy={copy}
+        farm={selectedFarm}
+        onDismiss={() => setSelectedFarm(null)}
+        opener={dialogOpener}
+      />
     </main>
   );
 }

@@ -556,14 +556,17 @@ const en = {
     farmGridTitle: "Farm growth details",
     signupGoal: "/ {count} signups",
     nextMilestoneOne:
-      "{remaining} more signup gets {name} to “{milestone}” — {description}.",
+      "{remaining} more signup gets {name} to “{milestone}” — {description}",
     nextMilestoneMany:
-      "{remaining} more signups gets {name} to “{milestone}” — {description}.",
+      "{remaining} more signups gets {name} to “{milestone}” — {description}",
     nextMilestoneCountOne: "{remaining} more signup",
     nextMilestoneCountMany: "{remaining} more signups",
     leaderMessage:
       "{name} has reached {milestone} — the highest milestone! Every extra signup keeps strengthening their work.",
     leaderBadge: "Community Leader reached",
+    farmerProfile: "Farmer profile",
+    aboutFarmer: "About this farmer",
+    closeFarmerDetails: "Close farmer details",
     accessibility: {
       field: "CSA farm growth field",
       farm: "Growth details for {name}",
@@ -1383,14 +1386,17 @@ const vi: SiteContent = {
     farmGridTitle: "Chi tiết phát triển của các nông trại",
     signupGoal: "/ {count} lượt đăng ký",
     nextMilestoneOne:
-      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}” — {description}.",
+      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}” — {description}",
     nextMilestoneMany:
-      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}” — {description}.",
+      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}” — {description}",
     nextMilestoneCountOne: "{remaining} lượt đăng ký",
     nextMilestoneCountMany: "{remaining} lượt đăng ký",
     leaderMessage:
       "{name} đã đạt cột mốc cao nhất {milestone} — một người dẫn dắt cộng đồng! Mỗi lượt đăng ký tiếp theo tiếp tục củng cố công việc của nông trại.",
     leaderBadge: "Đã đạt mốc Dẫn dắt cộng đồng",
+    farmerProfile: "Hồ sơ nông trại",
+    aboutFarmer: "Giới thiệu về nông trại này",
+    closeFarmerDetails: "Đóng thông tin nông trại",
     accessibility: {
       field: "Khu vực theo dõi sự phát triển của các nông trại CSA",
       farm: "Thông tin phát triển của {name}",

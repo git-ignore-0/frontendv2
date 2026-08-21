@@ -22,6 +22,11 @@ function declarationBlock(selector: string) {
 }
 
 describe("tracker responsive style contract", () => {
+  it("keeps shared content tables horizontally scrollable on mobile", () => {
+    expect(declarationBlock(".table-wrap")).toContain("overflow: auto");
+    expect(declarationBlock("table")).toContain("min-width: 42rem");
+  });
+
   it("uses a standalone route boundary without the website shell", () => {
     expect(layout).toContain('className="tracker-standalone"');
     expect(layout).not.toContain("LocaleShell");
@@ -97,6 +102,36 @@ describe("tracker responsive style contract", () => {
     );
     expect(declarationBlock(".tracker-standalone .tracker-shell")).toContain(
       "width: min(100%, 1320px)",
+    );
+  });
+
+  it("keeps the farmer dialog responsive at desktop and mobile widths", () => {
+    expect(
+      declarationBlock(".tracker-standalone .tracker-farmer-dialog"),
+    ).toContain("width: min(760px, calc(100vw - 40px))");
+    expect(
+      declarationBlock(".tracker-standalone .tracker-dialog-body"),
+    ).toContain("grid-template-columns: minmax(260px, 300px) minmax(0, 1fr)");
+    expect(
+      declarationBlock(".tracker-standalone .tracker-dialog-body"),
+    ).toContain("height: 370px");
+    expect(
+      declarationBlock(".tracker-standalone .tracker-dialog-media"),
+    ).toContain("max-height: 370px");
+    expect(
+      declarationBlock(".tracker-standalone .tracker-dialog-photo"),
+    ).toContain("object-position: center");
+    expect(
+      declarationBlock(".tracker-standalone .tracker-dialog-content"),
+    ).toContain("overflow-y: auto");
+    expect(css).toMatch(
+      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.tracker-farmer-dialog\s*\{\s*width: calc\(100vw - 20px\)/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.tracker-dialog-body\s*\{\s*height: 100%;\s*min-height: 0;[\s\S]*?grid-template-columns: 1fr/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.tracker-dialog-media\s*\{\s*height: clamp\(205px, 31dvh, 255px\)/,
     );
   });
 

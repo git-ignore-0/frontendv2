@@ -1,9 +1,19 @@
 import { z } from "zod";
 
+const publicTrackerImageSchema = z.object({
+  id: z.string().min(1),
+  url: z.string().url(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  alt: z.string(),
+});
+
 export const publicTrackerFarmSchema = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   name: z.string(),
   location: z.string(),
+  description: z.preprocess((value) => value ?? "", z.string()),
+  image: publicTrackerImageSchema.nullable(),
   signup_count: z.number().int().nonnegative(),
   sort_order: z.number().int(),
 });

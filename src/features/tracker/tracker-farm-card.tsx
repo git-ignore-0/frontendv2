@@ -1,5 +1,6 @@
 import { TRACKER_SIGNUP_GOAL } from "./lib/milestones";
 import type { TrackerFarmViewModel } from "./lib/view-model";
+import { TrackerFarmMedia } from "./tracker-farm-media";
 import { TrackerMilestoneIcon } from "./tracker-icon";
 import type { TrackerCopy } from "./types";
 
@@ -38,14 +39,13 @@ function nextMilestoneCopy(copy: TrackerCopy, farm: TrackerFarmViewModel) {
   const countLabel = replaceCopy(countTemplate, {
     remaining: farm.remainingSignups,
   });
-  const marker = "__TRACKER_COUNT__";
   const message = replaceCopy(template, {
-    remaining: marker,
+    remaining: farm.remainingSignups,
     name: farm.name,
     milestone: copy.milestones[farm.nextMilestoneKey].label,
     description: copy.milestones[farm.nextMilestoneKey].description,
   });
-  const [before, after] = message.split(marker);
+  const [before, after] = message.split(countLabel);
   return (
     <>
       {before}
@@ -58,9 +58,11 @@ function nextMilestoneCopy(copy: TrackerCopy, farm: TrackerFarmViewModel) {
 export function TrackerFarmCard({
   copy,
   farm,
+  onActivate,
 }: {
   copy: TrackerCopy;
   farm: TrackerFarmViewModel;
+  onActivate: (farm: TrackerFarmViewModel, opener: HTMLElement) => void;
 }) {
   const milestone = copy.milestones[farm.milestoneKey];
   const progressLabel = replaceCopy(copy.accessibility.progress, {
@@ -71,6 +73,17 @@ export function TrackerFarmCard({
 
   return (
     <article className="tracker-farm-card">
+      <button
+        aria-label={copy.accessibility.farm.replace("{name}", farm.name)}
+        className="tracker-farm-card-trigger"
+        onClick={(event) => onActivate(farm, event.currentTarget)}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          onActivate(farm, event.currentTarget);
+        }}
+        type="button"
+      />
       {farm.isLeader ? (
         <span aria-label={copy.leaderBadge} className="tracker-leader-badge">
           <span aria-hidden="true">⭐</span>
@@ -78,10 +91,7 @@ export function TrackerFarmCard({
       ) : null}
       <header className="tracker-farm-heading">
         <span className="tracker-farm-avatar">
-          <TrackerMilestoneIcon
-            size={farm.isLeader ? 28 : 30}
-            type={farm.icon}
-          />
+          <TrackerFarmMedia farm={farm} variant="avatar" />
         </span>
         <span>
           <h3>{farm.name}</h3>

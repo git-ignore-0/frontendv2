@@ -13,6 +13,8 @@ const recoveredFarm = {
   id: "recovered-farm",
   name: "Recovered Farm",
   location: "Da Lat",
+  description: "",
+  image: null,
   signup_count: 14,
   sort_order: 0,
 };
