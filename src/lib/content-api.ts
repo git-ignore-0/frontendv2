@@ -1,7 +1,11 @@
 import "server-only";
 
+import { publicTrackerFarmSchema } from "@/features/tracker/lib/public-contract";
+import type { PublicTrackerFarm } from "@/features/tracker/lib/public-contract";
 import { validExternalHttpUrl } from "@/lib/external-url";
 import type { Locale } from "@/lib/i18n";
+
+export type { PublicTrackerFarm } from "@/features/tracker/lib/public-contract";
 
 export type PublicExternalLinkKind =
   "facebook" | "youtube" | "store" | "forum" | "farms" | "other";
@@ -38,6 +42,15 @@ export type PublicWorkshop = {
   body?: Record<string, unknown>;
 };
 
+export type TrackerFarmsResult =
+  { ok: true; farms: PublicTrackerFarm[] } | { ok: false };
+
+export type TrackerFarmsRequestOptions = {
+  bypassCache?: boolean;
+};
+
+export const TRACKER_FARMS_CACHE_TAG = "tracker-farms";
+
 export type PublicTestimonial = {
   id: string;
   type: "customer" | "farmer";
@@ -65,7 +78,7 @@ export type PublicTestimonial = {
   full_story?: string;
 };
 
-class ContentApiConfigurationError extends Error {}
+export class ContentApiConfigurationError extends Error {}
 
 class ContentApiResponseError extends Error {
   constructor(readonly status: number) {
@@ -121,9 +134,12 @@ async function contentFetch<T>(
   path: string,
   tags: string[],
   revalidate = 300,
+  options: TrackerFarmsRequestOptions = {},
 ): Promise<T> {
   const response = await fetch(`${contentApiOrigin()}${path}`, {
-    ...contentFetchOptions(tags, revalidate),
+    ...(options.bypassCache
+      ? { cache: "no-store" as const }
+      : contentFetchOptions(tags, revalidate)),
   });
   if (!response.ok) throw new ContentApiResponseError(response.status);
   const payload = (await response.json()) as { data: T };
@@ -184,6 +200,31 @@ export async function getWorkshops(
   } catch (error) {
     rethrowConfigurationError(error);
     return [];
+  }
+}
+
+export async function getTrackerFarms(
+  locale: Locale,
+): Promise<PublicTrackerFarm[]> {
+  const result = await getTrackerFarmsResult(locale);
+  return result.ok ? result.farms : [];
+}
+
+export async function getTrackerFarmsResult(
+  locale: Locale,
+  options: TrackerFarmsRequestOptions = {},
+): Promise<TrackerFarmsResult> {
+  try {
+    const data = await contentFetch<unknown>(
+      `/api/v1/public/tracker-farms?locale=${locale}`,
+      [TRACKER_FARMS_CACHE_TAG],
+      300,
+      options,
+    );
+    return { ok: true, farms: publicTrackerFarmSchema.array().parse(data) };
+  } catch (error) {
+    rethrowConfigurationError(error);
+    return { ok: false };
   }
 }
 

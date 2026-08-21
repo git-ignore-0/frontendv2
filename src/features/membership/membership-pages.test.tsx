@@ -586,7 +586,7 @@ describe("public CSA Membership", () => {
       expect(farmsLink).toHaveAttribute("rel", "noopener noreferrer");
 
       const farmersLink = screen.getByRole("link", { name: farmersLabel });
-      expect(farmersLink).toHaveAttribute("href", "#");
+      expect(farmersLink).toHaveAttribute("href", `/tracker/${locale}`);
       expect(farmersLink).not.toHaveAttribute("target");
       expect(farmersLink).not.toHaveAttribute("rel");
 
@@ -642,7 +642,7 @@ describe("public CSA Membership", () => {
 
       expect(screen.queryByRole("link", { name: farmsLabel })).toBeNull();
       const farmersLink = screen.getByRole("link", { name: farmersLabel });
-      expect(farmersLink).toHaveAttribute("href", "#");
+      expect(farmersLink).toHaveAttribute("href", `/tracker/${locale}`);
       expect(farmersLink).not.toHaveAttribute("target");
       expect(farmersLink).not.toHaveAttribute("rel");
     },

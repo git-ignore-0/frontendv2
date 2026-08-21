@@ -1,0 +1,110 @@
+import { TRACKER_SIGNUP_GOAL } from "./lib/milestones";
+import type { TrackerFarmViewModel } from "./lib/view-model";
+import { TrackerMilestoneIcon } from "./tracker-icon";
+import type { TrackerCopy } from "./types";
+
+function replaceCopy(
+  template: string,
+  values: Record<string, string | number>,
+) {
+  return Object.entries(values).reduce(
+    (copy, [key, value]) => copy.replace(`{${key}}`, String(value)),
+    template,
+  );
+}
+
+function nextMilestoneCopy(copy: TrackerCopy, farm: TrackerFarmViewModel) {
+  if (!farm.nextMilestoneKey) {
+    return replaceCopy(copy.leaderMessage, {
+      name: farm.name,
+      milestone: copy.milestones.communityLeader.label,
+    });
+  }
+  const template =
+    farm.remainingSignups === 1
+      ? copy.nextMilestoneOne
+      : copy.nextMilestoneMany;
+  return replaceCopy(template, {
+    remaining: farm.remainingSignups,
+    name: farm.name,
+    milestone: copy.milestones[farm.nextMilestoneKey].label,
+  });
+}
+
+export function TrackerFarmCard({
+  copy,
+  farm,
+}: {
+  copy: TrackerCopy;
+  farm: TrackerFarmViewModel;
+}) {
+  const milestone = copy.milestones[farm.milestoneKey];
+  const progressLabel = replaceCopy(copy.accessibility.progress, {
+    name: farm.name,
+    count: farm.count,
+    percent: Math.round(farm.progressPercentage),
+  });
+
+  return (
+    <article className="tracker-farm-card">
+      {farm.isLeader ? (
+        <span aria-label={copy.leaderBadge} className="tracker-leader-badge">
+          <span aria-hidden="true">⭐</span>
+        </span>
+      ) : null}
+      <header className="tracker-farm-heading">
+        <span className="tracker-farm-avatar">
+          <TrackerMilestoneIcon
+            size={farm.isLeader ? 28 : 30}
+            type={farm.icon}
+          />
+        </span>
+        <span>
+          <h3>{farm.name}</h3>
+          <span className="tracker-farm-location">{farm.location}</span>
+        </span>
+      </header>
+      <div className="tracker-stage-badge">
+        <TrackerMilestoneIcon size={16} type={farm.icon} />
+        <span>{milestone.label}</span>
+      </div>
+      <p className="tracker-count">
+        <strong>{farm.count}</strong>
+        <span>
+          {copy.signupGoal.replace("{count}", String(TRACKER_SIGNUP_GOAL))}
+        </span>
+      </p>
+      <div className="tracker-progress-wrap">
+        <div
+          aria-label={progressLabel}
+          aria-valuemax={100}
+          aria-valuemin={0}
+          aria-valuenow={Math.round(farm.progressPercentage)}
+          className="tracker-progress"
+          role="progressbar"
+        >
+          <span style={{ width: `${farm.progressPercentage}%` }} />
+        </div>
+        <ol aria-hidden="true" className="tracker-progress-ticks">
+          {farm.ticks.map((tick) => (
+            <li
+              className={[tick.reached && "is-reached"]
+                .filter(Boolean)
+                .join(" ")}
+              key={tick.value}
+              style={{ left: `${(tick.value / TRACKER_SIGNUP_GOAL) * 100}%` }}
+            >
+              {tick.value}
+            </li>
+          ))}
+        </ol>
+      </div>
+      <p className="tracker-impact-note">
+        {nextMilestoneCopy(copy, farm)}
+        {farm.nextMilestoneKey ? (
+          <span> {copy.milestones[farm.nextMilestoneKey].description}</span>
+        ) : null}
+      </p>
+    </article>
+  );
+}

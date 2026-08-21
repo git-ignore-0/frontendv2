@@ -354,7 +354,7 @@ const en = {
             "Choose natural. Choose transparent. Choose Natural Farming Vietnam.",
           actions: [
             { label: "See our farms", kind: "farms", variant: "primary" },
-            { label: "Meet the farmers", href: "#", variant: "ghost" },
+            { label: "Meet the farmers", kind: "tracker", variant: "ghost" },
           ] as const,
         },
       },
@@ -507,6 +507,65 @@ const en = {
       "Message Natural Farming Vietnam on Zalo for help choosing a plan, ordering, or changing an existing membership.",
     zaloCta: "Contact us on Zalo",
     zaloUrl: "https://zalo.me/84988158285",
+  },
+  tracker: {
+    eyebrow: "Natural Farming Vietnam",
+    title: "From Seed to Harvest — CSA Growth Tracker",
+    intro:
+      "Follow the total number of CSA signups each farm has received from the beginning until now, and see what each community is growing toward next.",
+    liveNoteTitle: "Live CSA signup data.",
+    liveNoteBody:
+      "This tracker shows the current signup totals recorded for participating farms and updates as new totals are added.",
+    milestones: {
+      seedPlanted: {
+        label: "Seed planted",
+        description:
+          "The first signups are putting this farm community in motion.",
+      },
+      gettingStarted: {
+        label: "Getting Started",
+        description:
+          "A growing group is helping the farm plan with confidence.",
+      },
+      providingForFamily: {
+        label: "Providing for Family",
+        description: "CSA support is helping provide for a farming family.",
+      },
+      communityLeader: {
+        label: "Community Leader",
+        description:
+          "A strong CSA community is helping this farm lead the way.",
+      },
+    },
+    stats: {
+      farms: "Participating farms",
+      totalSignups: "Total signups from the beginning until now",
+      leaders: "Community Leaders reached",
+    },
+    legendLabel: "CSA growth milestones",
+    thresholdLabel: "{count} signups",
+    fieldSectionTitle: "Farms growing with their communities",
+    fieldSectionSubtitle:
+      "Every signup helps a farm build a steadier future, one household at a time.",
+    loading: "Loading farm growth…",
+    emptyTitle: "No farms to show yet",
+    emptyBody:
+      "Visible tracker farms will appear here when they are available.",
+    error: "We could not load the farm tracker. Please try again.",
+    retry: "Try again",
+    farmGridTitle: "Farm growth details",
+    signupGoal: "/ {count} signups",
+    nextMilestoneOne: "{remaining} more signup takes {name} to “{milestone}”.",
+    nextMilestoneMany: "{remaining} more signups take {name} to “{milestone}”.",
+    leaderMessage:
+      "{name} has reached {milestone}, the highest milestone. Every additional signup keeps strengthening their work.",
+    leaderBadge: "Community Leader reached",
+    accessibility: {
+      field: "CSA farm growth field",
+      farm: "Growth details for {name}",
+      progress:
+        "{name}: {count} total signups from the beginning until now, {percent}% toward Community Leader",
+    },
   },
   home: {
     heroEyebrow: "Living Soil · From soil, life begins",
@@ -1112,7 +1171,7 @@ const vi: SiteContent = {
             },
             {
               label: "Gặp gỡ những người nông dân",
-              href: "#",
+              kind: "tracker",
               variant: "ghost",
             },
           ] as const,
@@ -1270,6 +1329,68 @@ const vi: SiteContent = {
       "Nhắn Natural Farming Vietnam trên Zalo nếu bạn cần hỗ trợ chọn gói, đặt hàng hoặc thay đổi Membership hiện có.",
     zaloCta: "Liên hệ qua Zalo",
     zaloUrl: "https://zalo.me/84988158285",
+  },
+  tracker: {
+    eyebrow: "Natural Farming Vietnam",
+    title: "Từ hạt giống đến mùa thu hoạch — Hành trình phát triển CSA",
+    intro:
+      "Theo dõi tổng số lượt đăng ký CSA mà mỗi nông trại nhận được từ khi bắt đầu đến nay, cùng cột mốc tiếp theo mà cộng đồng đang hướng tới.",
+    liveNoteTitle: "Dữ liệu đăng ký CSA đang được cập nhật.",
+    liveNoteBody:
+      "Bảng theo dõi hiển thị tổng lượt đăng ký hiện tại đã được ghi nhận cho các nông trại tham gia và cập nhật khi có số liệu mới.",
+    milestones: {
+      seedPlanted: {
+        label: "Hạt giống đã gieo",
+        description:
+          "Những lượt đăng ký đầu tiên đang khởi động cộng đồng quanh nông trại.",
+      },
+      gettingStarted: {
+        label: "Bắt đầu phát triển",
+        description:
+          "Một nhóm thành viên đang lớn dần, giúp nông trại tự tin lên kế hoạch.",
+      },
+      providingForFamily: {
+        label: "Chăm lo cho gia đình",
+        description:
+          "Sự đồng hành qua CSA đang góp phần chăm lo cho một gia đình nông dân.",
+      },
+      communityLeader: {
+        label: "Dẫn dắt cộng đồng",
+        description:
+          "Một cộng đồng CSA vững mạnh đang giúp nông trại mở đường cho những thay đổi tích cực.",
+      },
+    },
+    stats: {
+      farms: "Nông trại tham gia",
+      totalSignups: "Tổng lượt đăng ký từ khi bắt đầu đến nay",
+      leaders: "Nông trại đã đạt mốc Dẫn dắt cộng đồng",
+    },
+    legendLabel: "Các cột mốc phát triển CSA",
+    thresholdLabel: "{count} lượt đăng ký",
+    fieldSectionTitle: "Những nông trại lớn lên cùng cộng đồng",
+    fieldSectionSubtitle:
+      "Mỗi lượt đăng ký giúp nông trại xây dựng một tương lai ổn định hơn, từng gia đình một.",
+    loading: "Đang tải hành trình của các nông trại…",
+    emptyTitle: "Chưa có nông trại để hiển thị",
+    emptyBody:
+      "Các nông trại đang được hiển thị công khai sẽ xuất hiện tại đây khi có dữ liệu.",
+    error: "Không thể tải hành trình nông trại. Vui lòng thử lại.",
+    retry: "Thử lại",
+    farmGridTitle: "Chi tiết phát triển của các nông trại",
+    signupGoal: "/ {count} lượt đăng ký",
+    nextMilestoneOne:
+      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}”.",
+    nextMilestoneMany:
+      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}”.",
+    leaderMessage:
+      "{name} đã đạt cột mốc cao nhất {milestone}. Mỗi lượt đăng ký tiếp theo tiếp tục củng cố công việc của nông trại.",
+    leaderBadge: "Đã đạt mốc Dẫn dắt cộng đồng",
+    accessibility: {
+      field: "Khu vực theo dõi sự phát triển của các nông trại CSA",
+      farm: "Thông tin phát triển của {name}",
+      progress:
+        "{name}: {count} tổng lượt đăng ký từ khi bắt đầu đến nay, đạt {percent}% chặng đường đến cột mốc Dẫn dắt cộng đồng",
+    },
   },
   home: {
     heroEyebrow: "Đất sống · Từ đất, sự sống bắt đầu",

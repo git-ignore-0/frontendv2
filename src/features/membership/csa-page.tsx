@@ -196,6 +196,7 @@ export function CsaPage({
               key={comparison.eyebrow}
               copy={comparison}
               farmsUrl={farmsUrl}
+              locale={locale}
             />
           ))}
 

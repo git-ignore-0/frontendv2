@@ -6,6 +6,8 @@ import {
   getFeaturedTestimonials,
   getSiteSettings,
   getTestimonial,
+  getTrackerFarms,
+  getTrackerFarmsResult,
   getWorkshopPreview,
   getWorkshops,
   linkFromSettings,
@@ -112,6 +114,127 @@ describe("content API", () => {
     expect(result).toHaveLength(51);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[1][0])).toContain("page=2");
+  });
+
+  it.each(["en", "vi"] as const)(
+    "loads and parses the public tracker contract for %s",
+    async (locale) => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            {
+              id: `farm-${locale}`,
+              name: locale === "en" ? "Green Farm" : "Nông trại Xanh",
+              location: locale === "en" ? "Da Lat" : "Đà Lạt",
+              signup_count: 14,
+              sort_order: 2,
+              is_visible: true,
+            },
+          ],
+        }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const result = await getTrackerFarms(locale);
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        `http://127.0.0.1:8000/api/v1/public/tracker-farms?locale=${locale}`,
+        expect.objectContaining({
+          next: { tags: ["tracker-farms"], revalidate: 300 },
+        }),
+      );
+      expect(result).toEqual([
+        {
+          id: `farm-${locale}`,
+          name: locale === "en" ? "Green Farm" : "Nông trại Xanh",
+          location: locale === "en" ? "Da Lat" : "Đà Lạt",
+          signup_count: 14,
+          sort_order: 2,
+        },
+      ]);
+    },
+  );
+
+  it("returns an empty tracker list for an empty API response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [] }),
+      }),
+    );
+
+    await expect(getTrackerFarms("en")).resolves.toEqual([]);
+  });
+
+  it("distinguishes a successful empty tracker response from failure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [] }),
+      }),
+    );
+
+    await expect(getTrackerFarmsResult("en")).resolves.toEqual({
+      ok: true,
+      farms: [],
+    });
+  });
+
+  it("returns a tracker failure result for network errors", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+
+    await expect(getTrackerFarmsResult("vi")).resolves.toEqual({ ok: false });
+  });
+
+  it("returns a tracker failure result for non-success responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 503 }),
+    );
+
+    await expect(getTrackerFarmsResult("en")).resolves.toEqual({ ok: false });
+  });
+
+  it("returns a tracker failure result for an invalid payload", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: [{ id: "invalid" }] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      getTrackerFarmsResult("en", { bypassCache: true }),
+    ).resolves.toEqual({ ok: false });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:8000/api/v1/public/tracker-farms?locale=en",
+      { cache: "no-store" },
+    );
+  });
+
+  it("continues to surface tracker origin configuration errors", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("CONTENT_API_ORIGIN", "");
+
+    await expect(getTrackerFarmsResult("en")).rejects.toThrow(
+      /required in production/i,
+    );
+  });
+
+  it("fails safely when the tracker API or payload is unavailable", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+    await expect(getTrackerFarms("vi")).resolves.toEqual([]);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [{ id: "invalid" }] }),
+      }),
+    );
+    await expect(getTrackerFarms("en")).resolves.toEqual([]);
   });
 
   it("encodes a preview token exactly once", async () => {
