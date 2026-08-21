@@ -15,20 +15,44 @@ function replaceCopy(
 
 function nextMilestoneCopy(copy: TrackerCopy, farm: TrackerFarmViewModel) {
   if (!farm.nextMilestoneKey) {
-    return replaceCopy(copy.leaderMessage, {
+    const message = replaceCopy(copy.leaderMessage, {
       name: farm.name,
       milestone: copy.milestones.communityLeader.label,
     });
+    const milestone = copy.milestones.communityLeader.label;
+    const [before, after] = message.split(milestone);
+    return (
+      <>
+        <span aria-hidden="true">🎉 </span>
+        {before}
+        <strong>{milestone}</strong>
+        {after}
+      </>
+    );
   }
-  const template =
-    farm.remainingSignups === 1
-      ? copy.nextMilestoneOne
-      : copy.nextMilestoneMany;
-  return replaceCopy(template, {
+  const isSingle = farm.remainingSignups === 1;
+  const template = isSingle ? copy.nextMilestoneOne : copy.nextMilestoneMany;
+  const countTemplate = isSingle
+    ? copy.nextMilestoneCountOne
+    : copy.nextMilestoneCountMany;
+  const countLabel = replaceCopy(countTemplate, {
     remaining: farm.remainingSignups,
+  });
+  const marker = "__TRACKER_COUNT__";
+  const message = replaceCopy(template, {
+    remaining: marker,
     name: farm.name,
     milestone: copy.milestones[farm.nextMilestoneKey].label,
+    description: copy.milestones[farm.nextMilestoneKey].description,
   });
+  const [before, after] = message.split(marker);
+  return (
+    <>
+      {before}
+      <strong>{countLabel}</strong>
+      {after}
+    </>
+  );
 }
 
 export function TrackerFarmCard({
@@ -99,12 +123,7 @@ export function TrackerFarmCard({
           ))}
         </ol>
       </div>
-      <p className="tracker-impact-note">
-        {nextMilestoneCopy(copy, farm)}
-        {farm.nextMilestoneKey ? (
-          <span> {copy.milestones[farm.nextMilestoneKey].description}</span>
-        ) : null}
-      </p>
+      <p className="tracker-impact-note">{nextMilestoneCopy(copy, farm)}</p>
     </article>
   );
 }

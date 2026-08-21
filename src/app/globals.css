@@ -7495,6 +7495,10 @@ tbody th {
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
+.tracker-standalone .tracker-impact-note strong {
+  color: var(--tracker-ink);
+  font-weight: 700;
+}
 .tracker-standalone .tracker-state {
   min-height: 224px;
   margin: clamp(22px, 3vw, 32px) 0;

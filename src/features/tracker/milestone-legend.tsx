@@ -15,7 +15,7 @@ export function MilestoneLegend({ copy }: { copy: TrackerCopy }) {
               </span>
               <TrackerMilestoneIcon size={18} type={milestone.icon} />
               <span className="tracker-legend-copy">
-                <strong>{milestoneCopy.label}</strong>
+                <span>{milestoneCopy.label}</span>
                 <span className="sr-only"> — {milestoneCopy.description}</span>
               </span>
               <span className="sr-only">

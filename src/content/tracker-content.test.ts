@@ -25,14 +25,21 @@ describe("tracker dictionary", () => {
     expect(copyPaths(en)).toContain("liveNoteBody");
   });
 
-  it("describes cumulative signups without six-month wording", () => {
-    const en = JSON.stringify(getSiteContent("en").tracker);
-    const vi = JSON.stringify(getSiteContent("vi").tracker);
+  it("keeps the reference six-month intro and stats labels", () => {
+    const en = getSiteContent("en").tracker;
+    const vi = getSiteContent("vi").tracker;
 
-    expect(en).toContain("from the beginning until now");
-    expect(vi).toContain("từ khi bắt đầu đến nay");
-    expect(en).not.toMatch(/6[- ]month signups/i);
-    expect(vi).not.toMatch(/đăng ký.{0,20}6 tháng/i);
+    expect(en.intro).toContain(
+      "Every 6-month CSA signup grows a farmer's story forward.",
+    );
+    expect(vi.intro).toContain(
+      "Mỗi lượt đăng ký CSA 6 tháng giúp câu chuyện của người nông dân tiến về phía trước.",
+    );
+    expect(en.stats).toEqual({
+      farms: "FARMERS IN THE GROUP",
+      totalSignups: "TOTAL 6-MONTH SIGNUPS",
+      leaders: "COMMUNITY LEADERS REACHED",
+    });
   });
 
   it("uses production-safe localized live-data copy", () => {

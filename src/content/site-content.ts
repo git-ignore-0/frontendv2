@@ -512,7 +512,7 @@ const en = {
     eyebrow: "Natural Farming Vietnam",
     title: "From Seed to Harvest — CSA Growth Tracker",
     intro:
-      "Follow the total number of CSA signups each farm has received from the beginning until now, and see what each community is growing toward next.",
+      "Every 6-month CSA signup grows a farmer's story forward. Watch each one move from getting started, to providing for their family, to becoming a leader others can learn from.",
     liveNoteTitle: "Live CSA signup data.",
     liveNoteBody:
       "This tracker shows the current signup totals recorded for participating farms and updates as new totals are added.",
@@ -538,9 +538,9 @@ const en = {
       },
     },
     stats: {
-      farms: "Participating farms",
-      totalSignups: "Total signups from the beginning until now",
-      leaders: "Community Leaders reached",
+      farms: "FARMERS IN THE GROUP",
+      totalSignups: "TOTAL 6-MONTH SIGNUPS",
+      leaders: "COMMUNITY LEADERS REACHED",
     },
     legendLabel: "CSA growth milestones",
     thresholdLabel: "{count} signups",
@@ -555,10 +555,14 @@ const en = {
     retry: "Try again",
     farmGridTitle: "Farm growth details",
     signupGoal: "/ {count} signups",
-    nextMilestoneOne: "{remaining} more signup takes {name} to “{milestone}”.",
-    nextMilestoneMany: "{remaining} more signups take {name} to “{milestone}”.",
+    nextMilestoneOne:
+      "{remaining} more signup gets {name} to “{milestone}” — {description}.",
+    nextMilestoneMany:
+      "{remaining} more signups gets {name} to “{milestone}” — {description}.",
+    nextMilestoneCountOne: "{remaining} more signup",
+    nextMilestoneCountMany: "{remaining} more signups",
     leaderMessage:
-      "{name} has reached {milestone}, the highest milestone. Every additional signup keeps strengthening their work.",
+      "{name} has reached {milestone} — the highest milestone! Every extra signup keeps strengthening their work.",
     leaderBadge: "Community Leader reached",
     accessibility: {
       field: "CSA farm growth field",
@@ -1334,7 +1338,7 @@ const vi: SiteContent = {
     eyebrow: "Natural Farming Vietnam",
     title: "Từ hạt giống đến mùa thu hoạch — Hành trình phát triển CSA",
     intro:
-      "Theo dõi tổng số lượt đăng ký CSA mà mỗi nông trại nhận được từ khi bắt đầu đến nay, cùng cột mốc tiếp theo mà cộng đồng đang hướng tới.",
+      "Mỗi lượt đăng ký CSA 6 tháng giúp câu chuyện của người nông dân tiến về phía trước. Hãy dõi theo từng nông trại từ những bước khởi đầu, đến khi chăm lo cho gia đình, rồi trở thành người dẫn dắt để cộng đồng học hỏi.",
     liveNoteTitle: "Dữ liệu đăng ký CSA đang được cập nhật.",
     liveNoteBody:
       "Bảng theo dõi hiển thị tổng lượt đăng ký hiện tại đã được ghi nhận cho các nông trại tham gia và cập nhật khi có số liệu mới.",
@@ -1361,9 +1365,9 @@ const vi: SiteContent = {
       },
     },
     stats: {
-      farms: "Nông trại tham gia",
-      totalSignups: "Tổng lượt đăng ký từ khi bắt đầu đến nay",
-      leaders: "Nông trại đã đạt mốc Dẫn dắt cộng đồng",
+      farms: "NÔNG TRẠI TRONG NHÓM",
+      totalSignups: "TỔNG LƯỢT ĐĂNG KÝ CSA 6 THÁNG",
+      leaders: "ĐÃ ĐẠT MỐC DẪN DẮT CỘNG ĐỒNG",
     },
     legendLabel: "Các cột mốc phát triển CSA",
     thresholdLabel: "{count} lượt đăng ký",
@@ -1379,11 +1383,13 @@ const vi: SiteContent = {
     farmGridTitle: "Chi tiết phát triển của các nông trại",
     signupGoal: "/ {count} lượt đăng ký",
     nextMilestoneOne:
-      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}”.",
+      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}” — {description}.",
     nextMilestoneMany:
-      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}”.",
+      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}” — {description}.",
+    nextMilestoneCountOne: "{remaining} lượt đăng ký",
+    nextMilestoneCountMany: "{remaining} lượt đăng ký",
     leaderMessage:
-      "{name} đã đạt cột mốc cao nhất {milestone}. Mỗi lượt đăng ký tiếp theo tiếp tục củng cố công việc của nông trại.",
+      "{name} đã đạt cột mốc cao nhất {milestone} — một người dẫn dắt cộng đồng! Mỗi lượt đăng ký tiếp theo tiếp tục củng cố công việc của nông trại.",
     leaderBadge: "Đã đạt mốc Dẫn dắt cộng đồng",
     accessibility: {
       field: "Khu vực theo dõi sự phát triển của các nông trại CSA",

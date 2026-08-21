@@ -11,6 +11,10 @@ const icon = readFileSync(
   resolve("src/features/tracker/tracker-icon.tsx"),
   "utf8",
 );
+const legend = readFileSync(
+  resolve("src/features/tracker/milestone-legend.tsx"),
+  "utf8",
+);
 
 function declarationBlock(selector: string) {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -94,6 +98,13 @@ describe("tracker responsive style contract", () => {
     expect(declarationBlock(".tracker-standalone .tracker-shell")).toContain(
       "width: min(100%, 1320px)",
     );
+  });
+
+  it("keeps milestone chip labels at the reference semibold weight", () => {
+    expect(legend).not.toContain("<strong>{milestoneCopy.label}</strong>");
+    expect(
+      declarationBlock(".tracker-standalone .tracker-legend li"),
+    ).toContain("font-weight: 600");
   });
 
   it("matches the reference demo-note geometry and production colors", () => {

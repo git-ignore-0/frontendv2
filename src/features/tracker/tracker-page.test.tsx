@@ -58,16 +58,14 @@ describe("TrackerPage", () => {
     );
 
     expect(
-      screen.getByText("Participating farms").previousSibling,
+      screen.getByText("FARMERS IN THE GROUP").previousSibling,
     ).toHaveTextContent("4");
     expect(
-      screen.getByText("Total signups from the beginning until now")
-        .previousSibling,
+      screen.getByText("TOTAL 6-MONTH SIGNUPS").previousSibling,
     ).toHaveTextContent("78");
     expect(
-      screen.getByText("Community Leaders reached").previousSibling,
+      screen.getByText("COMMUNITY LEADERS REACHED").previousSibling,
     ).toHaveTextContent("1");
-    expect(screen.queryByText(/6[- ]month signups/i)).not.toBeInTheDocument();
   });
 
   it.each([
@@ -136,7 +134,9 @@ describe("TrackerPage", () => {
     );
 
     const card = screen.getByRole("article");
-    expect(within(card).getByText(label)).toBeVisible();
+    expect(
+      within(card).getByText(label, { selector: ".tracker-stage-badge span" }),
+    ).toBeVisible();
   });
 
   it("provides localized progress semantics and fixed ticks", () => {
@@ -164,13 +164,18 @@ describe("TrackerPage", () => {
     const { rerender } = render(
       <TrackerPage copy={getSiteContent("en").tracker} farms={[farm(29)]} />,
     );
-    expect(screen.getByText(/1 more signup takes Farm 29/i)).toBeVisible();
+    const nextSignup = screen.getByText("1 more signup");
+    expect(nextSignup).toBeVisible();
+    expect(nextSignup.tagName).toBe("STRONG");
 
     rerender(
       <TrackerPage copy={getSiteContent("en").tracker} farms={[farm(30)]} />,
     );
     expect(screen.getByLabelText("Community Leader reached")).toBeVisible();
-    expect(screen.getByText(/has reached Community Leader/i)).toBeVisible();
+    const leaderMessage = screen.getByText("Community Leader", {
+      selector: "strong",
+    });
+    expect(leaderMessage).toBeVisible();
   });
 
   it("renders zero stats and no farm grid in the empty state", () => {
