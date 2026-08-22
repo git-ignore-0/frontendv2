@@ -59,11 +59,7 @@ export function TrackerPage({
           <TrackerState copy={copy} state="empty" />
         ) : (
           <>
-            <TrackerField
-              copy={copy}
-              farms={farmModels}
-              onActivate={openFarm}
-            />
+            <TrackerField copy={copy} farms={farmModels} />
             <TrackerFarmGrid
               copy={copy}
               farms={farmModels}

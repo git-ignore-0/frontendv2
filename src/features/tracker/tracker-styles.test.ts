@@ -103,6 +103,47 @@ describe("tracker responsive style contract", () => {
     expect(declarationBlock(".tracker-standalone .tracker-shell")).toContain(
       "width: min(100%, 1320px)",
     );
+    const stageLabel = declarationBlock(
+      ".tracker-standalone .tracker-stage-badge",
+    );
+    expect(stageLabel).toContain("align-self: flex-start");
+    expect(stageLabel).toContain("width: fit-content");
+    expect(stageLabel).toContain("max-width: 100%");
+  });
+
+  it("matches the v32 farmer detail trigger and keeps field farms static", () => {
+    const trigger = declarationBlock(".tracker-standalone .detail-trigger");
+    const action = declarationBlock(".tracker-standalone .fcard .card-action");
+    const cardHover = declarationBlock(
+      ".tracker-standalone .tracker-farm-card:hover",
+    );
+
+    expect(trigger).toContain("background: var(--tracker-dark)");
+    expect(trigger).toContain("border-radius: 11px");
+    expect(trigger).toContain("padding: 10px 13px");
+    expect(trigger).toContain("font-size: 12.5px");
+    expect(trigger).toContain("font-weight: 750");
+    expect(trigger).toContain("gap: 8px");
+    expect(trigger).toContain("box-shadow: 0 4px 10px rgba(18, 50, 31, 0.14)");
+    expect(action).toContain("margin-top: auto");
+    expect(action).toContain("padding-top: 18px");
+    expect(action).toContain("justify-content: flex-end");
+    expect(cardHover).toContain("border-color: #d7e1d0");
+    expect(cardHover).toContain(
+      "box-shadow: 0 10px 24px rgba(18, 50, 31, 0.1)",
+    );
+    expect(cardHover).not.toContain("transform:");
+    expect(
+      declarationBlock(".tracker-standalone .tracker-field-scroll li"),
+    ).toContain("cursor: default");
+    expect(css).not.toContain("tracker-farm-card-trigger");
+    expect(css).not.toContain("tracker-card-action");
+    expect(css).toMatch(
+      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.detail-trigger\s*\{\s*padding: 10px 13px;\s*font-size: 12px/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.fcard \.card-action\s*\{\s*padding-top: 16px/,
+    );
   });
 
   it("keeps the farmer dialog responsive at desktop and mobile widths", () => {

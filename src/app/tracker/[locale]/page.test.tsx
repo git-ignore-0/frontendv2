@@ -149,7 +149,9 @@ describe("tracker route", () => {
       );
     });
     expect(
-      screen.queryByRole("button", { name: /Growth details for/i }),
+      screen.queryByRole("button", {
+        name: /Thông tin phát triển của Nông trại/i,
+      }),
     ).not.toBeInTheDocument();
   });
 });

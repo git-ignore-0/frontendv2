@@ -135,10 +135,9 @@ describe("TrackerPage", () => {
       <TrackerPage copy={getSiteContent("en").tracker} farms={[farm(count)]} />,
     );
 
-    const card = screen.getByRole("button", {
-      name: `Growth details for Farm ${count}`,
-    });
-    const cardContainer = card.closest<HTMLElement>(".tracker-farm-card");
+    const cardContainer = screen
+      .getByRole("heading", { level: 3, name: `Farm ${count}` })
+      .closest<HTMLElement>(".tracker-farm-card");
     if (!cardContainer) throw new Error("Expected tracker farm card container");
     expect(
       within(cardContainer).getByText(label, {
@@ -158,15 +157,15 @@ describe("TrackerPage", () => {
     expect(progress).toHaveAttribute("aria-valuemin", "0");
     expect(progress).toHaveAttribute("aria-valuemax", "100");
     expect(progress).toHaveAttribute("aria-valuenow", "47");
-    const cardTrigger = screen.getByRole("button", {
-      name: "Growth details for Farm 14",
-    });
-    const card = cardTrigger.closest<HTMLElement>(".tracker-farm-card");
+    const card = progress.closest<HTMLElement>(".tracker-farm-card");
     if (!card) throw new Error("Expected tracker farm card container");
     expect(card.tagName).toBe("ARTICLE");
     expect(card).not.toHaveAttribute("role", "button");
-    expect(cardTrigger.tagName).toBe("BUTTON");
-    expect(cardTrigger).not.toContainElement(progress);
+    const detailTrigger = within(card).getByRole("button", {
+      name: "Growth details for Farm 14",
+    });
+    expect(detailTrigger.tagName).toBe("BUTTON");
+    expect(detailTrigger).not.toContainElement(progress);
     expect(card).toContainElement(progress);
     expect(within(card).getByText("/ 30 signups")).toBeVisible();
     for (const tick of ["0", "10", "20", "30"]) {
@@ -244,7 +243,9 @@ describe("TrackerPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
     expect(retry).toHaveBeenCalledTimes(1);
     expect(
-      screen.queryByRole("button", { name: /Growth details for Farm/i }),
+      screen.queryByRole("button", {
+        name: /Thông tin phát triển của Nông trại/i,
+      }),
     ).not.toBeInTheDocument();
   });
 
@@ -327,14 +328,28 @@ describe("TrackerPage", () => {
     ).toHaveTextContent("🌳");
   });
 
-  it("opens the same accessible dialog from a card or field icon with pointer and keyboard input", () => {
+  it("opens the dialog only from the localized detail trigger", () => {
     const copy = getSiteContent("en").tracker;
-    render(<TrackerPage copy={copy} farms={[farm(14)]} />);
+    const { container } = render(
+      <TrackerPage copy={copy} farms={[farm(14)]} />,
+    );
 
-    const card = screen.getByRole("button", {
+    const trigger = screen.getByRole("button", {
       name: "Growth details for Farm 14",
     });
+    const card = container.querySelector(".fcard");
+    const fieldFarm = container.querySelector(".tracker-field-scroll li");
+    if (!card || !fieldFarm) throw new Error("Expected card and field farm");
+
+    expect(card).not.toHaveAttribute("role");
+    expect(card).not.toHaveAttribute("tabindex");
+    expect(fieldFarm).not.toHaveAttribute("role");
+    expect(fieldFarm).not.toHaveAttribute("tabindex");
     fireEvent.click(card);
+    fireEvent.click(fieldFarm);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(trigger);
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(within(dialog).getByText(copy.farmerProfile)).toBeVisible();
@@ -346,22 +361,12 @@ describe("TrackerPage", () => {
       screen.getByRole("button", { name: copy.closeFarmerDetails }),
     );
 
-    fireEvent.keyDown(card, { key: "Enter" });
-    expect(screen.getByRole("dialog")).toBeVisible();
-    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
-    fireEvent.keyDown(card, { key: " " });
-    expect(screen.getByRole("dialog")).toBeVisible();
-    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
-
-    const field = screen.getByRole("button", {
-      name: /Farm 14: 14 total signups/i,
-    });
-    fireEvent.keyDown(field, { key: "Enter" });
-    expect(screen.getByRole("dialog")).toBeVisible();
-    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
-
-    fireEvent.keyDown(field, { key: " " });
-    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(trigger).toHaveClass("detail-trigger");
+    expect(trigger).toHaveAttribute("type", "button");
+    expect(within(trigger).getByText("→")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
   });
 
   it("closes on Escape, backdrop, and close button while returning focus to the opener", async () => {
@@ -432,6 +437,11 @@ describe("TrackerPage", () => {
       }),
     );
     const dialog = screen.getByRole("dialog");
+    expect(
+      screen.getByRole("button", {
+        name: "Thông tin phát triển của Nông trại Xanh",
+      }),
+    ).toBeVisible();
     expect(within(dialog).getByText("Hồ sơ nông trại")).toBeVisible();
     expect(
       within(dialog).getByText("Giới thiệu về nông trại này"),

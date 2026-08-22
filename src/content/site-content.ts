@@ -564,6 +564,7 @@ const en = {
     leaderMessage:
       "{name} has reached {milestone} — the highest milestone! Every extra signup keeps strengthening their work.",
     leaderBadge: "Community Leader reached",
+    viewFarmer: "View farmer",
     farmerProfile: "Farmer profile",
     aboutFarmer: "About this farmer",
     closeFarmerDetails: "Close farmer details",
@@ -1394,6 +1395,7 @@ const vi: SiteContent = {
     leaderMessage:
       "{name} đã đạt cột mốc cao nhất {milestone} — một người dẫn dắt cộng đồng! Mỗi lượt đăng ký tiếp theo tiếp tục củng cố công việc của nông trại.",
     leaderBadge: "Đã đạt mốc Dẫn dắt cộng đồng",
+    viewFarmer: "Xem người nông dân",
     farmerProfile: "Hồ sơ nông trại",
     aboutFarmer: "Giới thiệu về nông trại này",
     closeFarmerDetails: "Đóng thông tin nông trại",

@@ -72,18 +72,7 @@ export function TrackerFarmCard({
   });
 
   return (
-    <article className="tracker-farm-card">
-      <button
-        aria-label={copy.accessibility.farm.replace("{name}", farm.name)}
-        className="tracker-farm-card-trigger"
-        onClick={(event) => onActivate(farm, event.currentTarget)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          onActivate(farm, event.currentTarget);
-        }}
-        type="button"
-      />
+    <article className="fcard tracker-farm-card">
       {farm.isLeader ? (
         <span aria-label={copy.leaderBadge} className="tracker-leader-badge">
           <span aria-hidden="true">⭐</span>
@@ -98,7 +87,7 @@ export function TrackerFarmCard({
           <span className="tracker-farm-location">{farm.location}</span>
         </span>
       </header>
-      <div className="tracker-stage-badge">
+      <div className="stage-label tracker-stage-badge">
         <TrackerMilestoneIcon size={16} type={farm.icon} />
         <span>{milestone.label}</span>
       </div>
@@ -134,6 +123,19 @@ export function TrackerFarmCard({
         </ol>
       </div>
       <p className="tracker-impact-note">{nextMilestoneCopy(copy, farm)}</p>
+      <div className="card-action">
+        <button
+          aria-label={copy.accessibility.farm.replace("{name}", farm.name)}
+          className="detail-trigger"
+          onClick={(event) => onActivate(farm, event.currentTarget)}
+          type="button"
+        >
+          <span>{copy.viewFarmer}</span>
+          <span aria-hidden="true" className="detail-trigger__icon">
+            →
+          </span>
+        </button>
+      </div>
     </article>
   );
 }

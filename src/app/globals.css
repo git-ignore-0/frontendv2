@@ -7278,13 +7278,9 @@ tbody th {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  cursor: pointer;
+  cursor: default;
   border-radius: 12px;
-  outline: none;
   transition: transform 0.25s ease;
-}
-.tracker-standalone .tracker-field-scroll li:focus-visible {
-  box-shadow: 0 0 0 3px rgba(63, 159, 116, 0.2);
 }
 .tracker-standalone .tracker-field-scroll li:has(.tracker-mother-tree) {
   margin-inline: 4px;
@@ -7336,45 +7332,24 @@ tbody th {
 }
 .tracker-standalone .tracker-farm-card {
   position: relative;
+  display: flex;
   width: 100%;
   min-width: 0;
+  flex-direction: column;
   padding: clamp(18px, 2vw, 22px);
   overflow: hidden;
   border: 1px solid var(--tracker-line);
   border-radius: 20px;
   background: var(--tracker-card);
   box-shadow: 0 6px 18px rgba(18, 50, 31, 0.08);
-  cursor: pointer;
-  outline: none;
   transition:
     box-shadow 0.2s ease,
     transform 0.2s ease,
     border-color 0.2s ease;
 }
-.tracker-standalone .tracker-farm-card-trigger {
-  position: absolute;
-  z-index: 2;
-  inset: 0;
-  padding: 0;
-  border: 0;
-  border-radius: inherit;
-  background: transparent;
-  cursor: pointer;
-}
 .tracker-standalone .tracker-farm-card:hover {
-  transform: translateY(-2px);
-  border-color: #d4ddcd;
-  box-shadow: 0 10px 24px rgba(18, 50, 31, 0.11);
-}
-.tracker-standalone
-  .tracker-farm-card:has(.tracker-farm-card-trigger:focus-visible) {
-  box-shadow:
-    0 0 0 3px rgba(63, 159, 116, 0.2),
-    0 8px 22px rgba(18, 50, 31, 0.1);
-}
-.tracker-standalone .tracker-farm-card-trigger:focus-visible {
-  outline: 3px solid rgba(63, 159, 116, 0.2);
-  outline-offset: -3px;
+  border-color: #d7e1d0;
+  box-shadow: 0 10px 24px rgba(18, 50, 31, 0.1);
 }
 .tracker-standalone .tracker-leader-badge {
   position: absolute;
@@ -7455,6 +7430,8 @@ tbody th {
 }
 .tracker-standalone .tracker-stage-badge {
   display: inline-flex;
+  align-self: flex-start;
+  width: fit-content;
   max-width: 100%;
   align-items: center;
   gap: 6px;
@@ -7544,6 +7521,53 @@ tbody th {
   font-size: 12.5px;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+.tracker-standalone .detail-trigger {
+  appearance: none;
+  border: 0;
+  background: var(--tracker-dark);
+  color: #fff;
+  border-radius: 11px;
+  padding: 10px 13px;
+  font-size: 12.5px;
+  font-weight: 750;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+  box-shadow: 0 4px 10px rgba(18, 50, 31, 0.14);
+}
+.tracker-standalone .detail-trigger:hover {
+  transform: translateY(-1px);
+  background: var(--tracker-med);
+  box-shadow: 0 7px 16px rgba(18, 50, 31, 0.18);
+}
+.tracker-standalone .detail-trigger:active {
+  transform: translateY(0);
+}
+.tracker-standalone .detail-trigger:focus-visible {
+  outline: 3px solid rgba(63, 159, 116, 0.24);
+  outline-offset: 2px;
+}
+.tracker-standalone .detail-trigger__icon {
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.tracker-standalone .detail-trigger:hover .detail-trigger__icon {
+  transform: translateX(2px);
+}
+.tracker-standalone .fcard .card-action {
+  margin-top: auto;
+  padding-top: 18px;
+  display: flex;
+  justify-content: flex-end;
 }
 .tracker-standalone .tracker-impact-note strong {
   color: var(--tracker-ink);
@@ -7976,6 +8000,13 @@ body.tracker-dialog-open:has(.tracker-standalone) {
     min-height: 0;
     margin-bottom: 0;
     font-size: 12.5px;
+  }
+  .tracker-standalone .detail-trigger {
+    padding: 10px 13px;
+    font-size: 12px;
+  }
+  .tracker-standalone .fcard .card-action {
+    padding-top: 16px;
   }
   .tracker-standalone .tracker-farmer-dialog {
     width: calc(100vw - 20px);

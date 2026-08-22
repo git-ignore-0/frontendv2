@@ -12,11 +12,9 @@ function fieldLabel(copy: TrackerCopy, farm: TrackerFarmViewModel) {
 export function TrackerField({
   copy,
   farms,
-  onActivate,
 }: {
   copy: TrackerCopy;
   farms: TrackerFarmViewModel[];
-  onActivate: (farm: TrackerFarmViewModel, opener: HTMLElement) => void;
 }) {
   return (
     <section
@@ -33,18 +31,7 @@ export function TrackerField({
       >
         <ul>
           {farms.map((farm) => (
-            <li
-              aria-label={fieldLabel(copy, farm)}
-              key={farm.id}
-              onClick={(event) => onActivate(farm, event.currentTarget)}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter" && event.key !== " ") return;
-                event.preventDefault();
-                onActivate(farm, event.currentTarget);
-              }}
-              role="button"
-              tabIndex={0}
-            >
+            <li aria-label={fieldLabel(copy, farm)} key={farm.id}>
               <span className="tracker-field-icon-stage">
                 <TrackerMilestoneIcon
                   size={farm.fieldIconSize}
