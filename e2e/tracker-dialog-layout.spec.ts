@@ -34,16 +34,23 @@ const fixtures = {
   },
 } as const;
 
-async function renderDialog(page: Page, locale: keyof typeof fixtures) {
+async function renderDialog(
+  page: Page,
+  locale: keyof typeof fixtures,
+  options: { description?: string; expanded?: boolean } = {},
+) {
   const fixture = fixtures[locale];
+  const description = options.description ?? fixture.description;
+  const expandedClass =
+    options.expanded === false ? "" : " farmer-dialog--expand-about";
   await page.setContent(`
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>${trackerCss}</style>
     <main class="tracker-standalone">
-      <dialog aria-labelledby="tracker-farmer-dialog-name" class="farmer-dialog">
+      <dialog aria-labelledby="tracker-farmer-dialog-name" class="farmer-dialog${expandedClass}">
         <button class="farmer-dialog__close" type="button">×</button>
         <div class="farmer-dialog__body">
-          <div class="farmer-dialog__media">
+          <div class="farmer-dialog__media farmer-dialog__media--with-primary">
             <div class="farmer-dialog__fallback">🌱</div>
             <img
               alt="${fixture.name}"
@@ -55,13 +62,15 @@ async function renderDialog(page: Page, locale: keyof typeof fixtures) {
             <span class="dialog-photo-hint">⌕ View photo</span>
           </div>
           <div class="farmer-dialog__content">
-            <p class="farmer-dialog__eyebrow">${fixture.eyebrow}</p>
-            <h2 class="farmer-dialog__name" id="tracker-farmer-dialog-name">${fixture.name}</h2>
-            <p class="farmer-dialog__address"><span>📍</span><span>${fixture.location}</span></p>
+            <div class="farmer-dialog__profile">
+              <p class="farmer-dialog__eyebrow">${fixture.eyebrow}</p>
+              <h2 class="farmer-dialog__name" id="tracker-farmer-dialog-name">${fixture.name}</h2>
+              <p class="farmer-dialog__address"><span>📍</span><span>${fixture.location}</span></p>
+            </div>
             <div class="farmer-dialog__about">
               <p class="farmer-dialog__about-label">${fixture.about}</p>
               <div class="farmer-dialog__about-scroll">
-                <p class="farmer-dialog__description">${fixture.description}</p>
+                <p class="farmer-dialog__description">${description}</p>
               </div>
             </div>
             <section class="farmer-gallery">
@@ -103,6 +112,7 @@ async function dialogMetrics(page: Page) {
     const gallery = required<HTMLElement>(".farmer-gallery");
     const dialogRect = dialog.getBoundingClientRect();
     const galleryRect = gallery.getBoundingClientRect();
+    const aboutRect = about.getBoundingClientRect();
     const lineHeight = Number.parseFloat(
       getComputedStyle(description).lineHeight,
     );
@@ -121,6 +131,7 @@ async function dialogMetrics(page: Page) {
       dialogOverflowDelta: dialog.scrollHeight - dialog.clientHeight,
       dialogOverflowY: getComputedStyle(dialog).overflowY,
       galleryInsideDialog: galleryRect.bottom <= dialogRect.bottom + 1,
+      aboutEndsBeforeGallery: aboutRect.bottom <= galleryRect.top + 1,
       galleryVisible:
         galleryRect.height > 0 && getComputedStyle(gallery).display !== "none",
       mediaHeight: media.getBoundingClientRect().height,
@@ -136,7 +147,7 @@ async function dialogMetrics(page: Page) {
 }
 
 for (const locale of ["en", "vi"] as const) {
-  test(`${locale} long About copy retains one readable line at 375x812`, async ({
+  test(`${locale} long About copy retains four readable lines at 375x812`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: 375, height: 812 });
@@ -144,7 +155,7 @@ for (const locale of ["en", "vi"] as const) {
 
     const metrics = await dialogMetrics(page);
     expect(metrics.aboutClientHeight).toBeGreaterThanOrEqual(
-      metrics.aboutLineHeight,
+      metrics.aboutLineHeight * 4,
     );
     expect(metrics.aboutScrollHeight).toBeGreaterThan(
       metrics.aboutClientHeight,
@@ -153,10 +164,11 @@ for (const locale of ["en", "vi"] as const) {
     expect(metrics.aboutScrolled).toBe(true);
     expect(metrics.galleryVisible).toBe(true);
     expect(metrics.galleryInsideDialog).toBe(true);
+    expect(metrics.aboutEndsBeforeGallery).toBe(true);
     expect(metrics.dialogHeight).toBeLessThanOrEqual(
-      metrics.viewportHeight * 0.7 + 1,
+      metrics.viewportHeight * 0.9 + 1,
     );
-    expect(metrics.mediaHeight).toBe(160);
+    expect(metrics.mediaHeight).toBe(0);
     expect(metrics.nameLines).toBeGreaterThan(2);
     expect(metrics.nameLines).toBeLessThanOrEqual(3.05);
     expect(metrics.dialogOverflowY).toBe("hidden");
@@ -169,7 +181,7 @@ for (const locale of ["en", "vi"] as const) {
   });
 }
 
-test("long About copy retains one readable line at 320x720", async ({
+test("long About copy retains four readable lines at 320x720", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 720 });
@@ -177,26 +189,66 @@ test("long About copy retains one readable line at 320x720", async ({
 
   const metrics = await dialogMetrics(page);
   expect(metrics.aboutClientHeight).toBeGreaterThanOrEqual(
-    metrics.aboutLineHeight,
+    metrics.aboutLineHeight * 4,
   );
   expect(metrics.aboutScrollHeight).toBeGreaterThan(metrics.aboutClientHeight);
   expect(metrics.galleryVisible).toBe(true);
   expect(metrics.galleryInsideDialog).toBe(true);
+  expect(metrics.aboutEndsBeforeGallery).toBe(true);
   expect(metrics.dialogHeight).toBeLessThanOrEqual(
-    metrics.viewportHeight * 0.7 + 1,
+    metrics.viewportHeight * 0.9 + 1,
   );
-  expect(metrics.mediaHeight).toBe(130);
+  expect(metrics.mediaHeight).toBe(0);
   expect(metrics.dialogOverflowY).toBe("hidden");
   expect(metrics.bodyOverflowY).toBe("hidden");
   expect(metrics.contentOverflowY).toBe("hidden");
   expect(metrics.pageOverflowsHorizontally).toBe(false);
 });
 
+test("a short desktop viewport keeps About contained above the gallery", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 480 });
+  await renderDialog(page, "en");
+
+  const metrics = await dialogMetrics(page);
+  expect(metrics.aboutClientHeight).toBeGreaterThan(0);
+  expect(metrics.aboutScrollHeight).toBeGreaterThan(metrics.aboutClientHeight);
+  expect(metrics.galleryVisible).toBe(true);
+  expect(metrics.galleryInsideDialog).toBe(true);
+  expect(metrics.aboutEndsBeforeGallery).toBe(true);
+  expect(metrics.dialogOverflowDelta).toBeLessThanOrEqual(2);
+  expect(metrics.contentOverflowDelta).toBeLessThanOrEqual(1);
+  expect(metrics.pageOverflowsHorizontally).toBe(false);
+});
+
+test("a short About stays natural without an About scrollbar", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await renderDialog(page, "en", {
+    description: "A short farm description.",
+    expanded: false,
+  });
+
+  const metrics = await dialogMetrics(page);
+  expect(metrics.aboutScrollHeight).toBeLessThanOrEqual(
+    metrics.aboutClientHeight,
+  );
+  expect(metrics.galleryVisible).toBe(true);
+  expect(metrics.galleryInsideDialog).toBe(true);
+  expect(metrics.aboutEndsBeforeGallery).toBe(true);
+  expect(metrics.dialogHeight).toBeLessThan(metrics.viewportHeight * 0.9);
+  expect(metrics.pageOverflowsHorizontally).toBe(false);
+});
+
 for (const viewport of [
   { width: 768, height: 1024 },
+  { width: 1024, height: 768 },
   { width: 1280, height: 800 },
+  { width: 1440, height: 900 },
 ]) {
-  test(`long About copy remains bounded at ${viewport.width}x${viewport.height}`, async ({
+  test(`long About copy retains six readable lines at ${viewport.width}x${viewport.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -204,15 +256,16 @@ for (const viewport of [
 
     const metrics = await dialogMetrics(page);
     expect(metrics.aboutClientHeight).toBeGreaterThanOrEqual(
-      metrics.aboutLineHeight,
+      metrics.aboutLineHeight * 6,
     );
     expect(metrics.aboutScrollHeight).toBeGreaterThan(
       metrics.aboutClientHeight,
     );
     expect(metrics.galleryVisible).toBe(true);
     expect(metrics.galleryInsideDialog).toBe(true);
+    expect(metrics.aboutEndsBeforeGallery).toBe(true);
     expect(metrics.dialogHeight).toBeLessThanOrEqual(
-      metrics.viewportHeight * 0.7 + 1,
+      metrics.viewportHeight * 0.9 + 1,
     );
     expect(metrics.dialogOverflowY).toBe("hidden");
     expect(metrics.bodyOverflowY).toBe("hidden");

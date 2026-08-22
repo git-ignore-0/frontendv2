@@ -163,19 +163,19 @@ describe("tracker responsive style contract", () => {
     );
 
     expect(declarationBlock(".tracker-standalone .farmer-dialog")).toContain(
-      "width: min(820px, calc(100vw - 40px))",
+      "width: min(980px, 88vw)",
     );
     expect(declarationBlock(".tracker-standalone .farmer-dialog")).toContain(
       "height: fit-content",
     );
     expect(declarationBlock(".tracker-standalone .farmer-dialog")).toContain(
-      "max-height: 70vh",
+      "max-height: 90vh",
     );
     expect(declarationBlock(".tracker-standalone .farmer-dialog")).toContain(
-      "max-height: 70dvh",
+      "max-height: 90dvh",
     );
     expect(css).toMatch(
-      /@media \(min-width: 1100px\)[\s\S]*?\.tracker-standalone \.farmer-dialog\s*\{\s*width: min\(820px, 80vw\)/,
+      /@media \(min-width: 1100px\)[\s\S]*?\.tracker-standalone \.farmer-dialog\s*\{\s*width: min\(980px, 88vw\)/,
     );
     expect(
       declarationBlock(".tracker-standalone .farmer-dialog__body"),
@@ -188,7 +188,7 @@ describe("tracker responsive style contract", () => {
     ).toContain("height: auto");
     expect(
       declarationBlock(".tracker-standalone .farmer-dialog__body"),
-    ).toContain("max-height: 70dvh");
+    ).toContain("max-height: 90dvh");
     expect(
       declarationBlock(".tracker-standalone .farmer-dialog__body"),
     ).toContain("overflow: hidden");
@@ -214,9 +214,9 @@ describe("tracker responsive style contract", () => {
     expect(dialogName).toContain("overflow-wrap: anywhere");
     expect(dialogName).toContain("-webkit-box-orient: vertical");
     expect(dialogName).toContain("-webkit-line-clamp: 3");
-    expect(about).toContain("flex: 0 1 auto");
+    expect(about).toContain("flex: 1 1 auto");
     expect(about).toContain("min-height: 0");
-    expect(aboutScroll).toContain("max-height: min(18vh, 150px)");
+    expect(aboutScroll).not.toContain("max-height");
     expect(aboutScroll).toContain("overflow-y: auto");
     expect(aboutScroll).not.toMatch(/(^|\n)\s*height:/);
     expect(css).not.toContain(".tracker-standalone .tracker-farmer-dialog");
@@ -227,22 +227,22 @@ describe("tracker responsive style contract", () => {
       /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.farmer-dialog\s*\{\s*width: calc\(100vw - 20px\)/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__body\s*\{\s*display: flex;\s*flex-direction: column;[\s\S]*?max-height: 70dvh/,
+      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__body\s*\{\s*display: flex;\s*flex-direction: column;[\s\S]*?max-height: 90dvh/,
     );
     expect(css).toMatch(
       /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__media\s*\{\s*flex: 0 0 160px;[\s\S]*?height: 160px/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__about-scroll\s*\{[\s\S]*?min-height: 24px;[\s\S]*?max-height: min\(12vh, 96px\);[\s\S]*?overflow-y: auto/,
+      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__about-scroll\s*\{[\s\S]*?min-height: 0;[\s\S]*?overflow-y: auto/,
     );
     expect(css).toMatch(
       /@media \(max-width: 680px\) and \(max-height: 650px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__name\s*\{\s*font-size: 24px/,
     );
+    expect(css).toContain(".farmer-dialog--expand-about");
+    expect(css).toContain("min-height: min(148px, 20dvh)");
+    expect(css).toContain("min-height: min(96px, 20dvh)");
     expect(css).toMatch(
-      /@media \(max-height: 520px\) and \(min-width: 681px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__body\s*\{[\s\S]*?grid-template-columns: minmax\(210px, 250px\) minmax\(0, 1fr\)/,
-    );
-    expect(css).toMatch(
-      /@media \(max-height: 520px\) and \(min-width: 681px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__about-scroll\s*\{\s*max-height: min\(10vh, 52px\)/,
+      /@media \(max-height: 600px\)[\s\S]*?\.tracker-standalone\s+\.farmer-dialog--expand-about\s+\.farmer-dialog__about-scroll\s*\{\s*min-height: 24px/,
     );
   });
 

@@ -567,6 +567,9 @@ describe("TrackerPage", () => {
     expect(aboutScroll.scrollHeight).toBe(aboutScroll.clientHeight);
     expect(aboutScroll).not.toHaveAttribute("style");
     expect(container.querySelector(".farmer-gallery")).toBeVisible();
+    expect(container.querySelector("dialog.farmer-dialog")).not.toHaveClass(
+      "farmer-dialog--expand-about",
+    );
   });
 
   it("uses only the exact v32 farmer dialog class hierarchy", () => {
@@ -592,6 +595,7 @@ describe("TrackerPage", () => {
     const body = dialog?.querySelector(":scope > .farmer-dialog__body");
     const media = body?.querySelector(":scope > .farmer-dialog__media");
     const content = body?.querySelector(":scope > .farmer-dialog__content");
+    const profile = content?.querySelector(":scope > .farmer-dialog__profile");
     expect(body).not.toBeNull();
     expect(media).toContainElement(
       media?.querySelector(":scope > .farmer-dialog__fallback") ?? null,
@@ -602,14 +606,14 @@ describe("TrackerPage", () => {
     expect(media).toContainElement(
       media?.querySelector(":scope > .dialog-photo-hint") ?? null,
     );
-    expect(content).toContainElement(
-      content?.querySelector(":scope > .farmer-dialog__eyebrow") ?? null,
+    expect(profile).toContainElement(
+      profile?.querySelector(":scope > .farmer-dialog__eyebrow") ?? null,
     );
-    expect(content).toContainElement(
-      content?.querySelector(":scope > .farmer-dialog__name") ?? null,
+    expect(profile).toContainElement(
+      profile?.querySelector(":scope > .farmer-dialog__name") ?? null,
     );
-    expect(content).toContainElement(
-      content?.querySelector(":scope > .farmer-dialog__address") ?? null,
+    expect(profile).toContainElement(
+      profile?.querySelector(":scope > .farmer-dialog__address") ?? null,
     );
     const about = content?.querySelector(":scope > .farmer-dialog__about");
     expect(about).toContainElement(

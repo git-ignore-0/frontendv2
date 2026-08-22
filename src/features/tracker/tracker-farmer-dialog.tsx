@@ -8,6 +8,10 @@ import type { TrackerFarmViewModel } from "./lib/view-model";
 import { TrackerMilestoneIcon } from "./tracker-icon";
 import type { TrackerCopy } from "./types";
 
+const expandedDialogClass = "farmer-dialog--expand-about";
+const mediaClass = "farmer-dialog__media";
+const mediaWithPrimaryClass = "farmer-dialog__media--with-primary";
+
 function replaceCopy(
   template: string,
   values: Record<string, string | number>,
@@ -200,6 +204,7 @@ export function TrackerFarmerDialog({
   const lightboxOpenerRef = useRef<HTMLElement | null>(null);
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [expandAbout, setExpandAbout] = useState(false);
   const usableImages = useMemo(
     () => farm?.images.filter((image) => !failedImageIds.has(image.id)) ?? [],
     [failedImageIds, farm],
@@ -262,7 +267,8 @@ export function TrackerFarmerDialog({
   useEffect(() => {
     setFailedImageIds(new Set());
     setLightboxIndex(null);
-  }, [farm?.id]);
+    setExpandAbout(false);
+  }, [farm?.description, farm?.id]);
 
   useEffect(() => {
     if (lightboxIndex === null) return;
@@ -277,13 +283,37 @@ export function TrackerFarmerDialog({
     const dialog = dialogRef.current;
     if (!dialog || !farm) return;
     document.body.classList.add("tracker-dialog-open");
+    document.documentElement.classList.add("tracker-dialog-open");
     if (typeof dialog.showModal === "function" && !dialog.open) {
       dialog.showModal();
     } else {
       dialog.setAttribute("open", "");
     }
     closeButtonRef.current?.focus();
-    return () => document.body.classList.remove("tracker-dialog-open");
+    const measure = () => {
+      const about = dialog.querySelector<HTMLElement>(
+        ".farmer-dialog__about-scroll",
+      );
+      if (!about) return;
+      const needsExpansion =
+        dialog.scrollHeight > dialog.clientHeight + 1 ||
+        about.scrollHeight > about.clientHeight + 1;
+      // Once expanded for this farm, keep the bounded layout. Otherwise the
+      // ResizeObserver can oscillate between the natural and expanded states.
+      if (needsExpansion) setExpandAbout(true);
+    };
+    const frame = requestAnimationFrame(measure);
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(measure);
+    observer?.observe(dialog);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      document.body.classList.remove("tracker-dialog-open");
+      document.documentElement.classList.remove("tracker-dialog-open");
+    };
   }, [farm]);
 
   const photoCountCopy =
@@ -294,7 +324,9 @@ export function TrackerFarmerDialog({
       <dialog
         aria-labelledby="tracker-farmer-dialog-name"
         aria-modal="true"
-        className="farmer-dialog"
+        className={["farmer-dialog", expandAbout && expandedDialogClass]
+          .filter(Boolean)
+          .join(" ")}
         onCancel={(event) => {
           event.preventDefault();
           if (lightboxIndex === null) closeDialog();
@@ -324,7 +356,13 @@ export function TrackerFarmerDialog({
               ×
             </button>
             <div className="farmer-dialog__body">
-              <div className="farmer-dialog__media">
+              <div
+                className={
+                  primaryImage
+                    ? `${mediaClass} ${mediaWithPrimaryClass}`
+                    : mediaClass
+                }
+              >
                 <div className="farmer-dialog__fallback">
                   <TrackerMilestoneIcon
                     size={farm.isLeader ? 72 : 78}
@@ -358,17 +396,19 @@ export function TrackerFarmerDialog({
                 ) : null}
               </div>
               <div className="farmer-dialog__content">
-                <p className="farmer-dialog__eyebrow">{copy.farmerProfile}</p>
-                <h2
-                  className="farmer-dialog__name"
-                  id="tracker-farmer-dialog-name"
-                >
-                  {farm.name}
-                </h2>
-                <p className="farmer-dialog__address">
-                  <span aria-hidden="true">📍</span>
-                  <span>{farm.location}</span>
-                </p>
+                <div className="farmer-dialog__profile">
+                  <p className="farmer-dialog__eyebrow">{copy.farmerProfile}</p>
+                  <h2
+                    className="farmer-dialog__name"
+                    id="tracker-farmer-dialog-name"
+                  >
+                    {farm.name}
+                  </h2>
+                  <p className="farmer-dialog__address">
+                    <span aria-hidden="true">📍</span>
+                    <span>{farm.location}</span>
+                  </p>
+                </div>
                 <div className="farmer-dialog__about">
                   <p className="farmer-dialog__about-label">
                     {copy.aboutFarmer}

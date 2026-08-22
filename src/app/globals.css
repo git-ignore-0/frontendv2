@@ -7588,11 +7588,11 @@ tbody th {
   font-weight: 700;
 }
 .tracker-standalone .farmer-dialog {
-  width: min(820px, calc(100vw - 40px));
+  width: min(980px, 88vw);
   height: fit-content;
   min-height: 0;
-  max-height: 70vh;
-  max-height: 70dvh;
+  max-height: 90vh;
+  max-height: 90dvh;
   margin: auto;
   padding: 0;
   border: 1px solid rgba(18, 50, 31, 0.1);
@@ -7608,7 +7608,7 @@ tbody th {
 }
 @media (min-width: 1100px) {
   .tracker-standalone .farmer-dialog {
-    width: min(820px, 80vw);
+    width: min(980px, 88vw);
   }
 }
 .tracker-standalone .farmer-dialog *,
@@ -7639,8 +7639,8 @@ tbody th {
   width: 100%;
   height: auto;
   min-height: 0;
-  max-height: 70vh;
-  max-height: 70dvh;
+  max-height: 90vh;
+  max-height: 90dvh;
   overflow: hidden;
 }
 .tracker-standalone .farmer-dialog__media {
@@ -7748,6 +7748,10 @@ tbody th {
   flex-direction: column;
   overflow: hidden;
 }
+.tracker-standalone .farmer-dialog__profile {
+  flex: 0 0 auto;
+  min-height: 0;
+}
 .tracker-standalone .farmer-dialog__close {
   position: absolute;
   top: 16px;
@@ -7840,18 +7844,18 @@ tbody th {
   overflow-wrap: anywhere;
 }
 .tracker-standalone .farmer-dialog__about {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
   margin-top: 25px;
   padding-top: 21px;
   border-top: 1px solid var(--line);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .tracker-standalone .farmer-dialog__about-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: min(18vh, 150px);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -7882,6 +7886,7 @@ tbody th {
 }
 .tracker-standalone .farmer-gallery {
   flex: 0 0 auto;
+  min-height: 104px;
   margin-top: 22px;
   padding-top: 19px;
   border-top: 1px solid var(--line);
@@ -8084,8 +8089,21 @@ tbody th {
 .tracker-standalone .image-lightbox__counter {
   color: rgba(255, 255, 255, 0.62);
 }
+html.tracker-dialog-open,
 body.tracker-dialog-open:has(.tracker-standalone) {
   overflow: hidden;
+  overscroll-behavior: none;
+}
+.tracker-standalone .farmer-dialog--expand-about {
+  height: 90vh;
+  height: 90dvh;
+}
+.tracker-standalone .farmer-dialog--expand-about .farmer-dialog__body,
+.tracker-standalone .farmer-dialog--expand-about .farmer-dialog__content {
+  height: 100%;
+}
+.tracker-standalone .farmer-dialog--expand-about .farmer-dialog__about-scroll {
+  min-height: min(148px, 20dvh);
 }
 .tracker-standalone .tracker-state {
   min-height: 224px;
@@ -8301,8 +8319,8 @@ body.tracker-dialog-open:has(.tracker-standalone) {
     width: calc(100vw - 20px);
     height: fit-content;
     min-height: 0;
-    max-height: 70vh;
-    max-height: 70dvh;
+    max-height: 90vh;
+    max-height: 90dvh;
     border-radius: 20px;
     overflow: hidden;
   }
@@ -8312,8 +8330,8 @@ body.tracker-dialog-open:has(.tracker-standalone) {
     width: 100%;
     height: auto;
     min-height: 0;
-    max-height: 70vh;
-    max-height: 70dvh;
+    max-height: 90vh;
+    max-height: 90dvh;
     overflow: hidden;
   }
   .tracker-standalone .farmer-dialog__media {
@@ -8325,6 +8343,9 @@ body.tracker-dialog-open:has(.tracker-standalone) {
     padding: 14px;
     border-right: none;
     border-bottom: 1px solid var(--line);
+  }
+  .tracker-standalone .farmer-dialog__media--with-primary {
+    display: none;
   }
   .tracker-standalone .farmer-dialog__fallback {
     width: 132px;
@@ -8371,8 +8392,7 @@ body.tracker-dialog-open:has(.tracker-standalone) {
   }
   .tracker-standalone .farmer-dialog__about-scroll {
     flex: 1 1 auto;
-    min-height: 24px;
-    max-height: min(12vh, 96px);
+    min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -8384,6 +8404,7 @@ body.tracker-dialog-open:has(.tracker-standalone) {
   }
   .tracker-standalone .farmer-gallery {
     flex: 0 0 auto;
+    min-height: 93px;
     margin-top: 14px;
     padding-top: 13px;
   }
@@ -8438,6 +8459,13 @@ body.tracker-dialog-open:has(.tracker-standalone) {
   }
   .tracker-standalone .tracker-state-skeleton {
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 680px) {
+  .tracker-standalone
+    .farmer-dialog--expand-about
+    .farmer-dialog__about-scroll {
+    min-height: min(96px, 20dvh);
   }
 }
 @media (max-width: 680px) and (max-height: 720px) {
@@ -8506,73 +8534,43 @@ body.tracker-dialog-open:has(.tracker-standalone) {
     height: 48px;
   }
 }
-@media (max-height: 520px) and (min-width: 681px) {
-  .tracker-standalone .farmer-dialog {
-    width: min(760px, calc(100vw - 24px));
-    max-height: 70vh;
-    max-height: 70dvh;
-  }
-  .tracker-standalone .farmer-dialog__body {
-    grid-template-columns: minmax(210px, 250px) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    min-height: 0;
-    max-height: 70vh;
-    max-height: 70dvh;
-  }
-  .tracker-standalone .farmer-dialog__media,
-  .tracker-standalone .farmer-dialog__content {
-    height: 100%;
-    min-height: 0;
-  }
-  .tracker-standalone .farmer-dialog__media {
-    padding: 12px;
-  }
-  .tracker-standalone .farmer-dialog__content {
-    padding: 14px 20px 12px;
-  }
-  .tracker-standalone .farmer-dialog__eyebrow {
-    margin-bottom: 3px;
-    font-size: 10px;
-  }
-  .tracker-standalone .farmer-dialog__name {
-    font-size: 23px;
-  }
-  .tracker-standalone .farmer-dialog__address {
-    margin-top: 5px;
-    padding: 4px 8px;
-    font-size: 11px;
-  }
+@media (max-height: 600px) {
   .tracker-standalone .farmer-dialog__about {
-    margin-top: 7px;
-    padding-top: 7px;
+    margin-top: 12px;
+    padding-top: 10px;
   }
-  .tracker-standalone .farmer-dialog__about-label {
-    margin-bottom: 4px;
-    font-size: 10px;
-  }
-  .tracker-standalone .farmer-dialog__description {
-    font-size: 12.5px;
-    line-height: 1.45;
-  }
-  .tracker-standalone .farmer-dialog__about-scroll {
-    max-height: min(10vh, 52px);
+  .tracker-standalone
+    .farmer-dialog--expand-about
+    .farmer-dialog__about-scroll {
+    min-height: 24px;
   }
   .tracker-standalone .farmer-gallery {
-    margin-top: 7px;
-    padding-top: 7px;
+    min-height: 82px;
+    margin-top: 10px;
+    padding-top: 10px;
   }
   .tracker-standalone .farmer-gallery__head {
-    margin-bottom: 4px;
-  }
-  .tracker-standalone .farmer-gallery__label,
-  .tracker-standalone .farmer-gallery__count {
-    font-size: 9.5px;
+    margin-bottom: 7px;
   }
   .tracker-standalone .farmer-gallery__thumb {
-    flex-basis: 52px;
-    width: 52px;
-    height: 38px;
-    border-radius: 8px;
+    flex-basis: 64px;
+    width: 64px;
+    height: 48px;
+  }
+}
+@media (max-height: 600px) and (min-width: 681px) {
+  .tracker-standalone .farmer-dialog__content {
+    padding: 18px 24px 16px;
+  }
+  .tracker-standalone .farmer-dialog__eyebrow {
+    margin-bottom: 5px;
+  }
+  .tracker-standalone .farmer-dialog__name {
+    font-size: 24px;
+  }
+  .tracker-standalone .farmer-dialog__address {
+    margin-top: 8px;
+    padding: 5px 9px;
   }
 }
 @media (max-width: 380px) {
