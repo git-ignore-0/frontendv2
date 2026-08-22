@@ -7588,8 +7588,10 @@ tbody th {
   font-weight: 700;
 }
 .tracker-standalone .farmer-dialog {
+  position: fixed;
+  z-index: 101;
   width: min(980px, 88vw);
-  height: fit-content;
+  height: max-content;
   min-height: 0;
   max-height: 90vh;
   max-height: 90dvh;
@@ -7616,9 +7618,19 @@ tbody th {
   font-family: inherit;
 }
 .tracker-standalone .farmer-dialog[open] {
+  display: block;
   animation: farmerDialogIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .tracker-standalone .farmer-dialog::backdrop {
+  background: transparent;
+}
+.tracker-standalone .farmer-dialog-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   background: rgba(10, 29, 18, 0.52);
   backdrop-filter: blur(4px);
 }
@@ -8317,7 +8329,8 @@ body.tracker-dialog-open:has(.tracker-standalone) {
   }
   .tracker-standalone .farmer-dialog {
     width: calc(100vw - 20px);
-    height: fit-content;
+    max-width: calc(100vw - 20px);
+    height: max-content;
     min-height: 0;
     max-height: 90vh;
     max-height: 90dvh;

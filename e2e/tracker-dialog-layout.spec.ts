@@ -47,6 +47,7 @@ async function renderDialog(
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>${trackerCss}</style>
     <main class="tracker-standalone">
+      <div aria-hidden="true" class="farmer-dialog-backdrop"></div>
       <dialog aria-labelledby="tracker-farmer-dialog-name" class="farmer-dialog${expandedClass}">
         <button class="farmer-dialog__close" type="button">×</button>
         <div class="farmer-dialog__body">
@@ -106,6 +107,7 @@ async function dialogMetrics(page: Page) {
     const body = required<HTMLElement>(".farmer-dialog__body");
     const media = required<HTMLElement>(".farmer-dialog__media");
     const content = required<HTMLElement>(".farmer-dialog__content");
+    const backdrop = required<HTMLElement>(".farmer-dialog-backdrop");
     const name = required<HTMLElement>(".farmer-dialog__name");
     const about = required<HTMLElement>(".farmer-dialog__about-scroll");
     const description = required<HTMLElement>(".farmer-dialog__description");
@@ -113,6 +115,7 @@ async function dialogMetrics(page: Page) {
     const dialogRect = dialog.getBoundingClientRect();
     const galleryRect = gallery.getBoundingClientRect();
     const aboutRect = about.getBoundingClientRect();
+    const backdropRect = backdrop.getBoundingClientRect();
     const lineHeight = Number.parseFloat(
       getComputedStyle(description).lineHeight,
     );
@@ -132,6 +135,11 @@ async function dialogMetrics(page: Page) {
       dialogOverflowY: getComputedStyle(dialog).overflowY,
       galleryInsideDialog: galleryRect.bottom <= dialogRect.bottom + 1,
       aboutEndsBeforeGallery: aboutRect.bottom <= galleryRect.top + 1,
+      backdropCoversViewport:
+        backdropRect.top <= 0 &&
+        backdropRect.left <= 0 &&
+        backdropRect.right >= innerWidth &&
+        backdropRect.bottom >= innerHeight,
       galleryVisible:
         galleryRect.height > 0 && getComputedStyle(gallery).display !== "none",
       mediaHeight: media.getBoundingClientRect().height,
@@ -163,6 +171,7 @@ for (const locale of ["en", "vi"] as const) {
     expect(metrics.aboutOverflowY).toBe("auto");
     expect(metrics.aboutScrolled).toBe(true);
     expect(metrics.galleryVisible).toBe(true);
+    expect(metrics.backdropCoversViewport).toBe(true);
     expect(metrics.galleryInsideDialog).toBe(true);
     expect(metrics.aboutEndsBeforeGallery).toBe(true);
     expect(metrics.dialogHeight).toBeLessThanOrEqual(
@@ -193,6 +202,7 @@ test("long About copy retains four readable lines at 320x720", async ({
   );
   expect(metrics.aboutScrollHeight).toBeGreaterThan(metrics.aboutClientHeight);
   expect(metrics.galleryVisible).toBe(true);
+  expect(metrics.backdropCoversViewport).toBe(true);
   expect(metrics.galleryInsideDialog).toBe(true);
   expect(metrics.aboutEndsBeforeGallery).toBe(true);
   expect(metrics.dialogHeight).toBeLessThanOrEqual(
@@ -215,6 +225,7 @@ test("a short desktop viewport keeps About contained above the gallery", async (
   expect(metrics.aboutClientHeight).toBeGreaterThan(0);
   expect(metrics.aboutScrollHeight).toBeGreaterThan(metrics.aboutClientHeight);
   expect(metrics.galleryVisible).toBe(true);
+  expect(metrics.backdropCoversViewport).toBe(true);
   expect(metrics.galleryInsideDialog).toBe(true);
   expect(metrics.aboutEndsBeforeGallery).toBe(true);
   expect(metrics.dialogOverflowDelta).toBeLessThanOrEqual(2);
@@ -236,6 +247,7 @@ test("a short About stays natural without an About scrollbar", async ({
     metrics.aboutClientHeight,
   );
   expect(metrics.galleryVisible).toBe(true);
+  expect(metrics.backdropCoversViewport).toBe(true);
   expect(metrics.galleryInsideDialog).toBe(true);
   expect(metrics.aboutEndsBeforeGallery).toBe(true);
   expect(metrics.dialogHeight).toBeLessThan(metrics.viewportHeight * 0.9);

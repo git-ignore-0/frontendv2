@@ -466,6 +466,9 @@ describe("TrackerPage", () => {
     );
     await waitFor(() => expect(card).toHaveFocus());
     expect(document.body).not.toHaveClass("tracker-dialog-open");
+    expect(
+      document.querySelector(".farmer-dialog-backdrop"),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps long farmer descriptions in the dialog content region without changing media markup", () => {
@@ -587,6 +590,7 @@ describe("TrackerPage", () => {
 
     const dialog = container.querySelector("dialog.farmer-dialog");
     expect(dialog).not.toBeNull();
+    expect(container.querySelector(".farmer-dialog-backdrop")).toBeVisible();
     if (!dialog) throw new Error("Expected the farmer dialog to render");
     expect(dialog).toHaveClass("farmer-dialog");
     expect(dialog).toContainElement(

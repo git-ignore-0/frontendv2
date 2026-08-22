@@ -166,7 +166,7 @@ describe("tracker responsive style contract", () => {
       "width: min(980px, 88vw)",
     );
     expect(declarationBlock(".tracker-standalone .farmer-dialog")).toContain(
-      "height: fit-content",
+      "height: max-content",
     );
     expect(declarationBlock(".tracker-standalone .farmer-dialog")).toContain(
       "max-height: 90vh",
@@ -227,6 +227,9 @@ describe("tracker responsive style contract", () => {
       /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.farmer-dialog\s*\{\s*width: calc\(100vw - 20px\)/,
     );
     expect(css).toMatch(
+      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.farmer-dialog\s*\{[\s\S]*?max-width: calc\(100vw - 20px\)/,
+    );
+    expect(css).toMatch(
       /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__body\s*\{\s*display: flex;\s*flex-direction: column;[\s\S]*?max-height: 90dvh/,
     );
     expect(css).toMatch(
@@ -239,6 +242,15 @@ describe("tracker responsive style contract", () => {
       /@media \(max-width: 680px\) and \(max-height: 650px\)[\s\S]*?\.tracker-standalone \.farmer-dialog__name\s*\{\s*font-size: 24px/,
     );
     expect(css).toContain(".farmer-dialog--expand-about");
+    expect(
+      declarationBlock(".tracker-standalone .farmer-dialog-backdrop"),
+    ).toContain("position: fixed");
+    expect(
+      declarationBlock(".tracker-standalone .farmer-dialog-backdrop"),
+    ).toContain("height: 100dvh");
+    expect(
+      declarationBlock(".tracker-standalone .farmer-dialog-backdrop"),
+    ).toContain("z-index: 100");
     expect(css).toContain("min-height: min(148px, 20dvh)");
     expect(css).toContain("min-height: min(96px, 20dvh)");
     expect(css).toMatch(

@@ -321,6 +321,13 @@ export function TrackerFarmerDialog({
 
   return (
     <>
+      {farm ? (
+        <div
+          aria-hidden="true"
+          className="farmer-dialog-backdrop"
+          onClick={closeDialog}
+        />
+      ) : null}
       <dialog
         aria-labelledby="tracker-farmer-dialog-name"
         aria-modal="true"
