@@ -83,7 +83,7 @@ export function TrackerFarmCard({
           <TrackerFarmMedia farm={farm} variant="avatar" />
         </span>
         <span>
-          <h3>{farm.name}</h3>
+          <h3 title={farm.name}>{farm.name}</h3>
           <span className="tracker-farm-location">{farm.location}</span>
         </span>
       </header>

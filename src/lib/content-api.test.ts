@@ -194,13 +194,145 @@ describe("content API", () => {
               locale === "en"
                 ? "Green Farm in Da Lat"
                 : "Nông trại Xanh ở Đà Lạt",
+            variants: [],
           },
+          images: [
+            {
+              id: "22222222-2222-4222-8222-222222222222",
+              url: "https://cdn.example.com/farms/green-farm.webp",
+              width: 1200,
+              height: 900,
+              alt:
+                locale === "en"
+                  ? "Green Farm in Da Lat"
+                  : "Nông trại Xanh ở Đà Lạt",
+              variants: [],
+            },
+          ],
           signup_count: 14,
           sort_order: 2,
         },
       ]);
     },
   );
+
+  it("parses an ordered tracker gallery with responsive variants", async () => {
+    const first = {
+      id: "22222222-2222-4222-8222-222222222222",
+      url: "https://cdn.example.com/farms/first.webp",
+      width: 1600,
+      height: 1200,
+      alt: "Green Farm",
+      variants: [
+        {
+          url: "https://cdn.example.com/farms/first-480.webp",
+          width: 480,
+          height: 360,
+        },
+        {
+          url: "https://cdn.example.com/farms/first-960.webp",
+          width: 960,
+          height: 720,
+        },
+      ],
+    };
+    const second = {
+      ...first,
+      id: "33333333-3333-4333-8333-333333333333",
+      url: "https://cdn.example.com/farms/second.webp",
+      variants: [],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [trackerFarmPayload({ image: first, images: [first, second] })],
+        }),
+      }),
+    );
+
+    await expect(getTrackerFarmsResult("en")).resolves.toEqual({
+      ok: true,
+      farms: [
+        expect.objectContaining({ image: first, images: [first, second] }),
+      ],
+    });
+  });
+
+  it("normalizes a legacy tracker image into a one-photo gallery", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [trackerFarmPayload()] }),
+      }),
+    );
+
+    const result = await getTrackerFarmsResult("en");
+    expect(result).toEqual({
+      ok: true,
+      farms: [
+        expect.objectContaining({
+          image: expect.objectContaining({ variants: [] }),
+          images: [expect.objectContaining({ variants: [] })],
+        }),
+      ],
+    });
+  });
+
+  it("rejects an invalid image inside the tracker gallery", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            trackerFarmPayload({
+              images: [
+                {
+                  id: "bad-gallery-image",
+                  url: "https://cdn.example.com/farms/bad.webp",
+                  width: 1200,
+                  height: 900,
+                  alt: "Bad image",
+                  variants: [{ width: 480, height: 360 }],
+                },
+              ],
+            }),
+          ],
+        }),
+      }),
+    );
+
+    await expect(getTrackerFarmsResult("en")).resolves.toEqual({ ok: false });
+  });
+
+  it("rejects a new gallery image without variants", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [
+            trackerFarmPayload({
+              images: [
+                {
+                  id: "gallery-image-without-variants",
+                  url: "https://cdn.example.com/farms/gallery.webp",
+                  width: 1200,
+                  height: 900,
+                  alt: "Green Farm",
+                },
+              ],
+            }),
+          ],
+        }),
+      }),
+    );
+
+    await expect(getTrackerFarmsResult("en")).resolves.toEqual({ ok: false });
+  });
 
   it("returns an empty tracker list for an empty API response", async () => {
     vi.stubGlobal(

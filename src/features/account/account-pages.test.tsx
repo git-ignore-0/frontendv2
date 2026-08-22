@@ -541,8 +541,7 @@ describe("public account pages", () => {
         publicSiteOrigin={publicSiteOrigin}
       />,
     );
-    await screen.findByRole("heading", { name: "How it works" });
-    const input = screen.getByLabelText("Enter a referral code");
+    const input = await screen.findByLabelText("Enter a referral code");
     fireEvent.change(input, { target: { value: "REFCODE123" } });
     const submitBtn = screen.getByRole("button", { name: "Submit code" });
 

@@ -28,6 +28,7 @@ const farm: PublicTrackerFarm = {
   location: "Da Lat",
   description: "",
   image: null,
+  images: [],
   signup_count: 14,
   sort_order: 0,
 };

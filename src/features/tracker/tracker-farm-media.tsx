@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import type { TrackerFarmViewModel } from "./lib/view-model";
+import { getTrackerImageSource } from "./lib/media";
 import { TrackerMilestoneIcon } from "./tracker-icon";
 
 const mediaClassNames = {
@@ -11,9 +12,14 @@ const mediaClassNames = {
     image: "tracker-avatar-photo",
   },
   dialog: {
-    fallback: "tracker-dialog-fallback",
-    image: "tracker-dialog-photo",
+    fallback: "farmer-dialog__fallback",
+    image: "dialog-photo",
   },
+} as const;
+
+const mediaUseByVariant = {
+  avatar: "thumbnail",
+  dialog: "primary",
 } as const;
 
 export function TrackerFarmMedia({
@@ -47,7 +53,7 @@ export function TrackerFarmMedia({
           className={classNames.image}
           height={image.height}
           onError={() => setImageFailed(true)}
-          src={image.url}
+          src={getTrackerImageSource(image, mediaUseByVariant[variant])}
           width={image.width}
         />
       ) : null}

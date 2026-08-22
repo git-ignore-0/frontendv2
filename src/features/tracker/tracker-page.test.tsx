@@ -17,17 +17,52 @@ function farm(
   signupCount: number,
   overrides: Partial<PublicTrackerFarm> = {},
 ): PublicTrackerFarm {
+  const image = overrides.image ?? null;
   return {
     id: `farm-${signupCount}`,
     name: `Farm ${signupCount}`,
     location: "Da Lat",
     description: "A family farm growing with its community.",
-    image: null,
+    image,
+    images: overrides.images ?? (image ? [image] : []),
     signup_count: signupCount,
     sort_order: signupCount,
     ...overrides,
   };
 }
+
+function galleryImage(index: number) {
+  return {
+    id: `image-${index}`,
+    url: `https://cdn.example.com/farms/farm-${index}.webp`,
+    width: 1600,
+    height: 1200,
+    alt: `Farm photo ${index}`,
+    variants: [
+      {
+        url: `https://cdn.example.com/farms/farm-${index}-480.webp`,
+        width: 480,
+        height: 360,
+      },
+      {
+        url: `https://cdn.example.com/farms/farm-${index}-960.webp`,
+        width: 960,
+        height: 720,
+      },
+    ],
+  };
+}
+
+const localizedGalleryTestCopy = {
+  en: {
+    trigger: "Growth details for Farm 14",
+    viewer: "Farm photo viewer",
+  },
+  vi: {
+    trigger: "Thông tin phát triển của Farm 14",
+    viewer: "Trình xem ảnh nông trại",
+  },
+} as const;
 
 afterEach(cleanup);
 
@@ -249,24 +284,61 @@ describe("TrackerPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps long Vietnamese farm identity visible for CSS wrapping", () => {
-    const name = "Nông trại Sinh thái Thuận Thiên và Cộng đồng Cao nguyên";
-    const location = "Thôn Suối Dài, xã miền núi có tên rất dài, tỉnh Lâm Đồng";
-    render(
-      <TrackerPage
-        copy={getSiteContent("vi").tracker}
-        farms={[farm(20, { name, location })]}
-      />,
-    );
+  it.each([
+    {
+      locale: "en",
+      location: "Suoi Dai village, Lam Dong",
+      name: "Green Valley Regenerative Community Farm and Learning Centre",
+    },
+    {
+      locale: "vi",
+      location: "Thôn Suối Dài, xã miền núi, tỉnh Lâm Đồng",
+      name: "Nông trại Sinh thái Thuận Thiên và Cộng đồng Cao nguyên Lâm Đồng",
+    },
+    {
+      locale: "en",
+      location: "Suoi Dai village, Lam Dong",
+      name: "RegenerativeCommunityFarmWithAnIntentionallyLongUnbrokenNameToken",
+    },
+  ] as const)(
+    "keeps the full $locale farm name accessible while the card truncates visually",
+    ({ locale, location, name }) => {
+      const copy = getSiteContent(locale).tracker;
+      const { container } = render(
+        <TrackerPage copy={copy} farms={[farm(20, { name, location })]} />,
+      );
 
-    expect(screen.getByRole("heading", { level: 3, name })).toBeVisible();
-    expect(screen.getByText(location)).toBeVisible();
-    expect(
-      screen
-        .getByRole("heading", { level: 3, name })
-        .closest(".tracker-farm-heading"),
-    ).not.toBeNull();
-  });
+      const cardTitle = screen.getByRole("heading", { level: 3, name });
+      expect(cardTitle).toBeVisible();
+      expect(cardTitle).toHaveTextContent(name);
+      expect(cardTitle).toHaveAttribute("title", name);
+      expect(screen.getByText(location)).toBeVisible();
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: copy.accessibility.farm.replace("{name}", name),
+        }),
+      );
+
+      const dialogTitle = screen.getByRole("heading", { level: 2, name });
+      const dialogBody = container.querySelector<HTMLElement>(
+        ".farmer-dialog__body",
+      );
+      const dialogMedia = container.querySelector<HTMLElement>(
+        ".farmer-dialog__media",
+      );
+      const dialogContent = container.querySelector<HTMLElement>(
+        ".farmer-dialog__content",
+      );
+      expect(dialogTitle).toBeVisible();
+      expect(dialogTitle).toHaveTextContent(name);
+      expect(dialogTitle).not.toHaveAttribute("title");
+      expect(dialogBody).toContainElement(dialogMedia);
+      expect(dialogBody).toContainElement(dialogContent);
+      expect(dialogMedia).toBeVisible();
+      expect(dialogContent).toContainElement(dialogTitle);
+    },
+  );
 
   it("renders farm photos but keeps localized descriptions out of cards", () => {
     const image = {
@@ -275,6 +347,7 @@ describe("TrackerPage", () => {
       width: 1200,
       height: 900,
       alt: "Green Farm in Da Lat",
+      variants: [],
     };
     const { rerender } = render(
       <TrackerPage
@@ -312,6 +385,7 @@ describe("TrackerPage", () => {
       width: 1200,
       height: 900,
       alt: "Broken farm photo",
+      variants: [],
     };
     render(
       <TrackerPage
@@ -406,14 +480,156 @@ describe("TrackerPage", () => {
     );
 
     expect(
-      container.querySelector(".tracker-dialog-description"),
+      container.querySelector(".farmer-dialog__description"),
     ).toHaveTextContent(/A long description/);
-    expect(container.querySelector(".tracker-dialog-media")).toContainElement(
-      container.querySelector(".tracker-dialog-fallback"),
+    expect(container.querySelector(".farmer-dialog__media")).toContainElement(
+      container.querySelector(".farmer-dialog__fallback"),
     );
-    expect(container.querySelector(".tracker-dialog-content")).toContainElement(
-      container.querySelector(".tracker-dialog-description"),
+    expect(container.querySelector(".farmer-dialog__content")).toContainElement(
+      container.querySelector(".farmer-dialog__description"),
     );
+  });
+
+  it.each([
+    {
+      locale: "en",
+      name: "Long Copy Farm",
+      description:
+        "This farmer has cared for the land with the community for many seasons. ".repeat(
+          160,
+        ),
+      trigger: "Growth details for Long Copy Farm",
+    },
+    {
+      locale: "vi",
+      name: "Nông trại Mô tả Dài",
+      description:
+        "Người nông dân này đã chăm sóc đất đai cùng cộng đồng qua nhiều mùa vụ. ".repeat(
+          160,
+        ),
+      trigger: "Thông tin phát triển của Nông trại Mô tả Dài",
+    },
+  ] as const)(
+    "keeps the $locale long description inside the About scroller while the gallery stays visible",
+    ({ description, locale, name, trigger }) => {
+      const image = galleryImage(1);
+      const { container } = render(
+        <TrackerPage
+          copy={getSiteContent(locale).tracker}
+          farms={[farm(14, { description, image, images: [image], name })]}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: trigger }));
+
+      const aboutScroll = container.querySelector(
+        ".farmer-dialog__about-scroll",
+      );
+      if (!(aboutScroll instanceof HTMLElement)) {
+        throw new Error("Expected the About scroller to render");
+      }
+      expect(aboutScroll).toContainElement(
+        container.querySelector(".farmer-dialog__description"),
+      );
+      expect(container.querySelector(".farmer-dialog__eyebrow")).toBeVisible();
+      expect(container.querySelector(".farmer-dialog__name")).toBeVisible();
+      expect(container.querySelector(".farmer-dialog__address")).toBeVisible();
+      expect(
+        container.querySelector(".farmer-dialog__about-label"),
+      ).toBeVisible();
+      expect(container.querySelector(".farmer-gallery")).toBeVisible();
+    },
+  );
+
+  it("does not introduce overflow or fixed empty space for a short description", () => {
+    const image = galleryImage(1);
+    const { container } = render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[
+          farm(14, {
+            description: "A short farm description.",
+            image,
+            images: [image],
+          }),
+        ]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 14" }),
+    );
+    const aboutScroll = container.querySelector(".farmer-dialog__about-scroll");
+    if (!(aboutScroll instanceof HTMLElement)) {
+      throw new Error("Expected the About scroller to render");
+    }
+
+    expect(aboutScroll.scrollHeight).toBe(aboutScroll.clientHeight);
+    expect(aboutScroll).not.toHaveAttribute("style");
+    expect(container.querySelector(".farmer-gallery")).toBeVisible();
+  });
+
+  it("uses only the exact v32 farmer dialog class hierarchy", () => {
+    const image = galleryImage(1);
+    const { container } = render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[farm(14, { image, images: [image] })]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 14" }),
+    );
+
+    const dialog = container.querySelector("dialog.farmer-dialog");
+    expect(dialog).not.toBeNull();
+    if (!dialog) throw new Error("Expected the farmer dialog to render");
+    expect(dialog).toHaveClass("farmer-dialog");
+    expect(dialog).toContainElement(
+      dialog?.querySelector(":scope > .farmer-dialog__close") ?? null,
+    );
+    const body = dialog?.querySelector(":scope > .farmer-dialog__body");
+    const media = body?.querySelector(":scope > .farmer-dialog__media");
+    const content = body?.querySelector(":scope > .farmer-dialog__content");
+    expect(body).not.toBeNull();
+    expect(media).toContainElement(
+      media?.querySelector(":scope > .farmer-dialog__fallback") ?? null,
+    );
+    expect(media).toContainElement(
+      media?.querySelector(":scope > .dialog-photo") ?? null,
+    );
+    expect(media).toContainElement(
+      media?.querySelector(":scope > .dialog-photo-hint") ?? null,
+    );
+    expect(content).toContainElement(
+      content?.querySelector(":scope > .farmer-dialog__eyebrow") ?? null,
+    );
+    expect(content).toContainElement(
+      content?.querySelector(":scope > .farmer-dialog__name") ?? null,
+    );
+    expect(content).toContainElement(
+      content?.querySelector(":scope > .farmer-dialog__address") ?? null,
+    );
+    const about = content?.querySelector(":scope > .farmer-dialog__about");
+    expect(about).toContainElement(
+      about?.querySelector(":scope > .farmer-dialog__about-label") ?? null,
+    );
+    const aboutScroll = about?.querySelector(
+      ":scope > .farmer-dialog__about-scroll",
+    );
+    expect(aboutScroll).toContainElement(
+      aboutScroll?.querySelector(":scope > .farmer-dialog__description") ??
+        null,
+    );
+    expect(content).toContainElement(
+      content?.querySelector(":scope > .farmer-gallery") ?? null,
+    );
+
+    const dialogClasses = [dialog, ...dialog.querySelectorAll("[class]")]
+      .flatMap((element) => [...element.classList])
+      .filter((className) => className.startsWith("tracker-dialog-"));
+    expect(dialogClasses).toEqual([]);
   });
 
   it("uses localized Vietnamese farmer profile copy in the dialog", () => {
@@ -447,5 +663,243 @@ describe("TrackerPage", () => {
       within(dialog).getByText("Giới thiệu về nông trại này"),
     ).toBeVisible();
     expect(within(dialog).getByText("Mô tả ngắn về nông trại.")).toBeVisible();
+  });
+
+  it.each([
+    ["en", "Farm photos", "View photo"],
+    ["vi", "Ảnh nông trại", "Xem ảnh"],
+  ] as const)(
+    "renders localized one-photo dialog controls for %s without navigation",
+    (locale, galleryLabel, viewPhoto) => {
+      const image = galleryImage(1);
+      const expectedCopy = localizedGalleryTestCopy[locale];
+      render(
+        <TrackerPage
+          copy={getSiteContent(locale).tracker}
+          farms={[farm(14, { image, images: [image] })]}
+        />,
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: expectedCopy.trigger,
+        }),
+      );
+
+      expect(screen.getByText(galleryLabel)).toBeVisible();
+      const primary = screen.getByRole("button", { name: viewPhoto });
+      expect(primary).toHaveClass("dialog-photo");
+      expect(primary).toHaveAttribute("src", image.variants[1].url);
+      fireEvent.click(primary);
+
+      const lightbox = screen.getByRole("dialog", {
+        name: expectedCopy.viewer,
+      });
+      expect(within(lightbox).getByRole("img")).toHaveAttribute(
+        "src",
+        image.url,
+      );
+      expect(
+        lightbox.querySelector(".image-lightbox__nav--prev"),
+      ).toHaveAttribute("hidden");
+      expect(
+        lightbox.querySelector(".image-lightbox__nav--next"),
+      ).toHaveAttribute("hidden");
+    },
+  );
+
+  it("opens the selected thumbnail and navigates with arrows", () => {
+    const images = [galleryImage(1), galleryImage(2), galleryImage(3)];
+    render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[farm(14, { image: images[0], images })]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 14" }),
+    );
+
+    const secondThumbnail = screen.getByRole("button", {
+      name: "Open farm photo 2 of 3",
+    });
+    expect(within(secondThumbnail).getByRole("presentation")).toHaveAttribute(
+      "src",
+      images[1].variants[0].url,
+    );
+    fireEvent.click(secondThumbnail);
+
+    const lightbox = screen.getByRole("dialog", {
+      name: "Farm photo viewer",
+    });
+    expect(within(lightbox).getByText("2 / 3")).toBeVisible();
+    expect(within(lightbox).getByRole("img")).toHaveAttribute(
+      "src",
+      images[1].url,
+    );
+
+    fireEvent.keyDown(lightbox, { key: "ArrowRight" });
+    expect(within(lightbox).getByText("3 / 3")).toBeVisible();
+    fireEvent.keyDown(lightbox, { key: "ArrowLeft" });
+    expect(within(lightbox).getByText("2 / 3")).toBeVisible();
+  });
+
+  it("swipes between photos at the 48px threshold and ignores mouse pointers", () => {
+    const images = [galleryImage(1), galleryImage(2), galleryImage(3)];
+    render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[farm(14, { image: images[0], images })]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 14" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "View photo" }));
+
+    const lightbox = screen.getByRole("dialog", {
+      name: "Farm photo viewer",
+    });
+    const stage = lightbox.querySelector(".image-lightbox__stage");
+    expect(stage).not.toBeNull();
+
+    fireEvent.pointerDown(stage!, { clientX: 200, pointerType: "touch" });
+    fireEvent.pointerUp(stage!, { clientX: 153, pointerType: "touch" });
+    expect(within(lightbox).getByText("1 / 3")).toBeVisible();
+
+    fireEvent.pointerDown(stage!, { clientX: 200, pointerType: "touch" });
+    fireEvent.pointerUp(stage!, { clientX: 152, pointerType: "touch" });
+    expect(within(lightbox).getByText("2 / 3")).toBeVisible();
+
+    fireEvent.pointerDown(stage!, { clientX: 100, pointerType: "touch" });
+    fireEvent.pointerUp(stage!, { clientX: 148, pointerType: "touch" });
+    expect(within(lightbox).getByText("1 / 3")).toBeVisible();
+
+    fireEvent.pointerDown(stage!, { clientX: 200, pointerType: "mouse" });
+    fireEvent.pointerUp(stage!, { clientX: 100, pointerType: "mouse" });
+    expect(within(lightbox).getByText("1 / 3")).toBeVisible();
+  });
+
+  it("keeps the lightbox open on an active image failure and selects the nearest usable photo", () => {
+    const images = [galleryImage(1), galleryImage(2), galleryImage(3)];
+    render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[farm(14, { image: images[0], images })]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 14" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open farm photo 2 of 3" }),
+    );
+
+    const lightbox = screen.getByRole("dialog", {
+      name: "Farm photo viewer",
+    });
+    fireEvent.error(within(lightbox).getByRole("img"));
+
+    expect(lightbox).toBeVisible();
+    expect(within(lightbox).getByRole("img")).toHaveAttribute(
+      "src",
+      images[2].url,
+    );
+    expect(within(lightbox).getByText("Farm 14")).toBeVisible();
+    expect(within(lightbox).getByText("2 / 2")).toBeVisible();
+    expect(
+      lightbox.querySelector(".image-lightbox__nav--prev"),
+    ).not.toHaveAttribute("hidden");
+    expect(
+      lightbox.querySelector(".image-lightbox__nav--next"),
+    ).not.toHaveAttribute("hidden");
+  });
+
+  it("closes the lightbox and restores focus when every usable image fails", async () => {
+    const images = [galleryImage(1), galleryImage(2)];
+    render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[farm(14, { image: images[0], images })]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 14" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "View photo" }));
+
+    const lightbox = screen.getByRole("dialog", {
+      name: "Farm photo viewer",
+    });
+    fireEvent.error(within(lightbox).getByRole("img"));
+    expect(within(lightbox).getByText("1 / 1")).toBeVisible();
+    fireEvent.error(within(lightbox).getByRole("img"));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Farm photo viewer" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Close farmer details" }),
+    ).toHaveFocus();
+    expect(screen.getByRole("dialog", { name: "Farm 14" })).toBeVisible();
+  });
+
+  it("closes only the lightbox and returns focus to its thumbnail", async () => {
+    const images = [galleryImage(1), galleryImage(2)];
+    render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[farm(14, { image: images[0], images })]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 14" }),
+    );
+    const thumbnail = screen.getByRole("button", {
+      name: "Open farm photo 2 of 2",
+    });
+    fireEvent.click(thumbnail);
+    const lightbox = screen.getByRole("dialog", {
+      name: "Farm photo viewer",
+    });
+    fireEvent.keyDown(lightbox, { key: "Escape" });
+    await waitFor(() => expect(thumbnail).toHaveFocus());
+    expect(screen.getByRole("dialog", { name: "Farm 14" })).toBeVisible();
+    expect(
+      screen.queryByRole("dialog", { name: "Farm photo viewer" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens the primary image by keyboard and falls back when every image fails", async () => {
+    const images = [galleryImage(1), galleryImage(2)];
+    const { container } = render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[farm(20, { image: images[0], images })]}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 20" }),
+    );
+    const primary = screen.getByRole("button", { name: "View photo" });
+    fireEvent.keyDown(primary, { key: "Enter" });
+    expect(
+      screen.getByRole("dialog", { name: "Farm photo viewer" }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Close image viewer" }));
+    await waitFor(() => expect(primary).toHaveFocus());
+
+    fireEvent.error(primary);
+    const nextPrimary = screen.getByRole("button", { name: "View photo" });
+    fireEvent.error(nextPrimary);
+    expect(
+      screen.queryByRole("button", { name: "View photo" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Farm photos")).not.toBeInTheDocument();
+    expect(
+      container.querySelector(".farmer-dialog__fallback"),
+    ).toHaveTextContent("🌳");
   });
 });
