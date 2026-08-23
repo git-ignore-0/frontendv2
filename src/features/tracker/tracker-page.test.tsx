@@ -64,7 +64,10 @@ const localizedGalleryTestCopy = {
   },
 } as const;
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("TrackerPage", () => {
   it("renders the reference header hierarchy and milestone legend", () => {
@@ -469,6 +472,65 @@ describe("TrackerPage", () => {
     expect(
       document.querySelector(".farmer-dialog-backdrop"),
     ).not.toBeInTheDocument();
+  });
+
+  it("omits narrow-screen primary media while retaining the full gallery", async () => {
+    vi.stubGlobal("matchMedia", () => ({
+      addEventListener: vi.fn(),
+      matches: true,
+      removeEventListener: vi.fn(),
+    }));
+    const image = galleryImage(1);
+    const { container } = render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[farm(14, { image, images: [image] })]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 14" }),
+    );
+
+    await waitFor(() =>
+      expect(container.querySelector(".farmer-dialog__media")).toBeNull(),
+    );
+    expect(container.querySelector(".farmer-gallery")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Open farm photo 1 of 1" }),
+    ).toBeVisible();
+  });
+
+  it("uses the isolated custom dialog layer on narrow iOS without changing Android", async () => {
+    vi.stubGlobal("matchMedia", () => ({
+      addEventListener: vi.fn(),
+      matches: true,
+      removeEventListener: vi.fn(),
+    }));
+    vi.stubGlobal("navigator", {
+      maxTouchPoints: 5,
+      platform: "iPhone",
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)",
+    });
+    const image = galleryImage(1);
+    const { container } = render(
+      <TrackerPage
+        copy={getSiteContent("en").tracker}
+        farms={[farm(14, { image, images: [image] })]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Growth details for Farm 14" }),
+    );
+
+    await waitFor(() =>
+      expect(
+        container.querySelector(".farmer-dialog-layer .farmer-dialog"),
+      ).toBeVisible(),
+    );
+    expect(container.querySelector("dialog.farmer-dialog")).toBeNull();
+    expect(container.querySelector(".farmer-gallery")).toBeVisible();
   });
 
   it("keeps long farmer descriptions in the dialog content region without changing media markup", () => {

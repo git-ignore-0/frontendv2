@@ -7624,6 +7624,21 @@ tbody th {
 .tracker-standalone .farmer-dialog::backdrop {
   background: transparent;
 }
+.tracker-standalone .farmer-dialog-layer {
+  position: fixed;
+  z-index: 101;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.tracker-standalone .farmer-dialog--ios-layer {
+  position: relative;
+  z-index: auto;
+  display: block;
+  pointer-events: auto;
+  animation: farmerDialogIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
 .tracker-standalone .farmer-dialog-backdrop {
   position: fixed;
   z-index: 100;
