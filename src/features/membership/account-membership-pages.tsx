@@ -10,8 +10,8 @@ import {
 } from "@/features/account/account-level-one-back";
 import { AccountArrowIcon } from "@/features/account/account-icons";
 import {
+  AccountApiError,
   accountApi,
-  accountDateLocale,
   isAccountSessionError,
 } from "@/features/account/api";
 import { AccountPagination } from "@/features/account/account-pagination";
@@ -26,11 +26,19 @@ import {
 } from "@/features/account/account-presentation";
 import type {
   CurrentMembership,
+  MembershipContract,
   MembershipQuota,
   MembershipUsage,
   PaginationMeta,
 } from "@/features/account/types";
 import {
+  downloadMembershipContract,
+  getMembershipContract,
+} from "@/features/membership/membership-contract-api";
+import {
+  formatMembershipDate,
+  formatMembershipDateTime,
+  formatMembershipExclusiveEndDate,
   formatMembershipMoney,
   formatMembershipUnits,
   membershipUnitLabel,
@@ -63,6 +71,13 @@ export function AccountMembershipPage({
 }) {
   const [membership, setMembership] = useState<CurrentMembership | null>(null);
   const [quota, setQuota] = useState<MembershipQuota | null>(null);
+  const [contract, setContract] = useState<MembershipContract | null>(null);
+  const [contractLoading, setContractLoading] = useState(false);
+  const [contractError, setContractError] = useState("");
+  const [contractPdfError, setContractPdfError] = useState("");
+  const [downloadingContract, setDownloadingContract] = useState<
+    "vi" | "en" | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -91,6 +106,9 @@ export function AccountMembershipPage({
       if (!isCurrentRequest()) return;
       setMembership(current.data);
       setQuota(null);
+      setContract(null);
+      setContractError("");
+      setContractPdfError("");
       if (current.data?.status === "active") {
         const available = await accountApi<MembershipQuota | null>(
           `memberships/quota?locale=${locale}`,
@@ -98,6 +116,25 @@ export function AccountMembershipPage({
         );
         if (!isCurrentRequest()) return;
         setQuota(available.data);
+      }
+      if (current.data) {
+        setContractLoading(true);
+        try {
+          const contractResponse = await getMembershipContract(
+            current.data.id,
+            controller.signal,
+          );
+          if (!isCurrentRequest()) return;
+          setContract(contractResponse.data);
+        } catch (caught) {
+          if (!isCurrentRequest() || isAbortError(caught)) return;
+          if (isAccountSessionError(caught)) throw caught;
+          if (!(caught instanceof AccountApiError && caught.status === 404)) {
+            setContractError(copy.membershipContractError);
+          }
+        } finally {
+          if (isCurrentRequest()) setContractLoading(false);
+        }
       }
     } catch (caught) {
       if (!isCurrentRequest() || isAbortError(caught)) return;
@@ -108,7 +145,7 @@ export function AccountMembershipPage({
       activeRequest.current = null;
       setLoading(false);
     }
-  }, [copy.membershipError, locale]);
+  }, [copy.membershipContractError, copy.membershipError, locale]);
 
   useEffect(() => {
     void load();
@@ -140,9 +177,33 @@ export function AccountMembershipPage({
       />
     );
 
-  const date = new Intl.DateTimeFormat(accountDateLocale(locale), {
-    dateStyle: "long",
-  });
+  async function downloadContract(localeToDownload: "vi" | "en") {
+    if (
+      !membership ||
+      !contract?.available_locales.includes(localeToDownload) ||
+      downloadingContract
+    )
+      return;
+    setDownloadingContract(localeToDownload);
+    setContractPdfError("");
+    try {
+      const file = await downloadMembershipContract(
+        membership.id,
+        localeToDownload,
+      );
+      const objectUrl = URL.createObjectURL(file.blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = file.filename;
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1_000);
+    } catch (caught) {
+      if (isAccountSessionError(caught)) setSessionExpired(true);
+      else setContractPdfError(copy.membershipContractPdfError);
+    } finally {
+      setDownloadingContract(null);
+    }
+  }
   return (
     <AccountPageShell className="account-detail-page membership-account-page">
       <AccountDetailHeader
@@ -210,15 +271,11 @@ export function AccountMembershipPage({
               </div>
               <div>
                 <dt>{copy.membershipStartDate}</dt>
-                <dd>
-                  {date.format(new Date(`${membership.start_date}T00:00:00`))}
-                </dd>
+                <dd>{formatMembershipDate(membership.start_date)}</dd>
               </div>
               <div>
                 <dt>{copy.membershipEndDate}</dt>
-                <dd>
-                  {date.format(new Date(`${membership.end_date}T00:00:00`))}
-                </dd>
+                <dd>{formatMembershipExclusiveEndDate(membership.end_date)}</dd>
               </div>
               <div>
                 <dt>{copy.membershipQuotaPolicy}</dt>
@@ -229,13 +286,87 @@ export function AccountMembershipPage({
                 </dd>
               </div>
             </dl>
+            <section
+              className="membership-contract-section"
+              aria-labelledby="membership-contract-title"
+            >
+              <h3 id="membership-contract-title">
+                {copy.membershipContractTitle}
+              </h3>
+              {contractLoading ? (
+                <p>{copy.membershipContractLoading}</p>
+              ) : contractError ? (
+                <div className="account-request-state is-error" role="alert">
+                  <p>{contractError}</p>
+                  <button onClick={() => void load()} type="button">
+                    {copy.retry}
+                  </button>
+                </div>
+              ) : !contract ? (
+                <p>{copy.membershipContractEmpty}</p>
+              ) : (
+                <>
+                  <dl>
+                    <div>
+                      <dt>{copy.membershipContractCode}</dt>
+                      <dd className="membership-contract-code">
+                        {contract.reference_code}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>{copy.membershipContractStatus}</dt>
+                      <dd>
+                        <span
+                          className={`membership-status is-${contract.status}`}
+                        >
+                          {contract.status === "active"
+                            ? copy.membershipContractActive
+                            : copy.membershipContractRevoked}
+                        </span>
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="membership-contract-actions">
+                    {contract.available_locales.includes("vi") ? (
+                      <button
+                        className="account-primary-action"
+                        disabled={downloadingContract !== null}
+                        onClick={() => void downloadContract("vi")}
+                        type="button"
+                      >
+                        {downloadingContract === "vi"
+                          ? copy.membershipContractDownloading
+                          : copy.membershipContractDownloadVi}
+                      </button>
+                    ) : null}
+                    {contract.available_locales.includes("en") ? (
+                      <button
+                        className="account-primary-action"
+                        disabled={downloadingContract !== null}
+                        onClick={() => void downloadContract("en")}
+                        type="button"
+                      >
+                        {downloadingContract === "en"
+                          ? copy.membershipContractDownloading
+                          : copy.membershipContractDownloadEn}
+                      </button>
+                    ) : null}
+                  </div>
+                  {contractPdfError ? (
+                    <p className="membership-contract-error" role="alert">
+                      {contractPdfError}
+                    </p>
+                  ) : null}
+                </>
+              )}
+            </section>
           </article>
 
           {membership.status === "scheduled" ? (
             <p className="membership-scheduled-notice">
               {copy.membershipScheduledNotice.replace(
                 "{date}",
-                date.format(new Date(`${membership.start_date}T00:00:00`)),
+                formatMembershipDate(membership.start_date),
               )}
             </p>
           ) : membership.status === "active" ? (
@@ -360,10 +491,6 @@ export function MembershipUsagePage({
       />
     );
 
-  const date = new Intl.DateTimeFormat(accountDateLocale(locale), {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
   return (
     <AccountPageShell className="account-detail-page membership-usage-page">
       <AccountDetailHeader
@@ -391,7 +518,7 @@ export function MembershipUsagePage({
             <li className="membership-usage-record" key={item.id}>
               <header className="membership-usage-record-header">
                 <time dateTime={item.created_at}>
-                  {date.format(new Date(item.created_at))}
+                  {formatMembershipDateTime(item.created_at)}
                 </time>
                 <span className={`membership-usage-status is-${item.status}`}>
                   {item.status === "reversed"

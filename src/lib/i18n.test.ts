@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isCSASectionPath,
   isLocale,
   languageAlternates,
   localizedPath,
@@ -21,6 +22,47 @@ describe("locale routing", () => {
     expect(replacePathLocale("/store/en", "vi")).toBe("/store/vi");
     expect(replacePathLocale("/csa/en", "vi")).toBe("/csa/vi");
     expect(replacePathLocale("/en/csa", "vi")).toBe("/csa/vi");
+  });
+  it.each([
+    ["/csa/purchase/vi", "/csa/purchase/en"],
+    ["/csa/purchase/vi/", "/csa/purchase/en"],
+    ["/csa/track/vi", "/csa/track/en"],
+    ["/csa/track/vi/", "/csa/track/en"],
+    [
+      "/csa/verify/vi?reference=CSA-202609-8F3K2M",
+      "/csa/verify/en?reference=CSA-202609-8F3K2M",
+    ],
+    [
+      "/csa/verify/vi/?reference=CSA-202609-8F3K2M",
+      "/csa/verify/en?reference=CSA-202609-8F3K2M",
+    ],
+    ["/store/vi/", "/store/en"],
+    ["/account/vi/rewards/", "/account/en/rewards"],
+  ])(
+    "normalizes trailing slashes and preserves route suffix in %s",
+    (from, to) => {
+      expect(replacePathLocale(from, "en")).toBe(to);
+      expect(replacePathLocale(from, "en")).not.toContain("//");
+    },
+  );
+  it("recognizes only the supported localized CSA section routes", () => {
+    for (const route of [
+      "/csa/en",
+      "/csa/vi/",
+      "/csa/purchase/en",
+      "/csa/track/vi/",
+      "/csa/verify/en?reference=CSA-202609-8F3K2M",
+    ]) {
+      expect(isCSASectionPath(route)).toBe(true);
+    }
+    for (const route of [
+      "/csa/purchase/en/extra",
+      "/csa/other/en",
+      "/csa-other/en",
+      "/csa/purchase/french",
+    ]) {
+      expect(isCSASectionPath(route)).toBe(false);
+    }
   });
   it("switches the embedded locale in nested account routes", () => {
     expect(replacePathLocale("/account/vi/rewards", "en")).toBe(

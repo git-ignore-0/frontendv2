@@ -17,8 +17,7 @@ const farmbriteUrls = [
   "https://store.farmbrite.com/store/nntn",
   "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
 ];
-const membershipUrl =
-  "https://store.farmbrite.com/store/nntn/products?category=Memberships";
+const membershipUrls = { en: "/csa/purchase/en", vi: "/csa/purchase/vi" };
 
 describe("StorePage", () => {
   it.each([
@@ -115,9 +114,12 @@ describe("StorePage", () => {
       }
       expect(informationLink).toHaveAttribute("href", internalHref);
       expect(informationLink).not.toHaveAttribute("target");
-      expect(purchaseLink).toHaveAttribute("href", membershipUrl);
-      expect(purchaseLink).toHaveAttribute("target", "_blank");
-      expect(purchaseLink).toHaveAttribute("rel", "noopener noreferrer");
+      expect(purchaseLink).toHaveAttribute(
+        "href",
+        membershipUrls[locale as keyof typeof membershipUrls],
+      );
+      expect(purchaseLink).not.toHaveAttribute("target");
+      expect(purchaseLink).not.toHaveAttribute("rel");
       expect(informationLink).toHaveClass("store-btn-secondary");
       expect(purchaseLink).toHaveClass("store-btn-ghost");
       expect(weeklyLink).toHaveAttribute("href", farmbriteUrls[0]);

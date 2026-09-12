@@ -12,6 +12,7 @@ import { useHeaderAccountBalance } from "@/features/account/use-header-account-b
 import { useHeaderMembershipDestination } from "@/features/account/use-header-membership-destination";
 import type { CoreUser } from "@/lib/auth/schemas";
 import {
+  isCSASectionPath,
   type Locale,
   localeConfig,
   locales,
@@ -289,6 +290,13 @@ export function SiteHeader({
   const searchParams = useSearchParams();
   const search = searchParams.toString();
   const currentPath = search ? `${pathname}?${search}` : pathname;
+  const verificationReference = searchParams.get("reference");
+  const localeSearch =
+    pathname.startsWith("/csa/verify/") && verificationReference
+      ? `?${new URLSearchParams({ reference: verificationReference })}`
+      : "";
+  const preserveCSAScroll =
+    pathname.startsWith("/csa/purchase/") || pathname.startsWith("/csa/track/");
   const accountHref = localizedPath(locale, "/account");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
@@ -318,6 +326,8 @@ export function SiteHeader({
   ] as const;
   const linkHref = (path: (typeof links)[number][0]) =>
     localizedPath(locale, path);
+  const isPrimaryLinkActive = (path: (typeof links)[number][0]) =>
+    path === "/csa" ? isCSASectionPath(pathname) : pathname === linkHref(path);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -399,7 +409,7 @@ export function SiteHeader({
         <nav className="desktop-nav" aria-label={t.primaryNavigation}>
           {links.map(([path, label]) => {
             const href = linkHref(path);
-            const active = pathname === href;
+            const active = isPrimaryLinkActive(path);
             return (
               <Link
                 key={path}
@@ -441,11 +451,12 @@ export function SiteHeader({
           {alternateLocales.map((targetLocale) => (
             <Link
               key={targetLocale}
-              href={replacePathLocale(pathname, targetLocale)}
+              href={`${replacePathLocale(pathname, targetLocale)}${localeSearch}`}
               className="language"
               hrefLang={targetLocale}
               lang={targetLocale}
               aria-label={`${t.language}: ${localeConfig[targetLocale].label}`}
+              scroll={!preserveCSAScroll}
             >
               <span aria-hidden="true" className="language-icon">
                 {localeConfig[targetLocale].icon}
@@ -503,7 +514,13 @@ export function SiteHeader({
               </button>
               <nav aria-label={t.mobileNavigation}>
                 {links.map(([path, label]) => (
-                  <Link key={path} href={linkHref(path)}>
+                  <Link
+                    key={path}
+                    href={linkHref(path)}
+                    aria-current={
+                      isPrimaryLinkActive(path) ? "page" : undefined
+                    }
+                  >
                     <span>{label}</span>
                     <Arrow />
                   </Link>

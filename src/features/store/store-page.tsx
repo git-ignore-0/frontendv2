@@ -110,15 +110,13 @@ export function StorePage({ copy }: { copy: Copy }) {
                   >
                     {informationCta.label}
                   </Link>
-                  <a
+                  <Link
                     href={purchaseCta.href}
                     className={`store-btn store-btn-${purchaseCta.kind} store-card-cta store-csa-action`}
-                    target="_blank"
-                    rel="noopener noreferrer"
                   >
                     {purchaseCta.label}
                     <Arrow />
-                  </a>
+                  </Link>
                   <a
                     href={weeklyCta.href}
                     className={`store-btn store-btn-${weeklyCta.kind} store-card-cta store-csa-action`}

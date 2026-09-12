@@ -97,6 +97,7 @@ export type MembershipPackage = {
   requested_locale?: "vi" | "en";
   content_locale?: "vi" | "en";
   is_fallback?: boolean;
+  is_active?: boolean;
 };
 
 export type MembershipPackagePriceOption = {
@@ -105,6 +106,110 @@ export type MembershipPackagePriceOption = {
   monthly_price_vnd: string;
   total_price_vnd: string;
   sort_order?: number;
+  is_active?: boolean;
+};
+
+export type AdministrativeUnit = { code: string; name: string };
+
+export type CSAPurchaseRequestCreated = {
+  id: string;
+  request_code: string;
+  status: "pending";
+  expires_at: string | null;
+  package_snapshot: { id: string; name: string };
+  price_option_snapshot: {
+    id: string;
+    name: string;
+    duration_months: number;
+  };
+  amount: string;
+  currency: string;
+  transfer_content: string;
+  bank_bin: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  qr_payload: {
+    acqId: string;
+    accountNo: string;
+    accountName: string;
+    amount: string;
+    addInfo: string;
+    format: string;
+    template: string;
+  };
+  guest_confirmation_token?: string;
+};
+
+export type CSATrackerStatus =
+  "pending" | "payment_confirmed" | "approved" | "rejected" | "expired";
+
+export type CSATrackerRefundStatus = "not_applicable" | "pending" | "completed";
+
+export type CSATrackerResult = {
+  reference_code: string;
+  reference_type: "request" | "contract";
+  status: CSATrackerStatus;
+  package_snapshot: { name: string };
+  price_option_snapshot: { name: string };
+  duration_months: number;
+  amount: string;
+  currency: string;
+  created_at: string;
+  expires_at: string | null;
+  payment_confirmed_at: string | null;
+  contract: {
+    id: string;
+    reference_code: string;
+    status: "active" | "revoked";
+  } | null;
+  contract_status?: "active" | "revoked";
+  membership_start_date?: string;
+  membership_end_date?: string;
+  available_pdf_locales?: Array<"vi" | "en">;
+  pdf_available: boolean;
+  rejection_reason?: string;
+  rejected_at?: string | null;
+  refund_status?: CSATrackerRefundStatus;
+};
+
+export type CSATrackerContract = {
+  id: string;
+  reference_code: string;
+  source: string;
+  status: "active" | "revoked";
+  package_name_snapshot: string;
+  price_option_name_snapshot: string;
+  amount_snapshot: string;
+  currency_snapshot: string;
+  duration_months_snapshot: number;
+  start_date: string;
+  end_date: string;
+  issued_at: string;
+  revoked_at: string | null;
+  revocation_reason: string | null;
+  available_pdf_locales: Array<"vi" | "en">;
+  pdf_available: boolean;
+};
+
+export type CSAContractVerification = {
+  reference_code: string;
+  status: "active" | "revoked";
+  issued_at: string;
+  start_date: string;
+  end_date: string;
+  revoked_at: string | null;
+  revocation_reason: string | null;
+};
+
+export type MembershipContract = {
+  id: string;
+  reference_code: string;
+  status: "active" | "revoked";
+  issued_at: string;
+  revoked_at: string | null;
+  revocation_reason: string | null;
+  available_locales: Array<"vi" | "en">;
 };
 
 export type CurrentMembership = {

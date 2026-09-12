@@ -65,6 +65,78 @@ describe("site header navigation", () => {
     ).toHaveAttribute("href", "/csa/vi");
   });
 
+  it("preserves the verification reference when switching locale", () => {
+    navigation.pathname = "/csa/verify/en";
+    navigation.search = "reference=CSA-202609-8F3K2M";
+    renderHeader();
+
+    expect(
+      screen.getByRole("link", { name: "Language: Tiếng Việt" }),
+    ).toHaveAttribute("href", "/csa/verify/vi?reference=CSA-202609-8F3K2M");
+  });
+
+  it("normalizes the verification route slash while keeping its reference", () => {
+    navigation.pathname = "/csa/verify/en/";
+    navigation.search = "reference=CSA-202609-8F3K2M";
+    renderHeader();
+
+    expect(
+      screen.getByRole("link", { name: "Language: Tiếng Việt" }),
+    ).toHaveAttribute("href", "/csa/verify/vi?reference=CSA-202609-8F3K2M");
+  });
+
+  it.each([
+    ["/csa/purchase/en", "/csa/purchase/vi"],
+    ["/csa/purchase/en/", "/csa/purchase/vi"],
+    ["/csa/track/en", "/csa/track/vi"],
+    ["/csa/track/en/", "/csa/track/vi"],
+  ])("keeps the current CSA flow route and scroll at %s", (from, to) => {
+    navigation.pathname = from;
+    renderHeader();
+
+    const language = screen.getByRole("link", {
+      name: "Language: Tiếng Việt",
+    });
+    expect(language).toHaveAttribute("href", to);
+    expect(language.getAttribute("href")).not.toContain("?");
+  });
+
+  it.each(["/csa/en", "/csa/purchase/en", "/csa/track/en", "/csa/verify/en"])(
+    "marks the single CSA item active on desktop and mobile at %s",
+    (route) => {
+      navigation.pathname = route;
+      renderHeader();
+
+      const desktop = screen.getByRole("navigation", {
+        name: "Primary navigation",
+      });
+      const desktopCSA = within(desktop).getByRole("link", { name: "CSA" });
+      expect(desktopCSA).toHaveAttribute("aria-current", "page");
+      fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+      const mobile = within(
+        screen.getByRole("dialog", { name: "Menu" }),
+      ).getByRole("navigation", { name: "Mobile navigation" });
+      expect(within(mobile).getAllByRole("link", { name: "CSA" })).toHaveLength(
+        1,
+      );
+      expect(within(mobile).getByRole("link", { name: "CSA" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+    },
+  );
+
+  it("does not mark CSA active for unrelated routes", () => {
+    navigation.pathname = "/csa-other/en";
+    renderHeader();
+    const desktop = screen.getByRole("navigation", {
+      name: "Primary navigation",
+    });
+    expect(
+      within(desktop).getByRole("link", { name: "CSA" }),
+    ).not.toHaveAttribute("aria-current");
+  });
+
   it("omits Plants and Animals from the desktop primary navigation", () => {
     renderHeader();
 

@@ -19,7 +19,25 @@ export function localizedPath(locale: Locale, path = "") {
   return `${path}/${locale}`;
 }
 
+function splitPathSuffix(value: string) {
+  const suffixStart = value.search(/[?#]/);
+  const pathname = suffixStart === -1 ? value : value.slice(0, suffixStart);
+  return {
+    pathname: pathname.replace(/\/+$/, "") || "/",
+    suffix: suffixStart === -1 ? "" : value.slice(suffixStart),
+  };
+}
+
+export function isCSASectionPath(pathname: string) {
+  const normalizedPath = splitPathSuffix(pathname).pathname;
+  const localePattern = locales.join("|");
+  return new RegExp(
+    `^/csa/(?:(?:purchase|track|verify)/)?(?:${localePattern})$`,
+  ).test(normalizedPath);
+}
+
 export function replacePathLocale(pathname: string, locale: Locale) {
+  const { pathname: normalizedPath, suffix } = splitPathSuffix(pathname);
   const localePattern = locales.join("|");
   const csaPattern = new RegExp(`^/csa/(?:${localePattern})$`);
   const legacyCsaPattern = new RegExp(`^/(?:${localePattern})/csa$`);
@@ -27,25 +45,28 @@ export function replacePathLocale(pathname: string, locale: Locale) {
   const prefixPattern = new RegExp(`^/(${localePattern})(?=/|$)`);
   const suffixPattern = new RegExp(`/(?:${localePattern})$`);
 
-  if (csaPattern.test(pathname) || legacyCsaPattern.test(pathname)) {
-    return localizedPath(locale, "/csa");
+  if (
+    csaPattern.test(normalizedPath) ||
+    legacyCsaPattern.test(normalizedPath)
+  ) {
+    return `${localizedPath(locale, "/csa")}${suffix}`;
   }
 
-  if (accountPattern.test(pathname)) {
-    return pathname.replace(accountPattern, `/account/${locale}`);
+  if (accountPattern.test(normalizedPath)) {
+    return `${normalizedPath.replace(accountPattern, `/account/${locale}`)}${suffix}`;
   }
 
-  if (prefixPattern.test(pathname)) {
-    const path = pathname.replace(prefixPattern, "") || "/";
-    return localizedPath(locale, path);
+  if (prefixPattern.test(normalizedPath)) {
+    const path = normalizedPath.replace(prefixPattern, "") || "/";
+    return `${localizedPath(locale, path)}${suffix}`;
   }
 
-  if (suffixPattern.test(pathname)) {
-    const path = pathname.replace(suffixPattern, "") || "/";
-    return localizedPath(locale, path);
+  if (suffixPattern.test(normalizedPath)) {
+    const path = normalizedPath.replace(suffixPattern, "") || "/";
+    return `${localizedPath(locale, path)}${suffix}`;
   }
 
-  return localizedPath(locale, pathname);
+  return `${localizedPath(locale, normalizedPath)}${suffix}`;
 }
 
 export function languageAlternates(path = "") {

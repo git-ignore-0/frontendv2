@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizePhoneNumber, phoneHref } from "./contact";
+import {
+  normalizePhoneNumber,
+  normalizeVietnamPhone,
+  phoneHref,
+} from "./contact";
 
 describe("public phone number", () => {
   it("creates a call link directly from the formatted display number", () => {
@@ -10,5 +14,13 @@ describe("public phone number", () => {
 
   it("does not create a call link from incomplete text", () => {
     expect(phoneHref("call us")).toBe("");
+  });
+
+  it("normalizes supported Vietnamese formats and rejects ambiguous input", () => {
+    expect(normalizeVietnamPhone("090 123 4567")).toBe("+84901234567");
+    expect(normalizeVietnamPhone("+84 90 123 4567")).toBe("+84901234567");
+    expect(normalizeVietnamPhone("84901234567")).toBe("+84901234567");
+    expect(normalizeVietnamPhone("901234567")).toBe("");
+    expect(normalizeVietnamPhone("09012abc")).toBe("");
   });
 });

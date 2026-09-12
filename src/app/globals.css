@@ -4029,6 +4029,34 @@ tbody th {
   font-weight: 600;
   line-height: 1.45;
 }
+.membership-contract-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.membership-contract-section h3 {
+  margin: 0;
+  color: var(--forest);
+  font-family: var(--font-body), sans-serif;
+  font-size: 1rem;
+}
+.membership-contract-code {
+  overflow-wrap: anywhere;
+}
+.membership-contract-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.membership-contract-error {
+  margin: 0.75rem 0 0;
+  color: var(--danger, #a43c2f);
+}
+.membership-account-page .membership-status.is-revoked {
+  color: var(--danger, #a43c2f);
+  background: color-mix(in srgb, var(--danger, #a43c2f) 10%, transparent);
+}
 .membership-scheduled-notice {
   margin: 1.25rem 0 0;
   padding: 0.8rem 1rem;
@@ -5447,6 +5475,1761 @@ tbody th {
   opacity: 0.55;
   cursor: wait;
 }
+
+/* Contract verification keeps its existing presentation outside the two demo flows. */
+.csa-purchase-page:not(.csa-ui),
+.csa-tracker-page:not(.csa-ui) {
+  min-height: 70vh;
+  padding: clamp(1rem, 4vw, 2rem);
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body), sans-serif;
+}
+.csa-purchase-panel {
+  width: min(100%, 48rem);
+  margin-inline: auto;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.csa-purchase-back {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  color: var(--forest);
+  font-weight: 700;
+}
+.csa-purchase-intro {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.csa-purchase-fields {
+  display: grid;
+  gap: 0.85rem;
+}
+.csa-purchase-field {
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.csa-purchase-field label {
+  color: var(--forest);
+  font-weight: 700;
+}
+.csa-purchase-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.625rem;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+}
+.csa-purchase-primary,
+.csa-tracker-reset {
+  min-height: 44px;
+  margin-top: 1rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--forest);
+  border-radius: 0.625rem;
+  background: var(--forest);
+  color: var(--paper);
+  font: inherit;
+  font-weight: 700;
+}
+.csa-purchase-error {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--terra);
+  color: var(--soil);
+}
+.csa-tracker-details {
+  margin: 1rem 0 0;
+}
+.csa-tracker-details > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.8fr) minmax(0, 1.2fr);
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.csa-tracker-details dt {
+  color: var(--muted);
+}
+.csa-tracker-details dd {
+  min-width: 0;
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.csa-tracker-code {
+  font-weight: 800;
+}
+
+/* CSA purchase and tracker — ported from csa-ui-demo.html. */
+.csa-ui {
+  --cream: #f3eee3;
+  --paper: #fbf8f0;
+  --forest: #173f34;
+  --moss: #58705a;
+  --soil: #6d3f2d;
+  --terra: #bd5d3a;
+  --straw: #ddb96a;
+  --ink: #20251f;
+  --muted: #62685f;
+  --line: rgba(23, 63, 52, 0.18);
+  --shadow: 0 24px 70px rgba(40, 35, 24, 0.12);
+  --radius: 1.25rem;
+  min-width: 0;
+  min-height: 70vh;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: "Be Vietnam Pro", system-ui, sans-serif;
+  font-size: 15px;
+}
+.csa-ui *,
+.csa-ui *::before,
+.csa-ui *::after {
+  box-sizing: border-box;
+}
+.csa-ui button,
+.csa-ui input,
+.csa-ui select,
+.csa-ui textarea {
+  font: inherit;
+}
+.csa-ui button {
+  cursor: pointer;
+}
+.csa-ui img,
+.csa-ui svg {
+  max-width: 100%;
+  height: auto;
+}
+.csa-ui a {
+  color: var(--forest);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+.csa-ui .shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 18px auto 36px;
+}
+.csa-ui .app-card {
+  overflow: visible;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+}
+.csa-ui .content {
+  padding: 16px;
+}
+.csa-ui h1,
+.csa-ui h2,
+.csa-ui h3 {
+  margin-top: 0;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: normal;
+  line-height: 1.3;
+  text-wrap: wrap;
+}
+.csa-ui h1 {
+  margin-bottom: 0;
+  font-size: 30px;
+  line-height: 1.18;
+}
+.csa-ui h2 {
+  font-size: 20px;
+  line-height: 1.25;
+}
+.csa-ui h3 {
+  font-size: 18px;
+  line-height: 1.25;
+}
+.csa-ui p {
+  line-height: 1.55;
+}
+.csa-ui .lead {
+  max-width: 640px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.csa-ui .section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.csa-ui .progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 14px 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.csa-ui .progress-item {
+  min-width: 0;
+}
+.csa-ui .progress-line {
+  height: 2px;
+  display: block;
+  margin-bottom: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(23, 63, 52, 0.12);
+}
+.csa-ui .progress-line span {
+  width: 0;
+  height: 100%;
+  display: block;
+  background: var(--forest);
+  transition: width 0.2s ease;
+}
+.csa-ui .progress-item.done .progress-line span,
+.csa-ui .progress-item.active .progress-line span {
+  width: 100%;
+}
+.csa-ui .progress-label {
+  display: block;
+  margin: 0 0 5px;
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 600;
+}
+.csa-ui .progress-item.active .progress-label {
+  color: var(--forest);
+  font-weight: 900;
+}
+.csa-ui .wizard-layout {
+  width: min(1060px, 100%);
+  margin: 0 auto;
+}
+.csa-ui .main-panel,
+.csa-ui .lookup-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+}
+.csa-ui .main-panel {
+  padding: 16px;
+}
+.csa-purchase-ui .progress {
+  scroll-margin-top: 88px;
+}
+.csa-purchase-ui .step-heading {
+  outline: none;
+}
+@keyframes csa-step-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.csa-purchase-ui .step {
+  animation: csa-step-enter 180ms ease-out both;
+}
+.csa-purchase-ui .main-panel.package-step-panel {
+  border: 1px solid var(--line);
+}
+.csa-ui .step[hidden] {
+  display: none !important;
+}
+.csa-ui .step-title {
+  margin-bottom: 5px;
+}
+.csa-ui .step-desc {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+.csa-purchase-ui .package-section-head {
+  margin-bottom: 12px;
+}
+.csa-purchase-ui .package-section-head h2 {
+  margin: 0;
+}
+.csa-purchase-ui .package-section-head p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.csa-purchase-ui .package-choice-grid {
+  display: grid;
+  gap: 18px;
+}
+.csa-purchase-ui .package-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 12px;
+}
+.csa-purchase-ui .package-option {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(251, 248, 240, 0.52);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+.csa-purchase-ui .package-option:hover {
+  border-color: rgba(23, 63, 52, 0.32);
+  background: rgba(251, 248, 240, 0.82);
+}
+.csa-purchase-ui .package-option.selected {
+  border-color: rgba(23, 63, 52, 0.6);
+  background: var(--paper);
+  box-shadow: 0 0 0 1px rgba(23, 63, 52, 0.06);
+}
+.csa-purchase-ui .package-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.csa-purchase-ui .package-state {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border-radius: 50%;
+  background: var(--forest);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0;
+  transform: scale(0.88);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+.csa-purchase-ui .package-option.selected .package-state {
+  opacity: 1;
+  transform: scale(1);
+}
+.csa-purchase-ui .package-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.csa-purchase-ui .package-title-row {
+  display: block;
+  padding-right: 30px;
+}
+.csa-purchase-ui .package-title-row strong {
+  display: block;
+  color: var(--forest);
+  font-size: 17px;
+  line-height: 1.32;
+  letter-spacing: -0.01em;
+}
+.csa-purchase-ui .package-desc {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.csa-purchase-ui .package-meta {
+  display: grid;
+  gap: 0;
+  padding: 8px 0;
+  border-top: 1px solid rgba(23, 63, 52, 0.09);
+  border-bottom: 1px solid rgba(23, 63, 52, 0.09);
+  color: var(--muted);
+  font-size: 12px;
+}
+.csa-purchase-ui .package-meta span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  white-space: normal;
+}
+.csa-purchase-ui .package-meta span + span {
+  border-top: 1px solid rgba(23, 63, 52, 0.06);
+}
+.csa-purchase-ui .package-meta b {
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.csa-purchase-ui .package-policy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.csa-purchase-ui .duration-panel {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.csa-purchase-ui .duration-head {
+  margin-bottom: 10px;
+}
+.csa-purchase-ui .duration-head h3 {
+  font-size: 16px;
+}
+.csa-purchase-ui .duration-head p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.csa-purchase-ui .duration-list {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(251, 248, 240, 0.34);
+}
+.csa-purchase-ui .duration-list-head {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) minmax(180px, 1.4fr) minmax(
+      130px,
+      0.9fr
+    );
+  gap: 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(23, 63, 52, 0.035);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.csa-purchase-ui .duration-choice {
+  width: 100%;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) minmax(180px, 1.4fr) minmax(
+      130px,
+      0.9fr
+    );
+  align-items: center;
+  gap: 16px;
+  padding: 11px 12px;
+  border: 0;
+  border-bottom: 1px solid rgba(23, 63, 52, 0.08);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.csa-purchase-ui .duration-choice:last-child {
+  border-bottom: 0;
+}
+.csa-purchase-ui .duration-choice:hover {
+  background: rgba(23, 63, 52, 0.025);
+}
+.csa-purchase-ui .duration-choice.selected {
+  background: rgba(23, 63, 52, 0.045);
+}
+.csa-purchase-ui .duration-term {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.csa-purchase-ui .duration-check {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid rgba(23, 63, 52, 0.4);
+  border-radius: 5px;
+  color: white;
+}
+.csa-purchase-ui .duration-choice.selected .duration-check {
+  border-color: var(--forest);
+  background: var(--forest);
+}
+.csa-purchase-ui .duration-check::after {
+  content: "✓";
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0;
+}
+.csa-purchase-ui .duration-choice.selected .duration-check::after {
+  opacity: 1;
+}
+.csa-purchase-ui .duration-term strong {
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.csa-purchase-ui .duration-price-cell {
+  min-width: 0;
+}
+.csa-purchase-ui .duration-price-main {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.csa-purchase-ui .saving-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(88, 112, 90, 0.1);
+  color: var(--forest);
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.csa-purchase-ui .duration-saving {
+  display: block;
+  margin-top: 4px;
+  color: var(--moss);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.csa-purchase-ui .duration-monthly,
+.csa-purchase-ui .duration-total {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.csa-purchase-ui .chosen-total {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.csa-purchase-ui .chosen-total span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.csa-purchase-ui .chosen-total small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.csa-purchase-ui .chosen-total > strong {
+  color: var(--forest);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.csa-ui .btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.csa-ui .btn {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.csa-ui .btn-primary {
+  background: var(--forest);
+  color: var(--paper);
+}
+.csa-ui .btn-primary:hover {
+  filter: brightness(1.05);
+}
+.csa-ui .btn-secondary {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--forest);
+}
+.csa-ui .btn-terra {
+  border-color: rgba(189, 93, 58, 0.35);
+  background: transparent;
+  color: var(--terra);
+  text-decoration: none;
+}
+.csa-ui .btn:disabled,
+.csa-ui .ghost-link:disabled,
+.csa-ui .copy:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.csa-ui .btn-block {
+  width: 100%;
+}
+.csa-ui .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.csa-ui .field {
+  min-width: 0;
+}
+.csa-ui .field.full {
+  grid-column: 1 / -1;
+}
+.csa-ui label,
+.csa-ui .field dt {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 900;
+}
+.csa-ui .field dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.csa-ui input:not([type="radio"]):not([type="checkbox"]),
+.csa-ui select,
+.csa-ui textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+}
+.csa-ui textarea {
+  resize: vertical;
+}
+.csa-ui input:not([type="radio"]):not([type="checkbox"]):focus,
+.csa-ui select:focus,
+.csa-ui textarea:focus {
+  border-color: rgba(23, 63, 52, 0.65);
+  box-shadow: 0 0 0 3px rgba(23, 63, 52, 0.08);
+}
+.csa-ui input[aria-invalid="true"],
+.csa-ui select[aria-invalid="true"],
+.csa-ui textarea[aria-invalid="true"] {
+  border-color: var(--terra);
+}
+.csa-ui input[type="radio"],
+.csa-ui input[type="checkbox"] {
+  appearance: auto;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--forest);
+}
+.csa-ui .helper {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.csa-ui [role="alert"].helper {
+  color: var(--terra);
+}
+.csa-ui .profile-box {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+}
+.csa-ui .profile-box dl {
+  margin: 0;
+}
+.csa-ui .status-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.csa-ui .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.csa-ui .badge.ok {
+  background: rgba(88, 112, 90, 0.12);
+  color: var(--forest);
+}
+.csa-ui .terms-reader {
+  margin-top: 14px;
+}
+.csa-ui .terms-document {
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+.csa-ui .term-section {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(23, 63, 52, 0.1);
+}
+.csa-ui .term-section:last-child {
+  border-bottom: 0;
+}
+.csa-ui .term-number {
+  padding-top: 1px;
+  color: var(--moss);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.csa-ui .term-section h3 {
+  margin: 0 0 5px;
+  color: var(--forest);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.csa-ui .term-section p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.csa-ui .agree {
+  width: min(100%, 760px);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px auto 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+}
+.csa-ui .agree input {
+  margin-top: 2px;
+}
+.csa-ui .agree label {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
+  line-height: 1.5;
+}
+.csa-purchase-ui .payment-grid {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+.csa-purchase-ui .payment-information,
+.csa-purchase-ui .payment-qr {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+.csa-purchase-ui .payment-information .btn-row {
+  margin-top: 0;
+}
+.csa-purchase-ui .payment-qr-title,
+.csa-purchase-ui .payment-details-title {
+  margin: 0;
+}
+.csa-purchase-ui .qr-wrap {
+  width: min(320px, 100%);
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.csa-purchase-ui .qr {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+.csa-purchase-ui .qr-image {
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  position: relative;
+}
+.csa-purchase-ui .qr-logo {
+  width: 15%;
+  height: auto;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 2px;
+  border-radius: 4px;
+  background: #fff;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.csa-ui .bank-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.csa-ui .bank-row {
+  padding-bottom: 9px;
+  border-bottom: 1px dashed rgba(23, 63, 52, 0.16);
+}
+.csa-ui .bank-row:last-child {
+  border-bottom: 0;
+}
+.csa-ui .bank-row .k {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.csa-ui .bank-row .v {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+}
+.csa-ui .bank-row .v strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.csa-ui .copy {
+  min-width: 34px;
+  min-height: 34px;
+  flex: none;
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--forest);
+  font-size: 12px;
+  font-weight: 600;
+}
+.csa-ui .copy svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+  flex: none;
+}
+
+/* Match the Store visual language without changing the purchase wizard layout. */
+.csa-ui.csa-purchase-ui {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.90625rem;
+}
+.csa-ui.csa-purchase-ui h2 {
+  color: var(--forest);
+  font-family: system-ui, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+}
+.csa-ui.csa-purchase-ui h3,
+.csa-ui.csa-purchase-ui .duration-head h3 {
+  color: var(--forest);
+  font-family: system-ui, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+}
+.csa-ui.csa-purchase-ui .lead,
+.csa-ui.csa-purchase-ui .step-desc,
+.csa-ui.csa-purchase-ui .package-section-head p,
+.csa-ui.csa-purchase-ui .package-desc,
+.csa-ui.csa-purchase-ui .package-policy,
+.csa-ui.csa-purchase-ui .duration-head p,
+.csa-ui.csa-purchase-ui .term-section p,
+.csa-ui.csa-purchase-ui .notice {
+  color: var(--muted);
+  font-size: 0.90625rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.csa-ui.csa-purchase-ui .package-title-row strong {
+  color: var(--forest);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+}
+.csa-ui.csa-purchase-ui .progress-label,
+.csa-ui.csa-purchase-ui label,
+.csa-ui.csa-purchase-ui .field dt,
+.csa-ui.csa-purchase-ui .bank-row .k {
+  color: var(--forest);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.6;
+}
+.csa-ui.csa-purchase-ui .package-meta,
+.csa-ui.csa-purchase-ui .duration-list-head,
+.csa-ui.csa-purchase-ui .helper,
+.csa-ui.csa-purchase-ui .term-number,
+.csa-ui.csa-purchase-ui .duration-saving,
+.csa-ui.csa-purchase-ui .chosen-total span,
+.csa-ui.csa-purchase-ui .chosen-total small {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.csa-ui.csa-purchase-ui .duration-term strong,
+.csa-ui.csa-purchase-ui .duration-monthly,
+.csa-ui.csa-purchase-ui .duration-total,
+.csa-ui.csa-purchase-ui .bank-row .v {
+  color: var(--ink);
+  font-size: 0.90625rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.csa-ui.csa-purchase-ui .chosen-total > strong {
+  color: var(--forest);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+}
+.csa-ui.csa-purchase-ui .main-panel,
+.csa-ui.csa-purchase-ui .profile-box,
+.csa-ui.csa-purchase-ui .duration-list,
+.csa-ui.csa-purchase-ui .qr-wrap {
+  border-color: color-mix(in srgb, var(--moss) 20%, transparent);
+  background: var(--paper);
+}
+.csa-ui.csa-purchase-ui .package-option {
+  border-color: color-mix(in srgb, var(--moss) 20%, transparent);
+  background: var(--paper);
+  color: var(--ink);
+}
+.csa-ui.csa-purchase-ui .package-option:hover {
+  border-color: color-mix(in srgb, var(--forest) 40%, transparent);
+  background: var(--paper);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+.csa-ui.csa-purchase-ui .package-option.selected {
+  border-color: color-mix(in srgb, var(--forest) 40%, transparent);
+  background: var(--paper);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+.csa-ui.csa-purchase-ui .duration-list-head,
+.csa-ui.csa-purchase-ui .duration-choice:hover,
+.csa-ui.csa-purchase-ui .duration-choice.selected {
+  background: color-mix(in srgb, var(--forest) 5%, transparent);
+}
+.csa-ui.csa-purchase-ui input:not([type="radio"]):not([type="checkbox"]),
+.csa-ui.csa-purchase-ui select,
+.csa-ui.csa-purchase-ui textarea,
+.csa-ui.csa-purchase-ui .copy {
+  border-color: color-mix(in srgb, var(--forest) 20%, transparent);
+  background: white;
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.90625rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.csa-ui.csa-purchase-ui input:not([type="radio"]):not([type="checkbox"]):focus,
+.csa-ui.csa-purchase-ui select:focus,
+.csa-ui.csa-purchase-ui textarea:focus {
+  border-color: color-mix(in srgb, var(--forest) 40%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--forest) 8%, transparent);
+}
+.csa-ui.csa-purchase-ui .btn {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 0.90625rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  line-height: 1.15;
+}
+.csa-ui.csa-purchase-ui .btn-primary {
+  border-color: var(--forest);
+  background: var(--forest);
+  color: var(--cream);
+}
+.csa-ui.csa-purchase-ui .btn-primary:hover,
+.csa-ui.csa-purchase-ui .btn-primary:focus-visible {
+  background: var(--moss);
+  color: white;
+}
+.csa-ui.csa-purchase-ui .btn-secondary,
+.csa-ui.csa-purchase-ui .copy {
+  border-color: color-mix(in srgb, var(--forest) 20%, transparent);
+  background: white;
+  color: var(--forest);
+}
+.csa-ui.csa-purchase-ui .btn-secondary:hover,
+.csa-ui.csa-purchase-ui .btn-secondary:focus-visible,
+.csa-ui.csa-purchase-ui .copy:hover,
+.csa-ui.csa-purchase-ui .copy:focus-visible {
+  background: color-mix(in srgb, var(--forest) 5%, transparent);
+}
+.csa-ui.csa-purchase-ui [role="alert"].helper,
+.csa-ui.csa-purchase-ui .notice.error {
+  color: var(--terra);
+}
+.csa-ui .success {
+  padding: 18px 4px;
+  text-align: center;
+  animation: csa-success-soft-scale 0.24s ease both;
+}
+.csa-ui .success-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: var(--forest);
+  color: white;
+  font-size: 18px;
+  transform-origin: center;
+  animation: csa-success-pop 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.csa-ui .success h2 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  animation: csa-success-rise 0.28s 0.09s ease both;
+}
+.csa-ui .success > p {
+  max-width: 520px;
+  margin: 8px auto;
+  color: var(--muted);
+  animation: csa-success-rise 0.28s 0.15s ease both;
+}
+.csa-ui .success .code {
+  max-width: 100%;
+  display: inline-block;
+  margin: 8px auto 12px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  animation: csa-success-rise 0.28s 0.15s ease both;
+}
+.csa-ui .success > div:last-child {
+  animation: csa-success-rise 0.28s 0.15s ease both;
+}
+@keyframes csa-success-soft-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes csa-success-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes csa-success-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.csa-ui .lookup-wrap {
+  width: min(100%, 40rem);
+  display: grid;
+  gap: 14px;
+  margin: 0 auto;
+}
+.csa-ui .lookup-card {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.22);
+}
+.csa-ui .lookup-card .form-grid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 10px;
+}
+.csa-ui .lookup-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  margin-top: 10px;
+}
+.csa-ui .lookup-actions .btn {
+  min-width: 112px;
+}
+.csa-ui .lookup-btn-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.csa-ui .lookup-spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: csa-demo-spin 0.7s linear infinite;
+}
+@keyframes csa-demo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.csa-ui .result-card {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.csa-ui .result-shell {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.csa-ui .result-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.csa-ui .result-head h2 {
+  margin-bottom: 0;
+  font-size: 19px;
+}
+.csa-ui .status-dot {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 10px;
+  background: rgba(23, 63, 52, 0.07);
+  color: var(--forest);
+  font-weight: 700;
+}
+.csa-ui .status-dot.warn {
+  background: rgba(221, 185, 106, 0.14);
+  color: var(--soil);
+}
+.csa-ui .status-dot.bad {
+  background: rgba(189, 93, 58, 0.1);
+  color: var(--terra);
+}
+.csa-ui .status-badge {
+  align-self: start;
+  padding: 6px 8px;
+  border: 1px solid rgba(23, 63, 52, 0.1);
+  border-radius: 999px;
+  background: rgba(23, 63, 52, 0.06);
+  color: var(--forest);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.csa-ui .status-badge.approved {
+  background: rgba(23, 63, 52, 0.07);
+  color: var(--forest);
+}
+.csa-ui .status-badge.rejected {
+  border-color: rgba(189, 93, 58, 0.14);
+  background: rgba(189, 93, 58, 0.08);
+  color: var(--terra);
+}
+.csa-ui .result-data {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+  margin: 0;
+}
+.csa-ui .kv {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(0, 1.2fr);
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(23, 63, 52, 0.09);
+}
+.csa-ui .kv dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.csa-ui .kv dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.csa-ui .notice {
+  margin-top: 12px;
+  padding: 10px 11px;
+  border-left: 3px solid rgba(23, 63, 52, 0.3);
+  border-radius: 0 8px 8px 0;
+  background: rgba(23, 63, 52, 0.035);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.csa-ui .notice.error {
+  border-left-color: rgba(189, 93, 58, 0.38);
+  background: rgba(189, 93, 58, 0.045);
+  color: var(--terra);
+}
+.csa-ui .notice > p:first-child {
+  margin-top: 0;
+}
+.csa-ui .download-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.csa-ui .ghost-link {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.csa-ui .ghost-link.primary {
+  border-color: var(--forest);
+  background: var(--forest);
+  color: white;
+}
+.csa-ui .btn:focus-visible,
+.csa-ui .ghost-link:focus-visible,
+.csa-ui .copy:focus-visible {
+  outline: 3px solid rgba(23, 63, 52, 0.18);
+  outline-offset: 2px;
+}
+@media (min-width: 900px) {
+  .csa-purchase-ui .payment-grid {
+    grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
+  }
+  .csa-purchase-ui .package-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    overflow: visible;
+  }
+  .csa-purchase-ui .package-option {
+    min-width: 0;
+  }
+}
+@media (min-width: 600px) and (max-width: 899px) {
+  .csa-purchase-ui .package-list {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    margin-inline: -2px;
+    padding-inline: 2px;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    scroll-snap-type: x mandatory;
+  }
+  .csa-purchase-ui .package-option {
+    flex: 0 0 min(56vw, 360px);
+    scroll-snap-align: start;
+  }
+}
+@media (max-width: 599px) {
+  .csa-purchase-ui .saving-badge {
+    font-size: 9px;
+    white-space: normal;
+  }
+  .csa-purchase-ui .duration-saving {
+    line-height: 1.4;
+  }
+  .csa-purchase-ui .duration-list-head {
+    display: none;
+  }
+  .csa-purchase-ui .duration-choice {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    padding: 11px;
+  }
+  .csa-purchase-ui .duration-term {
+    grid-column: 1 / -1;
+  }
+  .csa-purchase-ui .duration-price-cell::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .csa-purchase-ui .duration-total::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .csa-purchase-ui .package-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+  }
+  .csa-purchase-ui .package-option {
+    width: 100%;
+    min-width: 0;
+    flex: none;
+  }
+}
+@media (min-width: 1100px) {
+  .csa-purchase-ui .package-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .csa-purchase-ui .package-option {
+    padding: 16px;
+  }
+  .csa-purchase-ui .package-title-row strong {
+    font-size: 16px;
+  }
+  .csa-purchase-ui .duration-panel {
+    display: block;
+    position: static;
+    margin-top: 0;
+    padding: 16px 0 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+  }
+  .csa-purchase-ui .duration-head {
+    margin: 0 0 12px;
+  }
+  .csa-purchase-ui .duration-head h3 {
+    font-size: 17px;
+  }
+  .csa-purchase-ui .chosen-total {
+    margin-top: 10px;
+    padding: 11px 12px 0;
+  }
+  .csa-purchase-ui .step > .btn-row {
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+  .csa-purchase-ui .step > .btn-row .btn-primary {
+    min-width: 136px;
+  }
+}
+@media (min-width: 1500px) {
+  .csa-purchase-ui .package-list {
+    gap: 16px;
+  }
+  .csa-purchase-ui .package-option {
+    padding: 19px;
+  }
+}
+@media (max-width: 980px) {
+  .csa-purchase-ui .package-choice-grid {
+    grid-template-columns: 1fr;
+  }
+  .csa-purchase-ui .duration-panel {
+    position: static;
+  }
+}
+@media (max-width: 760px) {
+  .csa-purchase-ui .qr-wrap {
+    width: min(280px, 100%);
+  }
+  .csa-ui .shell {
+    width: min(100% - 20px, 1180px);
+    margin: 10px auto 30px;
+  }
+  .csa-ui .content {
+    padding: 14px;
+  }
+  .csa-ui h1 {
+    font-size: 26px;
+  }
+  .csa-ui .section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .csa-ui .progress {
+    gap: 5px;
+  }
+  .csa-ui .progress-label {
+    font-size: 11px;
+  }
+  .csa-ui .main-panel,
+  .csa-ui .lookup-card {
+    padding: 14px;
+  }
+  .csa-ui .form-grid,
+  .csa-ui .lookup-card .form-grid,
+  .csa-ui .lookup-actions,
+  .csa-ui .result-data {
+    grid-template-columns: 1fr;
+  }
+  .csa-ui .field.full {
+    grid-column: auto;
+  }
+  .csa-purchase-ui .package-option {
+    padding: 13px;
+  }
+  .csa-purchase-ui .package-title-row strong {
+    font-size: 15px;
+  }
+  .csa-purchase-ui .package-state {
+    top: 12px;
+    right: 12px;
+  }
+  .csa-ui .btn-row,
+  .csa-ui .download-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .csa-ui .btn,
+  .csa-ui .ghost-link,
+  .csa-ui .lookup-actions .btn {
+    width: 100%;
+  }
+  .csa-ui .result-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .csa-ui .result-head .status-badge {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+@media (max-width: 599px) {
+  .csa-ui .terms-reader {
+    margin-top: 10px;
+  }
+  .csa-ui .term-section {
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px 0;
+  }
+  .csa-ui .term-number {
+    font-size: 10px;
+  }
+  .csa-ui .term-section h3 {
+    font-size: 13px;
+  }
+  .csa-ui .term-section p {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .csa-ui .agree {
+    padding-top: 11px;
+  }
+}
+@media (max-width: 480px) {
+  .csa-ui .shell {
+    width: min(100% - 12px, 1180px);
+    margin: 6px auto 24px;
+  }
+  .csa-ui .content {
+    padding: 12px;
+  }
+  .csa-ui .progress {
+    grid-template-columns: repeat(4, minmax(52px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .csa-ui .main-panel,
+  .csa-ui .lookup-card {
+    padding: 12px;
+    border-radius: 1rem;
+  }
+  .csa-ui .result-shell,
+  .csa-ui .lookup-card {
+    padding: 13px;
+  }
+  .csa-ui .result-head {
+    gap: 10px;
+  }
+  .csa-ui .status-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+  .csa-ui .kv {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+  .csa-ui .kv dd {
+    text-align: left;
+  }
+  .csa-ui .status-badge {
+    white-space: normal;
+  }
+  .csa-ui .bank-row .v {
+    align-items: center;
+    flex-direction: row;
+  }
+  .csa-ui .bank-row .v strong {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .csa-ui .copy {
+    width: 34px;
+    min-width: 34px;
+    flex: 0 0 34px;
+    padding: 6px;
+  }
+  .csa-ui .copy span {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .csa-purchase-ui .step {
+    animation: none;
+  }
+  .csa-ui *,
+  .csa-ui *::before,
+  .csa-ui *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+.csa-purchase-ui .shell {
+  width: min(64rem, calc(100% - 2.5rem));
+  max-width: 64rem;
+  margin-inline: auto;
+  margin-block: 0;
+}
+.csa-purchase-ui .app-card {
+  width: 100%;
+}
+.csa-tracker-ui .shell {
+  width: min(64rem, calc(100% - 2.5rem));
+  max-width: 64rem;
+  margin-inline: auto;
+  margin-block: 0;
+}
+.csa-tracker-ui .app-card {
+  width: 100%;
+}
+.csa-ui.csa-tracker-ui {
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.90625rem;
+}
+.csa-tracker-ui .section-head {
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.csa-tracker-ui .section-head h1 {
+  margin-bottom: 0;
+  color: var(--forest);
+  font-family: var(--font-body), sans-serif;
+  font-size: 1.625rem;
+  font-weight: 850;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+.csa-tracker-ui .section-head .lead {
+  max-width: 38rem;
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.90625rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.csa-tracker-ui label {
+  color: var(--forest);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.csa-tracker-ui .lookup-card .form-grid {
+  gap: 12px;
+}
+.csa-tracker-ui input:not([type="radio"]):not([type="checkbox"]) {
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.90625rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.csa-tracker-ui input::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+  opacity: 0.72;
+}
+.csa-tracker-ui .helper {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.csa-tracker-ui .result-head h2 {
+  color: var(--forest);
+  font-family: var(--font-body), sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.csa-tracker-ui .kv dt {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.csa-tracker-ui .kv dd {
+  color: var(--ink);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.90625rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.csa-tracker-ui .code {
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.csa-tracker-ui .status-badge {
+  border-radius: 999px;
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.csa-tracker-ui .notice {
+  color: var(--muted);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.90625rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.csa-tracker-ui .notice.error {
+  color: var(--terra);
+}
+.csa-tracker-ui :is(.btn, .ghost-link) {
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.90625rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  line-height: 1.15;
+}
+.csa-tracker-ui .btn-row {
+  justify-content: flex-end;
+}
+.csa-tracker-ui :is(.lookup-card, .result-shell) {
+  animation: csa-tracker-surface-enter 180ms ease-out both;
+}
+.csa-tracker-ui .status-dot {
+  animation: csa-tracker-status-enter 180ms ease-out both;
+}
+.csa-purchase-ui.csa-flow-restored .step,
+.csa-tracker-ui.csa-flow-restored
+  :is(.lookup-card, .result-shell, .status-dot) {
+  animation: none;
+}
+@keyframes csa-tracker-surface-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes csa-tracker-status-enter {
+  from {
+    transform: scale(0.92);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@media (max-width: 760px) {
+  .csa-tracker-ui .section-head h1 {
+    font-size: 1.4rem;
+  }
+}
+
 .redemption-list-page {
   max-width: 45rem;
 }

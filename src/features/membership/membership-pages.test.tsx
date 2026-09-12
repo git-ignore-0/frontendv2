@@ -10,7 +10,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getSiteContent } from "@/content/site-content";
-import { accountApi } from "@/features/account/api";
+import { AccountApiError, accountApi } from "@/features/account/api";
 import type {
   CurrentMembership,
   MembershipPackage,
@@ -22,6 +22,12 @@ import {
   MembershipUsagePage,
 } from "@/features/membership/account-membership-pages";
 import { CsaPage } from "@/features/membership/csa-page";
+import {
+  formatMembershipDate,
+  formatMembershipDateTime,
+  formatMembershipExclusiveEndDate,
+  formatMembershipTimestampDate,
+} from "@/features/membership/format";
 
 const navigation = vi.hoisted(() => ({
   back: vi.fn(),
@@ -41,7 +47,10 @@ vi.mock("@/features/account/api", async (importOriginal) => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 const packageItem: MembershipPackage = {
@@ -747,11 +756,24 @@ describe("public CSA Membership", () => {
 });
 
 describe("Account Membership", () => {
+  it("keeps date-only boundaries separate from timestamps in Vietnam time", () => {
+    expect(formatMembershipTimestampDate("2026-09-11T18:00:00Z")).toBe(
+      "12/09/2026",
+    );
+    expect(formatMembershipDateTime("2026-09-11T18:00:00Z")).toBe(
+      "12/09/2026 01:00",
+    );
+    expect(formatMembershipDate("2026-10-01")).toBe("01/10/2026");
+    expect(formatMembershipExclusiveEndDate("2027-01-01")).toBe("31/12/2026");
+  });
+
   it("renders immutable purchase snapshots and active quota", async () => {
     vi.mocked(accountApi).mockImplementation(async (path) => {
       if (path === "memberships/current?locale=en")
-        return { data: currentMembership };
+        return { data: { ...currentMembership, end_date: "2027-01-01" } };
       if (path === "memberships/quota?locale=en") return { data: quota };
+      if (path === `memberships/${currentMembership.id}/contract`)
+        throw new AccountApiError("csa_contract_unavailable", 404);
       throw new Error(`Unexpected request: ${path}`);
     });
     render(
@@ -767,6 +789,147 @@ describe("Account Membership", () => {
     expect(screen.getByText("₫4,614,000")).toBeVisible();
     expect(screen.getByText("This cycle: 1 kg")).toBeVisible();
     expect(screen.getByText("Vegetable basket snapshot")).toBeVisible();
+    expect(screen.getByText("15/08/2026")).toBeVisible();
+    expect(screen.getByText("31/12/2026")).toBeVisible();
+    expect(await screen.findByText("No contract yet")).toBeVisible();
+  });
+
+  it("renders the owned contract and downloads only available current PDFs", async () => {
+    const contract = {
+      id: "77777777-7777-4777-8777-777777777777",
+      reference_code: "CSA-202609-8F3K2M",
+      status: "active" as const,
+      issued_at: "2026-09-10T02:00:00Z",
+      revoked_at: null,
+      revocation_reason: null,
+      available_locales: ["vi", "en"] as Array<"vi" | "en">,
+    };
+    vi.mocked(accountApi).mockImplementation(async (path) => {
+      if (path === "memberships/current?locale=en")
+        return { data: currentMembership };
+      if (path === "memberships/quota?locale=en") return { data: quota };
+      if (path === `memberships/${currentMembership.id}/contract`)
+        return { data: contract };
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      expect(String(input)).toMatch(
+        new RegExp(
+          `/api/account/memberships/${currentMembership.id}/contract/pdf\\?locale=(vi|en)$`,
+        ),
+      );
+      return new Response(new Uint8Array([37, 80, 68, 70]), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": 'attachment; filename="contract.pdf"',
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:contract"),
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: vi.fn(),
+    });
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+
+    render(
+      <AccountMembershipPage copy={getSiteContent("en").account} locale="en" />,
+    );
+
+    expect(await screen.findByText(contract.reference_code)).toBeVisible();
+    expect(
+      screen.getByText("Active", {
+        selector: ".membership-contract-section span",
+      }),
+    ).toBeVisible();
+    const revokeObjectURL = vi.mocked(URL.revokeObjectURL);
+    vi.useFakeTimers();
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Download Vietnamese PDF" }),
+      );
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(999));
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Download English PDF" }),
+      );
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(click).toHaveBeenCalledTimes(2);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+    act(() => vi.advanceTimersByTime(1_000));
+    expect(revokeObjectURL).toHaveBeenCalledTimes(2);
+  });
+
+  it("localizes contract detail and PDF failures without exposing backend errors", async () => {
+    vi.mocked(accountApi).mockImplementation(async (path) => {
+      if (path === "memberships/current?locale=en")
+        return { data: currentMembership };
+      if (path === "memberships/quota?locale=en") return { data: quota };
+      throw new AccountApiError("internal_storage_key_failure", 502);
+    });
+    render(
+      <AccountMembershipPage copy={getSiteContent("en").account} locale="en" />,
+    );
+    expect(
+      await screen.findByText(
+        "We could not load the contract. Please try again.",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText("internal_storage_key_failure")).toBeNull();
+  });
+
+  it("shows a localized error when an owned contract PDF is unavailable", async () => {
+    const contract = {
+      id: "77777777-7777-4777-8777-777777777777",
+      reference_code: "CSA-202609-8F3K2M",
+      status: "active" as const,
+      issued_at: "2026-09-10T02:00:00Z",
+      revoked_at: null,
+      revocation_reason: null,
+      available_locales: ["en"] as Array<"vi" | "en">,
+    };
+    vi.mocked(accountApi).mockImplementation(async (path) => {
+      if (path === "memberships/current?locale=en")
+        return { data: currentMembership };
+      if (path === "memberships/quota?locale=en") return { data: quota };
+      return { data: contract };
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { error: "internal_storage_key_failure" },
+            { status: 404 },
+          ),
+        ),
+    );
+    render(
+      <AccountMembershipPage copy={getSiteContent("en").account} locale="en" />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Download English PDF" }),
+    );
+    expect(
+      await screen.findByText("The contract PDF is temporarily unavailable."),
+    ).toBeVisible();
+    expect(screen.queryByText("internal_storage_key_failure")).toBeNull();
   });
 
   it("links an empty Membership account to public CSA", async () => {
@@ -783,16 +946,19 @@ describe("Account Membership", () => {
   });
 
   it("keeps scheduled Membership details without loading quota", async () => {
-    vi.mocked(accountApi).mockResolvedValue({
-      data: { ...currentMembership, status: "scheduled" },
+    vi.mocked(accountApi).mockImplementation(async (path) => {
+      if (path === "memberships/current?locale=en")
+        return { data: { ...currentMembership, status: "scheduled" as const } };
+      throw new AccountApiError("csa_contract_unavailable", 404);
     });
     render(
       <AccountMembershipPage copy={getSiteContent("en").account} locale="en" />,
     );
     expect(await screen.findByText("Scheduled")).toBeVisible();
-    expect(screen.getByText(/will begin on August 15, 2026/)).toBeVisible();
+    expect(screen.getByText(/will begin on 15\/08\/2026/)).toBeVisible();
     expect(vi.mocked(accountApi).mock.calls.map(([path]) => path)).toEqual([
       "memberships/current?locale=en",
+      `memberships/${currentMembership.id}/contract`,
     ]);
   });
 
@@ -806,7 +972,8 @@ describe("Account Membership", () => {
           status: "scheduled",
           package_name: "New locale",
         },
-      });
+      })
+      .mockRejectedValue(new AccountApiError("csa_contract_unavailable", 404));
     const copy = getSiteContent("en").account;
     const view = render(<AccountMembershipPage copy={copy} locale="en" />);
     const olderSignal = vi.mocked(accountApi).mock.calls[0][1]?.signal;
@@ -829,7 +996,7 @@ describe("Membership usage", () => {
     membership_id: currentMembership.id,
     status: "reversed",
     note: "Weekly collection",
-    created_at: "2026-08-20T02:00:00Z",
+    created_at: "2026-08-20T18:00:00Z",
     reversed_at: "2026-08-21T02:00:00Z",
     lines: [
       {
@@ -861,6 +1028,7 @@ describe("Membership usage", () => {
     );
 
     expect(await screen.findByText("Vegetable basket snapshot")).toBeVisible();
+    expect(screen.getByText("21/08/2026 01:00")).toBeVisible();
     expect(screen.getByText("1 kg")).toBeVisible();
     expect(screen.getByText("Quantity corrected")).toBeVisible();
     expect(screen.getByText("Page 1 of 2")).toBeVisible();

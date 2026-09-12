@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import localFont from "next/font/local";
 import { siteConfig } from "@/config/site";
+import { CSAFlowStateProvider } from "@/features/membership/csa-flow-state";
 import { defaultLocale, isLocale } from "@/lib/i18n";
 import { getSiteSettings } from "@/lib/content-api";
 import { normalizePhoneNumber } from "@/lib/contact";
@@ -64,7 +65,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={`${body.variable} ${display.variable}`}>
       <body>
-        {children}
+        <CSAFlowStateProvider>{children}</CSAFlowStateProvider>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
