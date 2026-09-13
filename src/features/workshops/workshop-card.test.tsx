@@ -1,5 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { WorkshopCard } from "@/features/workshops/workshop-card";
 import type { PublicWorkshop } from "@/lib/content-api";
@@ -20,6 +20,8 @@ const workshop: PublicWorkshop = {
   title: "Đất sống",
   summary: "Workshop thực hành",
 };
+
+afterEach(cleanup);
 
 describe("workshop card", () => {
   it("shows its status, local date tile, title and detail link", () => {

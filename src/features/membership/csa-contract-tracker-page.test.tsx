@@ -270,6 +270,7 @@ describe("CSA contract guest tracker", () => {
       expect(screen.getByText("18/09/2026 08:30")).toBeVisible();
       expect(screen.getByText(notice)).toBeVisible();
       expect(screen.queryByRole("button", { name: /PDF/ })).toBeNull();
+      expect(screen.queryByText("Lịch sử phiên bản hợp đồng")).toBeNull();
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(
         "/api/account/csa-contract-tracker/lookup",
@@ -309,6 +310,247 @@ describe("CSA contract guest tracker", () => {
       screen.getByRole("button", { name: "Tải PDF tiếng Anh" }),
     ).toBeVisible();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the approved installment schedule without exposing it before approval", async () => {
+    const payment = {
+      installment_sequence: 1,
+      amount_due: "600000",
+      amount_paid: "600000",
+      cycle_count: 1,
+      status: "confirmed",
+      due_at: null,
+      confirmed_at: "2026-09-11T18:00:00Z",
+      rejected_at: null,
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(approvedResult))
+      .mockResolvedValueOnce(
+        response({
+          data: {
+            ...contractResult.data,
+            payment_plan: { payment_type: "installment" },
+            payment_summary: {
+              total_amount: "1200000",
+              paid_amount: "600000",
+              remaining_amount: "600000",
+              confirmed_installments: 1,
+              installment_count: 2,
+              paid_cycles: 1,
+              total_cycles: 3,
+            },
+            payments: [payment],
+          },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CSAContractTrackerPage locale="vi" />);
+    submitLookup();
+    expect(await screen.findByText("Lịch thanh toán CSA")).toBeVisible();
+    expect(screen.getByText("Trả góp 2 lần")).toBeVisible();
+    expect(screen.getByText("Lần thanh toán 1")).toBeVisible();
+    expect(screen.getByText("1 / 3")).toBeVisible();
+  });
+
+  it("shows approved versions in order and downloads each available locale through the BFF", async () => {
+    const oldId = "22222222-2222-4222-8222-222222222222";
+    const currentId = "33333333-3333-4333-8333-333333333333";
+    const old = {
+      id: oldId,
+      version_number: 1,
+      version_reason: "issued",
+      contract_status: "active",
+      created_at: "2026-09-11T18:00:00Z",
+      available_locales: ["vi"],
+    };
+    const current = {
+      id: currentId,
+      version_number: 2,
+      version_reason: "payment_confirmed",
+      contract_status: "active",
+      created_at: "2026-09-12T18:00:00Z",
+      available_locales: ["vi", "en"],
+      paid_amount: "600000",
+      remaining_amount: "600000",
+    };
+    const pdf = new Response(new Uint8Array([37, 80, 68, 70]), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": 'attachment; filename="contract-version.pdf"',
+      },
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(approvedResult))
+      .mockResolvedValueOnce(
+        response({
+          data: {
+            ...contractResult.data,
+            current_version: current,
+            versions: [current, old],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(pdf)
+      .mockResolvedValueOnce(pdf.clone());
+    vi.stubGlobal("fetch", fetchMock);
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:contract-version"),
+    });
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+    const filenames: string[] = [];
+    const anchorClick = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function (this: HTMLAnchorElement) {
+        filenames.push(this.download);
+      });
+    const timeoutSpy = vi.spyOn(window, "setTimeout");
+    const setStorageItem = vi.spyOn(Storage.prototype, "setItem");
+
+    render(<CSAContractTrackerPage locale="vi" />);
+    submitLookup();
+    const history = await screen.findByRole("heading", {
+      name: "Lịch sử phiên bản hợp đồng",
+    });
+    const list = history.closest("section")?.querySelector("ol");
+    expect(list).not.toBeNull();
+    const rows = Array.from(list?.querySelectorAll("li") ?? []);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("Phiên bản 1");
+    expect(rows[1]).toHaveTextContent("Phiên bản 2");
+    expect(rows[0]).not.toHaveTextContent("Bản hiện tại");
+    expect(rows[1]).toHaveTextContent("Bản hiện tại");
+    expect(rows[0]).toHaveTextContent("12/09/2026 01:00");
+    expect(rows[1]).toHaveTextContent("Đã thanh toán");
+    expect(rows[0].querySelectorAll("button")).toHaveLength(1);
+    expect(rows[1].querySelectorAll("button")).toHaveLength(2);
+
+    fireEvent.click(rows[0].querySelector("button") as HTMLButtonElement);
+    await waitFor(() => expect(anchorClick).toHaveBeenCalledTimes(1));
+    expect(filenames).toEqual(["contract-version.pdf"]);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    fireEvent.click(rows[1].querySelectorAll("button")[1] as HTMLButtonElement);
+    await waitFor(() => expect(anchorClick).toHaveBeenCalledTimes(2));
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `/api/account/csa-contract-tracker/contract/pdf?locale=vi&version_id=${oldId}`,
+      expect.objectContaining({
+        credentials: "same-origin",
+        cache: "no-store",
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `/api/account/csa-contract-tracker/contract/pdf?locale=en&version_id=${currentId}`,
+      expect.objectContaining({
+        credentials: "same-origin",
+        cache: "no-store",
+      }),
+    );
+    expect(setStorageItem).not.toHaveBeenCalled();
+    expect(window.location.search).not.toContain("version_id");
+    expect(window.location.search).not.toContain("0901234567");
+    const timers = timeoutSpy.mock.calls
+      .map(([, delay], index) => (delay === 1000 ? index : -1))
+      .filter((index) => index >= 0);
+    expect(timers.length).toBeGreaterThanOrEqual(2);
+    for (const timer of timers)
+      window.clearTimeout(timeoutSpy.mock.results[timer].value);
+  });
+
+  it("keeps approved lookup and contract data when a version PDF fails", async () => {
+    const versionId = "22222222-2222-4222-8222-222222222222";
+    const version = {
+      id: versionId,
+      version_number: 1,
+      version_reason: "issued",
+      contract_status: "active",
+      created_at: "2026-09-11T18:00:00Z",
+      available_locales: ["vi"],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(approvedResult))
+      .mockResolvedValueOnce(
+        response({
+          data: {
+            ...contractResult.data,
+            current_version: version,
+            versions: [version],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        response({ errors: [{ code: "csa_contract_pdf_unavailable" }] }, 404),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CSAContractTrackerPage locale="vi" />);
+    submitLookup();
+    const history = await screen.findByRole("heading", {
+      name: "Lịch sử phiên bản hợp đồng",
+    });
+    const versionButton = history
+      .closest("section")
+      ?.querySelector("button") as HTMLButtonElement;
+    fireEvent.click(versionButton);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "PDF hợp đồng đang tạm thời",
+    );
+    expect(screen.getByRole("heading", { name: "Đã duyệt" })).toBeVisible();
+    expect(screen.getByText("CSACT-ABC123")).toBeVisible();
+    expect(history).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("clears tracker data when a version download reports an expired session", async () => {
+    const version = {
+      id: "22222222-2222-4222-8222-222222222222",
+      version_number: 1,
+      version_reason: "issued",
+      contract_status: "active",
+      created_at: "2026-09-11T18:00:00Z",
+      available_locales: ["vi"],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(approvedResult))
+      .mockResolvedValueOnce(
+        response({
+          data: {
+            ...contractResult.data,
+            current_version: version,
+            versions: [version],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        response({ errors: [{ code: "csa_tracker_session_expired" }] }, 401),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CSAContractTrackerPage locale="vi" />);
+    submitLookup();
+    const history = await screen.findByRole("heading", {
+      name: "Lịch sử phiên bản hợp đồng",
+    });
+    fireEvent.click(
+      history.closest("section")?.querySelector("button") as HTMLButtonElement,
+    );
+    expect(
+      await screen.findByText(/Phiên tra cứu an toàn đã hết hạn/),
+    ).toBeVisible();
+    expect(screen.queryByText("CSACT-ABC123")).toBeNull();
+    expect(screen.queryByText("Lịch sử phiên bản hợp đồng")).toBeNull();
+    expect(screen.getByLabelText("Mã yêu cầu hoặc mã hợp đồng")).toHaveValue(
+      "",
+    );
+    expect(screen.getByLabelText("Số điện thoại")).toHaveValue("");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("keeps approved lookup data when contract loading fails and retries only the contract", async () => {

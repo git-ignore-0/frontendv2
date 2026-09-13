@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { accountUpstreamTarget } from "@/features/account/bff-path";
+import {
+  accountUpstreamTarget,
+  uuidPattern,
+} from "@/features/account/bff-path";
 import { authOrigin, publicSiteOrigin } from "@/lib/auth/config";
 import {
   AuthServiceUnavailableError,
@@ -47,9 +50,16 @@ function invalidTrackerQuery(request: NextRequest, upstreamPath: string) {
   const parameters = request.nextUrl.searchParams;
   if (upstreamPath.endsWith("/pdf")) {
     const locales = parameters.getAll("locale");
-    const onlyLocale = [...parameters.keys()].every((key) => key === "locale");
+    const versions = parameters.getAll("version_id");
+    const onlyAllowed = [...parameters.keys()].every(
+      (key) => key === "locale" || key === "version_id",
+    );
     return (
-      !onlyLocale || locales.length !== 1 || !["vi", "en"].includes(locales[0])
+      !onlyAllowed ||
+      locales.length !== 1 ||
+      !["vi", "en"].includes(locales[0]) ||
+      versions.length > 1 ||
+      (versions.length === 1 && !uuidPattern.test(versions[0]))
     );
   }
   return parameters.size > 0;
@@ -72,10 +82,15 @@ function invalidMembershipContractQuery(
   const parameters = request.nextUrl.searchParams;
   if (query === "membership-contract") return parameters.size > 0;
   const locales = parameters.getAll("locale");
+  const versions = parameters.getAll("version_id");
   return (
     locales.length !== 1 ||
     !["vi", "en"].includes(locales[0]) ||
-    [...parameters.keys()].some((key) => key !== "locale")
+    versions.length > 1 ||
+    (versions.length === 1 && !uuidPattern.test(versions[0])) ||
+    [...parameters.keys()].some(
+      (key) => key !== "locale" && key !== "version_id",
+    )
   );
 }
 

@@ -20,6 +20,34 @@ const copy = {
     savingPercent: "Save {percent}%",
     savingAmount: "Save {amount} compared with buying monthly",
     selectionSummary: "Your selection",
+    paymentPlanTitle: "Payment method",
+    paymentPlanMissing:
+      "No valid payment method is available for this duration.",
+    paymentPlanRequired:
+      "Choose an available payment method before continuing.",
+    paymentPlanUnavailable:
+      "This payment method is no longer available. Please choose another.",
+    payFull: "Pay in full",
+    payInstallments: "Pay in {count} installments",
+    entirePackage: "Entire package · {count} months",
+    packageDuration: "Total package value · {count} months",
+    installmentNumber: "Payment {number}",
+    installmentBeginning: "{count} months at the beginning",
+    installmentFollowing: "{count} following months",
+    installmentFinal: "{count} final months",
+    cycleCount: "{count} months",
+    paymentSchedule: "Payment schedule",
+    initialPayment: "First payment to transfer",
+    paymentAmountDue: "Amount to transfer",
+    packageValue: "Total package value",
+    firstPaymentCycles: "Months unlocked by the first payment",
+    summaryMethod: "Payment method",
+    summaryFirstPayment: "First payment",
+    summaryAmountDue: "Amount due",
+    initialPaymentMissing:
+      "The first payment amount is unavailable. Please contact Natural Farming Vietnam before transferring money.",
+    paymentSnapshotInvalid:
+      "Payment details could not be verified. Please contact Natural Farming Vietnam before transferring money.",
     startDateNote:
       "The start date will be confirmed after payment and the existing package schedule are checked.",
     informationStepTitle: "Your information",
@@ -57,8 +85,12 @@ const copy = {
           text: "The program is provided by Natural Farming Vietnam to the member identified in the CSA purchase request and contract.",
         },
         {
-          heading: "One-time payment",
-          text: "The member pays the full selected package amount once using the transfer details in the purchase request. The program does not offer installment payments.",
+          heading: "Payment",
+          paragraphs: [
+            "Depending on the package configuration, a member may pay in full or in installments. The total, number of payments, amount of each payment, and corresponding cycles are shown before the member accepts the request.",
+            "The first payment must be transferred for the request to be received and processed under the current workflow. Membership is created only after the request is approved. Later installments must be paid by their due dates.",
+            "An admin reviews and may manually confirm or reject each transaction. A later payment that misses its deadline may become overdue, and the Membership may be revoked under the applicable rules.",
+          ],
         },
         {
           heading: "How the program works",
@@ -110,6 +142,7 @@ const copy = {
     paymentIntro:
       "Transfer the exact amount with the content below. Do not create another request for this purchase.",
     qrAlt: "VietQR code for CSA bank transfer",
+    qrTitle: "QR code",
     bank: "Bank",
     accountNumber: "Account number",
     accountName: "Account name",
@@ -159,6 +192,33 @@ const copy = {
     savingPercent: "Tiết kiệm {percent}%",
     savingAmount: "Giảm {amount} so với mua từng tháng",
     selectionSummary: "Gói bạn đã chọn",
+    paymentPlanTitle: "Phương thức thanh toán",
+    paymentPlanMissing: "Thời hạn này chưa có phương thức thanh toán hợp lệ.",
+    paymentPlanRequired:
+      "Vui lòng chọn phương thức thanh toán trước khi tiếp tục.",
+    paymentPlanUnavailable:
+      "Phương thức thanh toán này không còn khả dụng. Vui lòng chọn phương thức khác.",
+    payFull: "Thanh toán một lần",
+    payInstallments: "Trả góp {count} lần",
+    entirePackage: "Thanh toán toàn bộ gói · {count} tháng",
+    packageDuration: "Tổng giá trị gói · {count} tháng",
+    installmentNumber: "Lần {number}",
+    installmentBeginning: "{count} tháng đầu",
+    installmentFollowing: "{count} tháng tiếp theo",
+    installmentFinal: "{count} tháng cuối",
+    cycleCount: "{count} tháng",
+    paymentSchedule: "Lịch thanh toán",
+    initialPayment: "Khoản thanh toán đầu tiên cần chuyển",
+    paymentAmountDue: "Số tiền cần chuyển",
+    packageValue: "Tổng giá trị gói",
+    firstPaymentCycles: "Số tháng được mở sau khoản đầu",
+    summaryMethod: "Phương thức",
+    summaryFirstPayment: "Khoản thanh toán đầu tiên",
+    summaryAmountDue: "Số tiền cần thanh toán",
+    initialPaymentMissing:
+      "Chưa có số tiền thanh toán đầu tiên. Vui lòng liên hệ Natural Farming Vietnam trước khi chuyển khoản.",
+    paymentSnapshotInvalid:
+      "Không thể xác minh thông tin thanh toán. Vui lòng liên hệ Natural Farming Vietnam trước khi chuyển khoản.",
     startDateNote:
       "Ngày bắt đầu sẽ được xác nhận sau khi kiểm tra thanh toán và lịch gói hiện có.",
     informationStepTitle: "Thông tin của bạn",
@@ -196,8 +256,12 @@ const copy = {
           text: "Chương trình được cung cấp bởi Natural Farming Vietnam cho thành viên có thông tin được ghi trong yêu cầu mua và hợp đồng CSA.",
         },
         {
-          heading: "Thanh toán một lần",
-          text: "Thành viên thanh toán một lần toàn bộ số tiền của gói đã chọn theo thông tin chuyển khoản trong yêu cầu mua. Chương trình không cung cấp lựa chọn trả góp.",
+          heading: "Thanh toán",
+          paragraphs: [
+            "Tùy cấu hình từng gói, thành viên có thể trả thẳng hoặc trả góp. Tổng tiền, số lần thanh toán, số tiền từng lần và số kỳ tương ứng được hiển thị trước khi thành viên xác nhận yêu cầu.",
+            "Khoản thanh toán đầu tiên cần được chuyển để yêu cầu được tiếp nhận và xử lý theo quy trình hiện hành. Membership chỉ được tạo sau khi yêu cầu được duyệt. Các khoản tiếp theo phải thanh toán đúng hạn.",
+            "Admin kiểm tra và có quyền xác nhận hoặc từ chối thủ công từng giao dịch. Khoản tiếp theo quá hạn có thể chuyển trạng thái quá hạn và Membership có thể bị thu hồi theo quy định.",
+          ],
         },
         {
           heading: "Cách chương trình hoạt động",
@@ -249,6 +313,7 @@ const copy = {
     paymentIntro:
       "Chuyển đúng số tiền và nội dung bên dưới. Không tạo thêm yêu cầu khác cho giao dịch này.",
     qrAlt: "Mã VietQR để chuyển khoản mua CSA",
+    qrTitle: "Mã QR",
     bank: "Ngân hàng",
     accountNumber: "Số tài khoản",
     accountName: "Tên chủ tài khoản",

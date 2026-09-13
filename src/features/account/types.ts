@@ -107,6 +107,44 @@ export type MembershipPackagePriceOption = {
   total_price_vnd: string;
   sort_order?: number;
   is_active?: boolean;
+  payment_plans?: CSAPaymentPlan[];
+};
+
+export type CSAPaymentInstallment = {
+  sequence: number;
+  amount: string;
+  cycle_count: number;
+};
+
+export type CSAPaymentPlan = {
+  id: string;
+  name: string;
+  payment_type: "full" | "installment";
+  total_amount: string;
+  installment_count: number;
+  initial_payment_amount: string | null;
+  installments: CSAPaymentInstallment[];
+};
+
+export type CSAPaymentSummary = {
+  total_amount: string;
+  paid_amount: string;
+  remaining_amount: string;
+  confirmed_installments: number;
+  installment_count: number;
+  paid_cycles: number;
+  total_cycles: number;
+};
+
+export type CSAPaymentRecord = {
+  installment_sequence: number;
+  amount_due: string;
+  amount_paid: string | null;
+  cycle_count: number;
+  status: "pending" | "reported" | "confirmed" | "rejected" | "overdue";
+  due_at: string | null;
+  confirmed_at: string | null;
+  rejected_at: string | null;
 };
 
 export type AdministrativeUnit = { code: string; name: string };
@@ -122,7 +160,9 @@ export type CSAPurchaseRequestCreated = {
     name: string;
     duration_months: number;
   };
+  payment_plan?: CSAPaymentPlan | null;
   amount: string;
+  initial_payment_amount: string;
   currency: string;
   transfer_content: string;
   bank_bin: string;
@@ -146,6 +186,19 @@ export type CSATrackerStatus =
 
 export type CSATrackerRefundStatus = "not_applicable" | "pending" | "completed";
 
+export type CSAContractVersion = {
+  id: string;
+  version_number: number;
+  version_reason: "issued" | "payment_confirmed" | "membership_revoked";
+  contract_status: "active" | "revoked";
+  created_at: string;
+  available_locales: Array<"vi" | "en">;
+  paid_amount?: string;
+  remaining_amount?: string;
+  paid_cycles?: number;
+  total_cycles?: number;
+};
+
 export type CSATrackerResult = {
   reference_code: string;
   reference_type: "request" | "contract";
@@ -167,6 +220,7 @@ export type CSATrackerResult = {
   membership_start_date?: string;
   membership_end_date?: string;
   available_pdf_locales?: Array<"vi" | "en">;
+  versions?: CSAContractVersion[];
   pdf_available: boolean;
   rejection_reason?: string;
   rejected_at?: string | null;
@@ -190,6 +244,11 @@ export type CSATrackerContract = {
   revocation_reason: string | null;
   available_pdf_locales: Array<"vi" | "en">;
   pdf_available: boolean;
+  current_version?: CSAContractVersion | null;
+  versions?: CSAContractVersion[];
+  payment_plan?: CSAPaymentPlan | null;
+  payment_summary?: CSAPaymentSummary | null;
+  payments?: CSAPaymentRecord[];
 };
 
 export type CSAContractVerification = {
@@ -210,6 +269,11 @@ export type MembershipContract = {
   revoked_at: string | null;
   revocation_reason: string | null;
   available_locales: Array<"vi" | "en">;
+  current_version?: CSAContractVersion | null;
+  versions?: CSAContractVersion[];
+  payment_plan?: CSAPaymentPlan | null;
+  payment_summary?: CSAPaymentSummary | null;
+  payments?: CSAPaymentRecord[];
 };
 
 export type CurrentMembership = {

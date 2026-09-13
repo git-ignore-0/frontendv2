@@ -4,6 +4,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 import { workshopCopy } from "@/features/workshops/copy";
+import { getCSAPurchaseCopy } from "@/features/membership/csa-purchase-copy";
 
 const roots = ["src/app", "src/components", "src/features"];
 const translatedAttributeNames = new Set([
@@ -26,14 +27,13 @@ function findTsxFiles(directory: string): string[] {
     const path = join(directory, entry.name);
     return entry.isDirectory()
       ? findTsxFiles(path)
-      : extname(path) === ".tsx"
+      : extname(path) === ".tsx" && !/\.(?:test|spec)\.tsx$/u.test(path)
         ? [path]
         : [];
   });
 }
 
-function inlineCopy(file: string) {
-  const source = readFileSync(resolve(file), "utf8");
+function inlineCopySource(source: string, file: string) {
   const ast = ts.createSourceFile(
     file,
     source,
@@ -57,10 +57,22 @@ function inlineCopy(file: string) {
       findings.push(`${node.name.getText(ast)}=${node.initializer.text}`);
     }
     if (ts.isConditionalExpression(node)) {
+      // className branches and CSS selectors are implementation tokens, not copy.
+      const parent = node.parent;
+      const classAttribute = ts.isJsxExpression(parent) ? parent.parent : null;
+      if (
+        classAttribute &&
+        ts.isJsxAttribute(classAttribute) &&
+        classAttribute.name.getText(ast) === "className"
+      ) {
+        ts.forEachChild(node, visit);
+        return;
+      }
       for (const branch of [node.whenTrue, node.whenFalse]) {
         if (
           ts.isStringLiteralLike(branch) &&
           /[A-Za-zÀ-ỹ]{2}/u.test(branch.text) &&
+          !/^[.#][a-z]/iu.test(branch.text) &&
           !technicalStringTokens.has(branch.text)
         ) {
           findings.push(`conditional=${branch.text}`);
@@ -73,11 +85,44 @@ function inlineCopy(file: string) {
   return { source, findings };
 }
 
+function inlineCopy(file: string) {
+  return inlineCopySource(readFileSync(resolve(file), "utf8"), file);
+}
+
 describe("localization boundary", () => {
+  it("still catches production-visible JSX copy while ignoring class and selector branches", () => {
+    const source = `
+      const example = <>
+        <p>Visible copy</p>
+        <input aria-label="Visible label" />
+        <span>{locale === "vi" ? "Xin chào" : "Hello"}</span>
+        <div className={selected ? "is-selected" : "is-idle"} />
+      </>;
+      const selector = selected ? ".item:enabled" : ".item:disabled";
+    `;
+    expect(inlineCopySource(source, "example.tsx").findings).toEqual([
+      "Visible copy",
+      "aria-label=Visible label",
+      "conditional=Xin chào",
+      "conditional=Hello",
+    ]);
+  });
+
   it("keeps the English and Vietnamese workshop dictionaries in sync", () => {
     expect(Object.keys(workshopCopy.en).sort()).toEqual(
       Object.keys(workshopCopy.vi).sort(),
     );
+  });
+
+  it("keeps CSA purchase copy keys and terms sections in sync across locales", () => {
+    const english = getCSAPurchaseCopy("en");
+    const vietnamese = getCSAPurchaseCopy("vi");
+    expect(Object.keys(english).sort()).toEqual(Object.keys(vietnamese).sort());
+    expect(english.terms.sections).toHaveLength(
+      vietnamese.terms.sections.length,
+    );
+    expect(english.qrTitle).toBe("QR code");
+    expect(vietnamese.qrTitle).toBe("Mã QR");
   });
 
   it("keeps translated copy out of every presentation file", () => {

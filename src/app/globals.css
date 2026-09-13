@@ -4043,6 +4043,68 @@ tbody th {
 .membership-contract-code {
   overflow-wrap: anywhere;
 }
+.csa-installments {
+  min-width: 0;
+  margin-top: 1rem;
+}
+.csa-installments h4 {
+  margin: 0 0 0.75rem;
+  color: var(--forest);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.95rem;
+}
+.csa-installments-summary,
+.csa-installments-list dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+.csa-installments :is(dt, dd) {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.csa-installments dt {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+.csa-installments dd {
+  color: var(--ink);
+  font-size: 0.90625rem;
+  font-weight: 700;
+}
+.csa-installments-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.csa-installments-list li {
+  min-width: 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+.csa-installments-list li > strong {
+  display: inline-block;
+  margin-right: 0.5rem;
+  color: var(--forest);
+}
+.csa-installments-list dl {
+  margin-top: 0.5rem;
+}
+.csa-installments .membership-status.is-confirmed {
+  background: #e4f0e7;
+  color: #25613d;
+}
+.csa-installments .membership-status.is-reported {
+  background: #e8eff4;
+  color: #315b73;
+}
+.csa-installments .membership-status.is-overdue {
+  background: #f5e5df;
+  color: #8b3d25;
+}
 .membership-contract-actions {
   display: flex;
   flex-wrap: wrap;
@@ -4052,6 +4114,81 @@ tbody th {
 .membership-contract-error {
   margin: 0.75rem 0 0;
   color: var(--danger, #a43c2f);
+}
+.csa-contract-versions {
+  min-width: 0;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.csa-contract-versions h4 {
+  margin: 0;
+  color: var(--forest);
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.95rem;
+}
+.csa-contract-versions-empty {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.csa-contract-version-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+.csa-contract-version {
+  min-width: 0;
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+}
+.csa-contract-version-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.csa-contract-version-data,
+.membership-current-section .csa-contract-version-data {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 0.75rem 1rem;
+  margin: 0.75rem 0 0;
+  border: 0;
+}
+.csa-contract-version-data > div,
+.membership-current-section .csa-contract-version-data > div,
+.membership-current-section .csa-contract-version-data > div + div {
+  display: block;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+.csa-contract-version-data dt {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+.csa-contract-version-data dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+}
+.csa-contract-version-downloads {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.csa-contract-version-download {
+  min-width: 0;
+}
+.csa-contract-version-download button {
+  width: 100%;
+}
+.csa-contract-version-download p {
+  margin: 0.35rem 0 0;
+  color: var(--danger, #a43c2f);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
 }
 .membership-account-page .membership-status.is-revoked {
   color: var(--danger, #a43c2f);
@@ -5745,9 +5882,6 @@ tbody th {
 .csa-purchase-ui .main-panel.package-step-panel {
   border: 1px solid var(--line);
 }
-.csa-ui .step[hidden] {
-  display: none !important;
-}
 .csa-ui .step-title {
   margin-bottom: 5px;
 }
@@ -6023,13 +6157,149 @@ tbody th {
   overflow-wrap: anywhere;
 }
 .csa-purchase-ui .chosen-total {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
   gap: 14px;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
+}
+.csa-purchase-ui .payment-plan-section {
+  margin-top: 14px;
+}
+.csa-purchase-ui .payment-plan-section h3 {
+  margin: 0 0 10px;
+  color: var(--forest);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.csa-purchase-ui .payment-schedule h4 {
+  margin: 0 0 10px;
+  color: var(--forest);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.csa-purchase-ui .payment-plan-list {
+  display: grid;
+  gap: 7px;
+}
+.csa-purchase-ui .payment-plan-choice {
+  min-width: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.csa-purchase-ui .payment-plan-choice.selected {
+  border-color: var(--forest);
+  background: rgba(23, 63, 52, 0.045);
+}
+.csa-purchase-ui .payment-plan-choice:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 2px;
+}
+.csa-purchase-ui .payment-plan-main,
+.csa-purchase-ui .payment-plan-price,
+.csa-purchase-ui .payment-plan-detail {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.csa-purchase-ui .payment-plan-main strong,
+.csa-purchase-ui .payment-plan-price > strong {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.csa-purchase-ui .payment-plan-main small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.csa-purchase-ui .payment-plan-price {
+  justify-items: end;
+  text-align: right;
+}
+.csa-purchase-ui .payment-plan-detail {
+  grid-column: 1 / -1;
+  width: 100%;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.csa-purchase-ui .payment-plan-installment {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(8rem, auto);
+  gap: 8px;
+  align-items: baseline;
+  overflow-wrap: anywhere;
+}
+.csa-purchase-ui .payment-plan-installment strong:last-of-type {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.csa-purchase-ui .payment-plan-installment strong:first-of-type {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.csa-purchase-ui .payment-plan-installment small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: right;
+}
+.csa-purchase-ui .payment-plan-saving {
+  grid-column: 1 / -1;
+}
+.csa-purchase-ui .payment-plan-section .saving-badge {
+  font-size: 12px;
+}
+.csa-purchase-ui .payment-schedule ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.csa-purchase-ui .payment-schedule-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(8rem, auto);
+  gap: 8px;
+  align-items: baseline;
+  overflow-wrap: anywhere;
+}
+.csa-purchase-ui .payment-schedule-label {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.csa-purchase-ui .payment-schedule-amount {
+  color: var(--ink);
+  font-size: 0.90625rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.csa-purchase-ui .payment-schedule-months {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  text-align: right;
 }
 .csa-purchase-ui .chosen-total span {
   display: block;
@@ -6044,13 +6314,52 @@ tbody th {
   color: var(--muted);
   font-size: 12px;
 }
-.csa-purchase-ui .chosen-total > strong {
+.csa-purchase-ui .chosen-total-selection {
+  grid-column: 1 / -1;
+}
+.csa-purchase-ui .chosen-total-method,
+.csa-purchase-ui .chosen-total-payment {
+  min-width: 0;
+}
+.csa-purchase-ui .chosen-total-payment {
+  text-align: right;
+}
+.csa-purchase-ui .chosen-total-payment strong {
   color: var(--forest);
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.15;
   text-align: right;
   overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+  .csa-purchase-ui .payment-plan-choice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .csa-purchase-ui .payment-plan-price {
+    justify-items: start;
+    text-align: left;
+  }
+  .csa-purchase-ui .payment-plan-installment {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .csa-purchase-ui .payment-plan-installment small {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  .csa-purchase-ui .payment-schedule-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .csa-purchase-ui .payment-schedule-months {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  .csa-purchase-ui .chosen-total {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .csa-purchase-ui .chosen-total-payment {
+    text-align: left;
+  }
 }
 .csa-ui .btn-row {
   display: flex;
@@ -6089,9 +6398,6 @@ tbody th {
 .csa-ui .copy:disabled {
   cursor: not-allowed;
   opacity: 0.45;
-}
-.csa-ui .btn-block {
-  width: 100%;
 }
 .csa-ui .form-grid {
   display: grid;
@@ -6252,16 +6558,18 @@ tbody th {
 .csa-purchase-ui .payment-grid {
   min-width: 0;
   display: grid;
+  align-items: start;
   gap: 16px;
 }
 .csa-purchase-ui .payment-information,
 .csa-purchase-ui .payment-qr {
   min-width: 0;
   display: grid;
+  align-content: start;
   gap: 16px;
 }
-.csa-purchase-ui .payment-information .btn-row {
-  margin-top: 0;
+.csa-purchase-ui .payment-qr {
+  justify-items: center;
 }
 .csa-purchase-ui .payment-qr-title,
 .csa-purchase-ui .payment-details-title {
@@ -6271,10 +6579,12 @@ tbody th {
   width: min(320px, 100%);
   max-width: 100%;
   aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
   display: grid;
   place-items: center;
   justify-self: center;
-  padding: 10px;
+  margin-inline: auto;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: #fff;
@@ -6290,6 +6600,9 @@ tbody th {
   min-width: 0;
   aspect-ratio: 1 / 1;
   position: relative;
+}
+.csa-purchase-ui .qr-unavailable {
+  min-width: 0;
 }
 .csa-purchase-ui .qr-logo {
   width: 15%;
@@ -6324,6 +6637,7 @@ tbody th {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 3px 0 0;
   overflow-wrap: anywhere;
@@ -6331,6 +6645,22 @@ tbody th {
 .csa-ui .bank-row .v strong {
   min-width: 0;
   overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.csa-purchase-ui .bank-row .v small {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+.csa-ui.csa-purchase-ui .payment-information .bank-row .k {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.csa-purchase-ui .payment-actions {
+  margin-top: 16px;
 }
 .csa-ui .copy {
   min-width: 34px;
@@ -6380,7 +6710,6 @@ tbody th {
   letter-spacing: -0.025em;
   line-height: 1.04;
 }
-.csa-ui.csa-purchase-ui .lead,
 .csa-ui.csa-purchase-ui .step-desc,
 .csa-ui.csa-purchase-ui .package-section-head p,
 .csa-ui.csa-purchase-ui .package-desc,
@@ -6431,9 +6760,9 @@ tbody th {
   font-weight: 600;
   line-height: 1.6;
 }
-.csa-ui.csa-purchase-ui .chosen-total > strong {
+.csa-ui.csa-purchase-ui .chosen-total-payment strong {
   color: var(--forest);
-  font-size: 1.0625rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.04;

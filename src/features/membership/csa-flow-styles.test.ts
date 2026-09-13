@@ -171,6 +171,44 @@ describe("CSA demo style contract", () => {
     expect(button).toContain("border-radius: 10px");
   });
 
+  it("keeps payment-plan typography compact and readable", () => {
+    const sectionTitle = declarationBlock(
+      ".csa-purchase-ui .payment-plan-section h3",
+    );
+    expect(sectionTitle).toContain("margin: 0 0 10px");
+    expect(sectionTitle).toContain("font-size: 18px");
+    expect(sectionTitle).toContain("font-weight: 700");
+
+    const planChoice = declarationBlock(
+      ".csa-purchase-ui .payment-plan-choice",
+    );
+    expect(planChoice).toContain("gap: 8px 12px");
+    expect(csaCss).toMatch(
+      /\.csa-purchase-ui \.payment-plan-main strong,[\s\S]*?\.csa-purchase-ui \.payment-plan-price > strong\s*\{[^}]*font-size: 16px[^}]*font-weight: 700/,
+    );
+    const planDescription = declarationBlock(
+      ".csa-purchase-ui .payment-plan-main small",
+    );
+    expect(planDescription).toContain("font-size: 13px");
+    expect(planDescription).toContain("color: var(--muted)");
+    const installmentLabel = declarationBlock(
+      ".csa-purchase-ui .payment-plan-installment strong:first-of-type",
+    );
+    expect(installmentLabel).toContain("font-size: 13px");
+    expect(installmentLabel).toContain("font-weight: 600");
+    const installmentAmount = declarationBlock(
+      ".csa-purchase-ui .payment-plan-installment strong:last-of-type",
+    );
+    expect(installmentAmount).toContain("font-size: 14px");
+    expect(installmentAmount).toContain("font-weight: 600");
+    expect(
+      declarationBlock(".csa-purchase-ui .payment-plan-section .saving-badge"),
+    ).toContain("font-size: 12px");
+    expect(
+      declarationBlock(".csa-purchase-ui .chosen-total-payment strong"),
+    ).toContain("font-size: 16px");
+  });
+
   it("keeps tracker layout and makes payment responsive from one to two columns", () => {
     expect(csaCss).not.toMatch(
       /\.csa-ui \.(?:topbar|brand|brand-mark|brand-copy|tabs|tab-btn|eyebrow)/,
@@ -199,7 +237,9 @@ describe("CSA demo style contract", () => {
     expect(qrWrap).toContain("max-width: 100%");
     expect(qrWrap).toContain("aspect-ratio: 1 / 1");
     expect(qrWrap).toContain("justify-self: center");
-    expect(qrWrap).toContain("padding: 10px");
+    expect(qrWrap).toContain("flex: 0 0 auto");
+    expect(qrWrap).toContain("margin-inline: auto");
+    expect(qrWrap).toContain("padding: 8px 10px");
     const qr = declarationBlock(".csa-purchase-ui .qr");
     expect(qr).toContain("width: 100%");
     expect(qr).toContain("height: 100%");
@@ -221,6 +261,17 @@ describe("CSA demo style contract", () => {
     expect(qrLogo).toContain("transform: translate(-50%, -50%)");
     expect(csaCss).not.toMatch(/\.csa-ui \.qr(?:-wrap)?\s*\{/);
     expect(csaCss).not.toMatch(/\.csa-ui \.qr-logo\s*\{/);
+    expect(declarationBlock(".csa-purchase-ui .qr-unavailable")).toContain(
+      "min-width: 0",
+    );
+    expect(declarationBlock(".csa-purchase-ui .payment-actions")).toContain(
+      "margin-top: 16px",
+    );
+    const paymentLabel = declarationBlock(
+      ".csa-ui.csa-purchase-ui .payment-information .bank-row .k",
+    );
+    expect(paymentLabel).toContain("color: var(--muted)");
+    expect(paymentLabel).toContain("font-size: 0.8125rem");
     expect(declarationBlock(".csa-ui .bank-list")).toContain("gap: 10px");
     expect(declarationBlock(".csa-ui .bank-row")).toContain(
       "border-bottom: 1px dashed rgba(23, 63, 52, 0.16)",
@@ -228,6 +279,18 @@ describe("CSA demo style contract", () => {
     expect(declarationBlock(".csa-ui .result-head")).toContain(
       "grid-template-columns: auto minmax(0, 1fr) auto",
     );
+    const schedule = declarationBlock(".csa-purchase-ui .payment-schedule-row");
+    expect(schedule).toContain("display: grid");
+    expect(schedule).toContain(
+      "grid-template-columns: minmax(0, 1fr) auto minmax(8rem, auto)",
+    );
+    expect(schedule).toContain("gap: 8px");
+    expect(
+      declarationBlock(".csa-purchase-ui .payment-schedule-label"),
+    ).toContain("font-size: 0.8125rem");
+    expect(
+      declarationBlock(".csa-purchase-ui .payment-schedule-amount"),
+    ).toContain("font-size: 0.90625rem");
   });
 
   it("matches tracker typography to the purchase visual system", () => {

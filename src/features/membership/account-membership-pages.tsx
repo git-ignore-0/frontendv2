@@ -35,6 +35,8 @@ import {
   downloadMembershipContract,
   getMembershipContract,
 } from "@/features/membership/membership-contract-api";
+import { CSAContractVersionHistory } from "@/features/membership/csa-contract-version-history";
+import { CSAPaymentSchedule } from "@/features/membership/csa-payment-schedule";
 import {
   formatMembershipDate,
   formatMembershipDateTime,
@@ -75,9 +77,13 @@ export function AccountMembershipPage({
   const [contractLoading, setContractLoading] = useState(false);
   const [contractError, setContractError] = useState("");
   const [contractPdfError, setContractPdfError] = useState("");
-  const [downloadingContract, setDownloadingContract] = useState<
-    "vi" | "en" | null
-  >(null);
+  const downloadsInFlight = useRef(new Set<string>());
+  const [downloadingContracts, setDownloadingContracts] = useState<Set<string>>(
+    new Set(),
+  );
+  const [versionPdfErrors, setVersionPdfErrors] = useState<
+    Record<string, string>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -109,6 +115,7 @@ export function AccountMembershipPage({
       setContract(null);
       setContractError("");
       setContractPdfError("");
+      setVersionPdfErrors({});
       if (current.data?.status === "active") {
         const available = await accountApi<MembershipQuota | null>(
           `memberships/quota?locale=${locale}`,
@@ -177,19 +184,28 @@ export function AccountMembershipPage({
       />
     );
 
-  async function downloadContract(localeToDownload: "vi" | "en") {
-    if (
-      !membership ||
-      !contract?.available_locales.includes(localeToDownload) ||
-      downloadingContract
-    )
-      return;
-    setDownloadingContract(localeToDownload);
-    setContractPdfError("");
+  async function downloadContract(
+    localeToDownload: "vi" | "en",
+    versionId?: string,
+  ) {
+    const version = versionId
+      ? contract?.versions?.find((entry) => entry.id === versionId)
+      : null;
+    const available = version
+      ? version.available_locales.includes(localeToDownload)
+      : !versionId && contract?.available_locales.includes(localeToDownload);
+    const key = `${versionId ?? "current"}:${localeToDownload}`;
+    if (!membership || !available || downloadsInFlight.current.has(key)) return;
+    downloadsInFlight.current.add(key);
+    setDownloadingContracts(new Set(downloadsInFlight.current));
+    if (versionId)
+      setVersionPdfErrors((current) => ({ ...current, [key]: "" }));
+    else setContractPdfError("");
     try {
       const file = await downloadMembershipContract(
         membership.id,
         localeToDownload,
+        versionId,
       );
       const objectUrl = URL.createObjectURL(file.blob);
       const anchor = document.createElement("a");
@@ -199,9 +215,15 @@ export function AccountMembershipPage({
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1_000);
     } catch (caught) {
       if (isAccountSessionError(caught)) setSessionExpired(true);
+      else if (versionId)
+        setVersionPdfErrors((current) => ({
+          ...current,
+          [key]: copy.membershipContractPdfError,
+        }));
       else setContractPdfError(copy.membershipContractPdfError);
     } finally {
-      setDownloadingContract(null);
+      downloadsInFlight.current.delete(key);
+      setDownloadingContracts(new Set(downloadsInFlight.current));
     }
   }
   return (
@@ -326,15 +348,21 @@ export function AccountMembershipPage({
                       </dd>
                     </div>
                   </dl>
+                  <CSAPaymentSchedule
+                    plan={contract.payment_plan}
+                    summary={contract.payment_summary}
+                    payments={contract.payments}
+                    locale={locale}
+                  />
                   <div className="membership-contract-actions">
                     {contract.available_locales.includes("vi") ? (
                       <button
                         className="account-primary-action"
-                        disabled={downloadingContract !== null}
+                        disabled={downloadingContracts.has("current:vi")}
                         onClick={() => void downloadContract("vi")}
                         type="button"
                       >
-                        {downloadingContract === "vi"
+                        {downloadingContracts.has("current:vi")
                           ? copy.membershipContractDownloading
                           : copy.membershipContractDownloadVi}
                       </button>
@@ -342,16 +370,27 @@ export function AccountMembershipPage({
                     {contract.available_locales.includes("en") ? (
                       <button
                         className="account-primary-action"
-                        disabled={downloadingContract !== null}
+                        disabled={downloadingContracts.has("current:en")}
                         onClick={() => void downloadContract("en")}
                         type="button"
                       >
-                        {downloadingContract === "en"
+                        {downloadingContracts.has("current:en")
                           ? copy.membershipContractDownloading
                           : copy.membershipContractDownloadEn}
                       </button>
                     ) : null}
                   </div>
+                  <CSAContractVersionHistory
+                    versions={contract.versions ?? []}
+                    currentVersionId={contract.current_version?.id}
+                    locale={locale}
+                    buttonClassName="account-primary-action"
+                    downloading={downloadingContracts}
+                    errors={versionPdfErrors}
+                    onDownload={(versionId, pdfLocale) =>
+                      void downloadContract(pdfLocale, versionId)
+                    }
+                  />
                   {contractPdfError ? (
                     <p className="membership-contract-error" role="alert">
                       {contractPdfError}

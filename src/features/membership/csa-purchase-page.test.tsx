@@ -24,6 +24,7 @@ import type { CSAPurchaseRequestCreated } from "@/features/account/types";
 
 const packageId = "11111111-1111-4111-8111-111111111111";
 const optionId = "22222222-2222-4222-8222-222222222222";
+const planId = "66666666-6666-4666-8666-666666666666";
 const requestId = "33333333-3333-4333-8333-333333333333";
 const member = {
   sub: "44444444-4444-4444-8444-444444444444",
@@ -58,6 +59,18 @@ const packagePayload = {
           duration_months: 3,
           monthly_price_vnd: "400000",
           total_price_vnd: "1200000",
+          payment_plans: [
+            {
+              id: planId,
+              name: "Trả thẳng",
+              payment_type: "full",
+              total_amount: "1200000",
+              installment_count: 1,
+              installments: [
+                { sequence: 1, amount: "1200000", cycle_count: 3 },
+              ],
+            },
+          ],
         },
       ],
     },
@@ -75,7 +88,16 @@ const purchasePayload = {
       name: "3 tháng",
       duration_months: 3,
     },
+    payment_plan: {
+      id: planId,
+      name: "Trả thẳng",
+      payment_type: "full",
+      total_amount: "1200000",
+      installment_count: 1,
+      installments: [{ sequence: 1, amount: "1200000", cycle_count: 3 }],
+    },
     amount: "1200000",
+    initial_payment_amount: "1200000",
     currency: "VND",
     transfer_content: "CSA-ABC123",
     bank_bin: "970422",
@@ -454,7 +476,7 @@ describe("CSA purchase wizard", () => {
     resolveCreate(json(purchasePayload, 201));
 
     expect(
-      await screen.findByRole("heading", { name: "Payment" }),
+      await screen.findByAltText("VietQR code for CSA bank transfer"),
     ).toBeVisible();
     expect(screen.getByText("CSA-ABC123")).toBeVisible();
     expect(memory.current?.purchase?.guest_confirmation_token).toBe(
@@ -645,6 +667,7 @@ describe("CSA purchase wizard", () => {
     await waitFor(() => expect(memory.current?.purchase?.id).toBe(requestId));
     expect(memory.current?.selectedPackageId).toBe(packageId);
     expect(memory.current?.selectedOptionId).toBe(optionId);
+    expect(memory.current?.selectedPlanId).toBe(planId);
     expect(memory.current?.guest.name).toBe("Nguyễn Văn An");
     expect(memory.current?.termsAccepted).toBe(true);
     expect(memory.current?.step).toBe(4);
@@ -971,6 +994,16 @@ describe("CSA purchase wizard", () => {
                 duration_months: 1,
                 monthly_price_vnd: "999999",
                 total_price_vnd: "500000",
+                payment_plans: [
+                  {
+                    ...packagePayload.data[0].price_options[0].payment_plans[0],
+                    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                    total_amount: "500000",
+                    installments: [
+                      { sequence: 1, amount: "500000", cycle_count: 1 },
+                    ],
+                  },
+                ],
               },
               {
                 ...packagePayload.data[0].price_options[0],
@@ -1341,6 +1374,7 @@ describe("CSA purchase wizard", () => {
     expect(JSON.parse(String(createCall?.init?.body))).toEqual({
       package_id: packageId,
       price_option_id: optionId,
+      payment_plan_id: planId,
       terms_accepted: true,
       terms_locale: "vi",
       name: "Nguyễn Văn An",
@@ -1454,6 +1488,31 @@ describe("CSA purchase wizard", () => {
     expect(terms.querySelectorAll(".term-section")).toHaveLength(11);
     expect(within(terms).getByText("Thông tin các bên")).toBeVisible();
     expect(screen.getByText(/Chương trình được cung cấp bởi/)).toBeVisible();
+    expect(within(terms).getByText("Thanh toán")).toBeVisible();
+    expect(
+      within(terms).getByText(
+        /Tùy cấu hình từng gói, thành viên có thể trả thẳng hoặc trả góp/,
+      ),
+    ).toBeVisible();
+    expect(
+      within(terms).getByText(/Khoản thanh toán đầu tiên cần được chuyển/),
+    ).toBeVisible();
+    expect(
+      within(terms).getByText(
+        /Admin kiểm tra và có quyền xác nhận hoặc từ chối thủ công/,
+      ),
+    ).toBeVisible();
+    expect(within(terms).queryByText("Thanh toán một lần")).toBeNull();
+  });
+
+  it("maps the backend terms-required error to localized copy", () => {
+    const error = new AccountApiError("csa_purchase_terms_required", 400);
+    expect(purchaseErrorMessage(error, "vi")).toBe(
+      "Bạn phải đồng ý với Điều khoản CSA trước khi tiếp tục.",
+    );
+    expect(purchaseErrorMessage(error, "en")).toBe(
+      "You must accept the CSA terms before continuing.",
+    );
   });
 
   it("keeps terms consent required and reports keyboard submission inline", async () => {
@@ -1516,6 +1575,20 @@ describe("CSA purchase wizard", () => {
     expect(terms.parentElement!.querySelectorAll(".term-section")).toHaveLength(
       11,
     );
+    expect(
+      screen.getByText(
+        /Depending on the package configuration, a member may pay in full or in installments/,
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/The first payment must be transferred/),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        /An admin reviews and may manually confirm or reject each transaction/,
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText("One-time payment")).toBeNull();
   });
 
   it("renders authenticated identity read-only and submits no client identity fields", async () => {
@@ -1534,6 +1607,7 @@ describe("CSA purchase wizard", () => {
     expect(JSON.parse(String(createCall?.init?.body))).toEqual({
       package_id: packageId,
       price_option_id: optionId,
+      payment_plan_id: planId,
       terms_accepted: true,
       terms_locale: "vi",
     });
@@ -1621,18 +1695,28 @@ describe("CSA purchase wizard", () => {
     ).toHaveClass("payment-details-title");
     expect(bankList).not.toBeNull();
     expect(bankList?.querySelectorAll(":scope > .bank-row")).toHaveLength(5);
+    const fullAmountRow = screen
+      .getByText("Số tiền cần chuyển")
+      .closest<HTMLElement>(".bank-row")!;
+    expect(within(fullAmountRow).getByText(/1\.200\.000/)).toBeVisible();
+    expect(
+      within(fullAmountRow).getByText("Thanh toán toàn bộ gói · 3 tháng"),
+    ).toBeVisible();
     expect(
       Array.from(paymentGrid?.children ?? []).indexOf(paymentQr!),
     ).toBeLessThan(
       Array.from(paymentGrid?.children ?? []).indexOf(paymentInformation!),
     );
-    expect(paymentInformation?.lastElementChild).toHaveClass("btn-row");
+    expect(paymentGrid?.nextElementSibling).toHaveClass(
+      "btn-row",
+      "payment-actions",
+    );
     expect(container.querySelector(".payment-stack")).toBeNull();
     expect(container.querySelector(".payment-total")).toBeNull();
     expect(container.querySelector(".csa-payment-panel")).toBeNull();
     expect(container.querySelector(".csa-payment-layout")).toBeNull();
     expect(container.querySelector(".csa-payment-details")).toBeNull();
-    expect(screen.getByText(/1\.200\.000/)).toBeVisible();
+    expect(screen.getAllByText(/1\.200\.000/).length).toBeGreaterThan(0);
     const copyButtons = screen.getAllByRole("button", { name: "Sao chép" });
     expect(copyButtons).toHaveLength(2);
     expect(copyButtons[0].querySelector("svg")).not.toBeNull();
@@ -1793,6 +1877,9 @@ describe("CSA purchase wizard", () => {
       screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
     ).toBeNull();
     expect(container.querySelector(".csa-purchase-ui .qr-logo")).toBeNull();
+    expect(
+      container.querySelector(".csa-purchase-ui .qr-unavailable"),
+    ).not.toBeNull();
     expect(screen.getByText("MB Bank")).toBeVisible();
     expect(screen.getByText("123456789")).toBeVisible();
     expect(
@@ -1877,4 +1964,414 @@ describe("CSA purchase wizard", () => {
     ).toBeVisible();
     expect(screen.queryByText(/csa_purchase_request_open_exists/)).toBeNull();
   });
+
+  it("renders backend payment plans in order, selects the first, and shows only real savings", async () => {
+    const full = {
+      ...packagePayload.data[0].price_options[0].payment_plans[0],
+      total_amount: "1100000",
+      installments: [{ sequence: 1, amount: "1100000", cycle_count: 3 }],
+    };
+    const installment = {
+      id: "77777777-7777-4777-8777-777777777777",
+      name: "Trả góp hai lần",
+      payment_type: "installment",
+      total_amount: "1200000",
+      installment_count: 2,
+      installments: [
+        { sequence: 2, amount: "600000", cycle_count: 2 },
+        { sequence: 1, amount: "600000", cycle_count: 1 },
+      ],
+    };
+    installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              {
+                id: "88888888-8888-4888-8888-888888888888",
+                duration_months: 1,
+                monthly_price_vnd: "400000",
+                total_price_vnd: "400000",
+                payment_plans: [
+                  {
+                    ...full,
+                    id: "99999999-9999-4999-8999-999999999999",
+                    total_amount: "400000",
+                    installments: [
+                      { sequence: 1, amount: "400000", cycle_count: 1 },
+                    ],
+                  },
+                ],
+              },
+              {
+                ...packagePayload.data[0].price_options[0],
+                payment_plans: [full, installment],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await screen.findByRole("heading", { name: "Phương thức thanh toán" });
+    fireEvent.click(await screen.findByRole("button", { name: /3 tháng/ }));
+    const plans = screen.getAllByRole("button", {
+      name: /Thanh toán một lần|Trả góp 2 lần/,
+    });
+    expect(plans[0]).toHaveAttribute("aria-pressed", "true");
+    expect(plans[1]).toHaveAttribute("aria-pressed", "false");
+    expect(within(plans[0]).getByText("Tiết kiệm 8,33%")).toBeVisible();
+    expect(within(plans[1]).queryByText(/Tiết kiệm|Giảm/)).toBeNull();
+    expect(within(plans[0]).queryByText("Lần 1")).toBeNull();
+    expect(
+      within(plans[0]).getByText("Thanh toán toàn bộ gói · 3 tháng"),
+    ).toBeVisible();
+    expect(within(plans[0]).queryByText(/Mở .*kỳ|Tổng .*kỳ/)).toBeNull();
+    expect(within(plans[1]).getByText("Lần 1")).toBeVisible();
+    expect(within(plans[1]).getByText("1 tháng đầu")).toBeVisible();
+    expect(within(plans[1]).getByText("Lần 2")).toBeVisible();
+    expect(within(plans[1]).getByText("2 tháng cuối")).toBeVisible();
+    expect((plans[1].textContent ?? "").indexOf("Lần 1")).toBeLessThan(
+      (plans[1].textContent ?? "").indexOf("Lần 2"),
+    );
+    expect(plans[1].textContent).not.toMatch(/\b(?:installments?|cycles?)\b/i);
+    fireEvent.click(plans[1]);
+    expect(plans[1]).toHaveAttribute("aria-pressed", "true");
+    expect(plans[0]).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("Phương thức")).toBeVisible();
+    expect(screen.getByText("Khoản thanh toán đầu tiên")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+  });
+
+  it("renders payment-plan wording and installment months in English", async () => {
+    const option = packagePayload.data[0].price_options[0];
+    installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              {
+                ...option,
+                payment_plans: [
+                  option.payment_plans[0],
+                  {
+                    id: "77777777-7777-4777-8777-777777777777",
+                    name: "unused backend name",
+                    payment_type: "installment",
+                    total_amount: "1200000",
+                    installment_count: 2,
+                    installments: [
+                      { sequence: 2, amount: "600000", cycle_count: 2 },
+                      { sequence: 1, amount: "600000", cycle_count: 1 },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    render(<CSAPurchasePage locale="en" />);
+
+    const full = await screen.findByRole("button", { name: /Pay in full/ });
+    const installment = screen.getByRole("button", {
+      name: /Pay in 2 installments/,
+    });
+    expect(within(full).getByText("Entire package · 3 months")).toBeVisible();
+    expect(within(installment).getByText("Payment 1")).toBeVisible();
+    expect(
+      within(installment).getByText("1 months at the beginning"),
+    ).toBeVisible();
+    expect(within(installment).getByText("2 final months")).toBeVisible();
+    expect(screen.queryByText("Thanh toán một lần")).toBeNull();
+  });
+
+  it("blocks progression when a duration has no valid backend plan", async () => {
+    installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              { ...packagePayload.data[0].price_options[0], payment_plans: [] },
+            ],
+          },
+        ],
+      },
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    expect(
+      await screen.findByText(
+        "Thời hạn này chưa có phương thức thanh toán hợp lệ.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeDisabled();
+  });
+
+  it("uses one-month price option as full payment when no plan is configured", async () => {
+    installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              {
+                ...packagePayload.data[0].price_options[0],
+                duration_months: 1,
+                monthly_price_vnd: "400000",
+                total_price_vnd: "400000",
+                payment_plans: [],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    render(<CSAPurchasePage locale="vi" />);
+
+    expect(
+      await screen.findByRole("button", { name: /Thanh toán một lần/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.queryByText("Thời hạn này chưa có phương thức thanh toán hợp lệ."),
+    ).toBeNull();
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+  });
+
+  it("resets the plan to the first valid option when package or duration changes", async () => {
+    const base = packagePayload.data[0];
+    const full = base.price_options[0].payment_plans[0];
+    const second = {
+      id: "77777777-7777-4777-8777-777777777777",
+      name: "Hai lần",
+      payment_type: "installment",
+      total_amount: "1200000",
+      installment_count: 2,
+      installments: [
+        { sequence: 1, amount: "600000", cycle_count: 1 },
+        { sequence: 2, amount: "600000", cycle_count: 2 },
+      ],
+    };
+    const otherPlan = { ...full, id: "88888888-8888-4888-8888-888888888888" };
+    const longerPlan = {
+      ...full,
+      id: "99999999-9999-4999-8999-999999999999",
+      total_amount: "2400000",
+      installments: [{ sequence: 1, amount: "2400000", cycle_count: 6 }],
+    };
+    installApi({
+      packages: {
+        data: [
+          {
+            ...base,
+            price_options: [
+              { ...base.price_options[0], payment_plans: [full, second] },
+            ],
+          },
+          {
+            ...base,
+            id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            name: "Gói khác",
+            price_options: [
+              {
+                ...base.price_options[0],
+                id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                payment_plans: [otherPlan],
+              },
+              {
+                ...base.price_options[0],
+                id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+                duration_months: 6,
+                total_price_vnd: "2400000",
+                payment_plans: [longerPlan],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    const secondButton = await screen.findByRole("button", {
+      name: /Trả góp 2 lần/,
+    });
+    fireEvent.click(secondButton);
+    expect(secondButton).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: /Gói khác/ }));
+    expect(screen.getByRole("button", { name: /Gói khác/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("button", { name: /Thanh toán một lần/ }),
+    ).toHaveAttribute("data-payment-plan", otherPlan.id);
+    fireEvent.click(screen.getByRole("button", { name: /6 tháng/ }));
+    expect(
+      screen.getByRole("button", { name: /Thanh toán một lần/ }),
+    ).toHaveAttribute("data-payment-plan", longerPlan.id);
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+  });
+
+  it("blocks the QR and confirmation if backend installment QR overcharges the current payment", async () => {
+    const installment = {
+      id: "77777777-7777-4777-8777-777777777777",
+      name: "Trả góp hai lần",
+      payment_type: "installment",
+      total_amount: "1200000",
+      installment_count: 2,
+      installments: [
+        { sequence: 1, amount: "600000", cycle_count: 1 },
+        { sequence: 2, amount: "600000", cycle_count: 2 },
+      ],
+    };
+    const { calls } = installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              {
+                ...packagePayload.data[0].price_options[0],
+                payment_plans: [installment],
+              },
+            ],
+          },
+        ],
+      },
+      create: { data: { ...purchasePayload.data, payment_plan: installment } },
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Thanh toán" }),
+    ).toBeVisible();
+    const post = calls.find(
+      (call) => call.url === "/api/account/csa-purchase-requests",
+    );
+    expect(JSON.parse(String(post?.init?.body))).toMatchObject({
+      payment_plan_id: installment.id,
+    });
+    expect(JSON.parse(String(post?.init?.body))).not.toHaveProperty("amount");
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+    expect(
+      await screen.findByText(/Không thể xác minh thông tin thanh toán/),
+    ).toBeVisible();
+    expect(
+      calls.filter((call) => call.url.endsWith("/confirm-payment")),
+    ).toHaveLength(0);
+  });
+
+  it("uses the backend QR amount for the current installment when its snapshot is consistent", async () => {
+    const installment = {
+      id: "77777777-7777-4777-8777-777777777777",
+      name: "Trả góp hai lần",
+      payment_type: "installment",
+      total_amount: "1200000",
+      installment_count: 2,
+      installments: [
+        { sequence: 1, amount: "600000", cycle_count: 1 },
+        { sequence: 2, amount: "600000", cycle_count: 2 },
+      ],
+    };
+    installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              {
+                ...packagePayload.data[0].price_options[0],
+                payment_plans: [installment],
+              },
+            ],
+          },
+        ],
+      },
+      create: {
+        data: {
+          ...purchasePayload.data,
+          payment_plan: installment,
+          initial_payment_amount: "600000",
+          qr_payload: { ...purchasePayload.data.qr_payload, amount: "600000" },
+        },
+      },
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    expect(await screen.findByText("Lịch thanh toán")).toBeVisible();
+    const scheduleRows = document.querySelectorAll(".payment-schedule-row");
+    expect(scheduleRows).toHaveLength(2);
+    expect(
+      within(scheduleRows[0] as HTMLElement).getByText("Lần 1"),
+    ).toBeVisible();
+    expect(
+      within(scheduleRows[0] as HTMLElement).getByText("1 tháng đầu"),
+    ).toBeVisible();
+    expect(
+      within(scheduleRows[1] as HTMLElement).getByText("Lần 2"),
+    ).toBeVisible();
+    expect(
+      within(scheduleRows[1] as HTMLElement).getByText("2 tháng cuối"),
+    ).toBeVisible();
+    const totalRow = screen
+      .getByText("Tổng giá trị gói")
+      .closest<HTMLElement>(".bank-row")!;
+    const initialRow = screen
+      .getByText("Khoản thanh toán đầu tiên cần chuyển")
+      .closest<HTMLElement>(".bank-row")!;
+    expect(within(totalRow).getByText(/1\.200\.000/)).toBeVisible();
+    expect(within(initialRow).getByText(/600\.000/)).toBeVisible();
+    expect(screen.getByText("1 tháng đầu")).toBeVisible();
+    expect(
+      screen.getByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toHaveAttribute("src", expect.stringContaining("amount=600000"));
+    expect(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeEnabled();
+  });
+
+  it.each([
+    ["", "Chưa có số tiền thanh toán đầu tiên"],
+    ["1100000", "Không thể xác minh thông tin thanh toán"],
+  ])(
+    "blocks QR and confirmation for an invalid first payment amount %s",
+    async (amount, message) => {
+      const { calls } = installApi({
+        create: {
+          data: { ...purchasePayload.data, initial_payment_amount: amount },
+        },
+      });
+      render(<CSAPurchasePage locale="vi" />);
+      await goToGuestTerms();
+      acceptTerms();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+      );
+      expect(await screen.findByText(new RegExp(message))).toBeVisible();
+      expect(
+        screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+      ).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+      ).toBeNull();
+      expect(
+        calls.filter((call) => call.url.endsWith("/confirm-payment")),
+      ).toHaveLength(0);
+    },
+  );
 });

@@ -27,6 +27,9 @@ export type CSAPurchaseErrorKey =
   | "rateLimited"
   | "packageUnavailable"
   | "paymentUnavailable"
+  | "paymentPlanRequired"
+  | "paymentPlanUnavailable"
+  | "termsRequired"
   | "duplicate"
   | "invalidDetails"
   | "notPending"
@@ -65,6 +68,7 @@ export type CSAPurchaseFlowMemory = {
   wardsResourceKey: string;
   selectedPackageId: string;
   selectedOptionId: string;
+  selectedPlanId: string;
   guest: CSAGuestDetails;
   termsAccepted: boolean;
   informationSubmitted: boolean;

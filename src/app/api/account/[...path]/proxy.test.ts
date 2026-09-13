@@ -32,6 +32,7 @@ afterEach(() => {
 
 describe("account BFF proxy", () => {
   const membershipId = "44444444-4444-4444-8444-444444444444";
+  const versionId = "77777777-7777-4777-8777-777777777777";
 
   it("forwards owned Membership contract detail with the server-side bearer token", async () => {
     const upstream = vi.fn(
@@ -163,11 +164,64 @@ describe("account BFF proxy", () => {
     },
   );
 
+  it("forwards an owned version PDF with only the server-side bearer token", async () => {
+    const upstream = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        expect(String(input)).toBe(
+          `https://auth.example.test/api/v1/memberships/${membershipId}/contract/pdf?locale=en&version_id=${versionId}`,
+        );
+        expect(new Headers(init?.headers).get("authorization")).toBe(
+          "Bearer access-token",
+        );
+        return new Response(new Uint8Array([37, 80, 68, 70]), {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": 'attachment; filename="CSA-CODE.v1.en.pdf"',
+          },
+        });
+      },
+    );
+    vi.stubGlobal("fetch", upstream);
+    const response = await GET(
+      new NextRequest(
+        `https://site.example.test/api/account/memberships/${membershipId}/contract/pdf?locale=en&version_id=${versionId}`,
+      ),
+      {
+        params: Promise.resolve({
+          path: ["memberships", membershipId, "contract", "pdf"],
+        }),
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-disposition")).toContain(
+      "CSA-CODE.v1.en.pdf",
+    );
+    expect(response.headers.get("authorization")).toBeNull();
+
+    upstream.mockResolvedValueOnce(
+      Response.json({ error: "not_found" }, { status: 404 }),
+    );
+    const denied = await GET(
+      new NextRequest(
+        `https://site.example.test/api/account/memberships/${membershipId}/contract/pdf?locale=en&version_id=${versionId}`,
+      ),
+      {
+        params: Promise.resolve({
+          path: ["memberships", membershipId, "contract", "pdf"],
+        }),
+      },
+    );
+    expect(denied.status).toBe(404);
+  });
+
   it.each([
     "",
     "?locale=fr",
     "?locale=vi&original=true",
     "?locale=vi&locale=en",
+    "?locale=vi&version_id=bad",
+    `?locale=vi&version_id=${versionId}&original=true`,
+    `?locale=vi&version_id=${versionId}&version_id=${versionId}`,
   ])("rejects an unsafe owned contract PDF query: %s", async (query) => {
     const upstream = vi.fn();
     vi.stubGlobal("fetch", upstream);
@@ -337,6 +391,37 @@ describe("account BFF proxy", () => {
     expect(readSession).not.toHaveBeenCalled();
   });
 
+  it("forwards only the tracker cookie for a version PDF", async () => {
+    const upstream = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        expect(String(input)).toBe(
+          `https://auth.example.test/api/v1/public/csa-contract-tracker/contract/pdf?locale=vi&version_id=${versionId}`,
+        );
+        const headers = new Headers(init?.headers);
+        expect(headers.get("cookie")).toBe("nfv_csa_tracker=opaque-value");
+        expect(headers.has("authorization")).toBe(false);
+        return new Response(new Uint8Array([37, 80, 68, 70]), {
+          headers: { "Content-Type": "application/pdf" },
+        });
+      },
+    );
+    vi.stubGlobal("fetch", upstream);
+    const response = await GET(
+      new NextRequest(
+        `https://site.example.test/api/account/csa-contract-tracker/contract/pdf?locale=vi&version_id=${versionId}`,
+        { headers: { Cookie: "nfv_csa_tracker=opaque-value" } },
+      ),
+      {
+        params: Promise.resolve({
+          path: ["csa-contract-tracker", "contract", "pdf"],
+        }),
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(readSession).not.toHaveBeenCalled();
+    expect(response.headers.get("authorization")).toBeNull();
+  });
+
   it("rejects tracker query parameters outside the fixed contract", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -355,6 +440,24 @@ describe("account BFF proxy", () => {
     expect(await invalidLocale.json()).toEqual({
       error: "invalid_contract_locale",
     });
+
+    for (const query of [
+      "?locale=vi&version_id=bad",
+      `?locale=vi&version_id=${versionId}&original=true`,
+      `?locale=vi&version_id=${versionId}&version_id=${versionId}`,
+    ]) {
+      const blocked = await GET(
+        new NextRequest(
+          `https://site.example.test/api/account/csa-contract-tracker/contract/pdf${query}`,
+        ),
+        {
+          params: Promise.resolve({
+            path: ["csa-contract-tracker", "contract", "pdf"],
+          }),
+        },
+      );
+      expect(blocked.status).toBe(400);
+    }
 
     const arbitraryContractQuery = await GET(
       new NextRequest(

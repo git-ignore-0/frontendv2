@@ -803,6 +803,28 @@ describe("Account Membership", () => {
       revoked_at: null,
       revocation_reason: null,
       available_locales: ["vi", "en"] as Array<"vi" | "en">,
+      payment_plan: { payment_type: "installment", installment_count: 2 },
+      payment_summary: {
+        total_amount: "1200000",
+        paid_amount: "600000",
+        remaining_amount: "600000",
+        confirmed_installments: 1,
+        installment_count: 2,
+        paid_cycles: 1,
+        total_cycles: 3,
+      },
+      payments: [
+        {
+          installment_sequence: 1,
+          amount_due: "600000",
+          amount_paid: "600000",
+          cycle_count: 1,
+          status: "confirmed",
+          due_at: null,
+          confirmed_at: "2026-09-11T18:00:00Z",
+          rejected_at: null,
+        },
+      ],
     };
     vi.mocked(accountApi).mockImplementation(async (path) => {
       if (path === "memberships/current?locale=en")
@@ -843,6 +865,12 @@ describe("Account Membership", () => {
     );
 
     expect(await screen.findByText(contract.reference_code)).toBeVisible();
+    expect(screen.getByText("CSA payment schedule")).toBeVisible();
+    expect(screen.getByText("Pay in 2 installments")).toBeVisible();
+    expect(screen.getByText("Payment 1")).toBeVisible();
+    expect(
+      screen.getByText(/legacy contract has no version history/),
+    ).toBeVisible();
     expect(
       screen.getByText("Active", {
         selector: ".membership-contract-section span",
@@ -873,6 +901,164 @@ describe("Account Membership", () => {
     expect(revokeObjectURL).toHaveBeenCalledTimes(1);
     act(() => vi.advanceTimersByTime(1_000));
     expect(revokeObjectURL).toHaveBeenCalledTimes(2);
+  });
+
+  it("renders ordered owned Contract versions and downloads historical/current PDFs", async () => {
+    const old = {
+      id: "11111111-1111-4111-8111-111111111111",
+      version_number: 1,
+      version_reason: "issued",
+      contract_status: "active",
+      created_at: "2026-09-10T02:00:00Z",
+      available_locales: ["vi"],
+    };
+    const current = {
+      id: "22222222-2222-4222-8222-222222222222",
+      version_number: 2,
+      version_reason: "membership_revoked",
+      contract_status: "revoked",
+      created_at: "2026-09-12T02:00:00Z",
+      available_locales: ["vi", "en"],
+      paid_amount: "1000000",
+      remaining_amount: "3500000",
+    };
+    const contract = {
+      id: "77777777-7777-4777-8777-777777777777",
+      reference_code: "CSA-202609-8F3K2M",
+      status: "revoked",
+      available_locales: ["vi", "en"],
+      current_version: current,
+      versions: [current, old],
+    };
+    vi.mocked(accountApi).mockImplementation(async (path) => {
+      if (path === "memberships/current?locale=en")
+        return { data: currentMembership };
+      if (path === "memberships/quota?locale=en") return { data: quota };
+      if (path === `memberships/${currentMembership.id}/contract`)
+        return { data: contract };
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(new Uint8Array([37, 80, 68, 70]), {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": 'attachment; filename="CSA-CODE.v1.vi.pdf"',
+          },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:version"),
+    });
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+    const downloaded: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloaded.push(this.download);
+    });
+
+    render(
+      <AccountMembershipPage copy={getSiteContent("en").account} locale="en" />,
+    );
+    expect(await screen.findByText("Contract version history")).toBeVisible();
+    const rows = screen
+      .getAllByRole("listitem")
+      .filter((row) => row.className === "csa-contract-version");
+    expect(within(rows[0]).getByText("Version 1")).toBeVisible();
+    expect(within(rows[1]).getByText("Version 2")).toBeVisible();
+    expect(within(rows[1]).getByText("Current version")).toBeVisible();
+    expect(within(rows[0]).queryByText("Current version")).toBeNull();
+    expect(within(rows[0]).getByText("VI")).toBeVisible();
+    expect(
+      within(rows[0]).queryByRole("button", { name: "Download English PDF" }),
+    ).toBeNull();
+    expect(within(rows[1]).getByText("₫1,000,000")).toBeVisible();
+
+    vi.useFakeTimers();
+    await act(async () =>
+      fireEvent.click(
+        within(rows[0]).getByRole("button", {
+          name: "Download Vietnamese PDF",
+        }),
+      ),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/account/memberships/${currentMembership.id}/contract/pdf?locale=vi&version_id=${old.id}`,
+      expect.objectContaining({ cache: "no-store" }),
+    );
+    expect(downloaded).toEqual(["CSA-CODE.v1.vi.pdf"]);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1_000));
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:version");
+    await act(async () =>
+      fireEvent.click(
+        within(rows[1]).getByRole("button", { name: "Download English PDF" }),
+      ),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/account/memberships/${currentMembership.id}/contract/pdf?locale=en&version_id=${current.id}`,
+      expect.anything(),
+    );
+  });
+
+  it("keeps owned Contract detail when one version PDF fails", async () => {
+    const version = {
+      id: "11111111-1111-4111-8111-111111111111",
+      version_number: 1,
+      version_reason: "issued",
+      contract_status: "active",
+      created_at: "2026-09-10T02:00:00Z",
+      available_locales: ["vi", "en"],
+    };
+    const contract = {
+      reference_code: "CSA-202609-8F3K2M",
+      status: "active",
+      available_locales: ["vi", "en"],
+      current_version: version,
+      versions: [version],
+    };
+    vi.mocked(accountApi).mockImplementation(async (path) => {
+      if (path === "memberships/current?locale=en")
+        return { data: currentMembership };
+      if (path === "memberships/quota?locale=en") return { data: quota };
+      return { data: contract };
+    });
+    let rejectFetch: (error: Error) => void = () => undefined;
+    const fetchMock = vi.fn(
+      () =>
+        new Promise<Response>((_, reject) => {
+          rejectFetch = reject;
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <AccountMembershipPage copy={getSiteContent("en").account} locale="en" />,
+    );
+    const row = (await screen.findByText("Version 1")).closest("li")!;
+    const button = within(row).getByRole("button", {
+      name: "Download Vietnamese PDF",
+    });
+    fireEvent.click(button);
+    expect(button).toBeDisabled();
+    expect(
+      within(row).getByRole("button", { name: "Download English PDF" }),
+    ).toBeEnabled();
+    fireEvent.click(button);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await act(async () => rejectFetch(new Error("private-storage-key")));
+    expect(within(row).getByRole("alert")).toHaveTextContent(
+      "temporarily unavailable",
+    );
+    expect(screen.getByText(contract.reference_code)).toBeVisible();
+    expect(button).toBeEnabled();
+    expect(screen.queryByText("private-storage-key")).toBeNull();
   });
 
   it("localizes contract detail and PDF failures without exposing backend errors", async () => {

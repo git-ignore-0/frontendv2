@@ -24,6 +24,7 @@ const purchase: CSAPurchaseFlowMemory = {
   wardsResourceKey: "",
   selectedPackageId: "package-1",
   selectedOptionId: "option-1",
+  selectedPlanId: "plan-1",
   guest: {
     name: "Guest",
     phone: "0901234567",

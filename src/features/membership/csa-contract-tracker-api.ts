@@ -72,12 +72,18 @@ export async function getTrackedCSAContract() {
   return (await trackerJson<CSATrackerContract>("contract")).data;
 }
 
-export async function downloadTrackedCSAContract(locale: "vi" | "en") {
-  const response = await fetch(`${basePath}/contract/pdf?locale=${locale}`, {
-    method: "GET",
-    credentials: "same-origin",
-    cache: "no-store",
-  });
+export async function downloadTrackedCSAContract(
+  locale: "vi" | "en",
+  versionId?: string,
+) {
+  const response = await fetch(
+    `${basePath}/contract/pdf?locale=${locale}${versionId ? `&version_id=${encodeURIComponent(versionId)}` : ""}`,
+    {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+    },
+  );
   if (!response.ok) throw await trackerError(response);
   if (!response.headers.get("content-type")?.startsWith("application/pdf"))
     throw new CSATrackerApiError("csa_contract_pdf_unavailable", 502);

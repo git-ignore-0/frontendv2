@@ -16,6 +16,8 @@ import {
   lookupCSAContract,
 } from "@/features/membership/csa-contract-tracker-api";
 import { getCSAContractTrackerCopy } from "@/features/membership/csa-contract-tracker-copy";
+import { CSAContractVersionHistory } from "@/features/membership/csa-contract-version-history";
+import { CSAPaymentSchedule } from "@/features/membership/csa-payment-schedule";
 import {
   type CSATrackerErrorKey,
   useCSAFlowState,
@@ -124,14 +126,16 @@ function TrackerDetails({
   onDownload,
   onRetryContract,
   onReset,
+  versionPdfErrors,
 }: {
   result: CSATrackerResult;
   contract: CSATrackerContract | null;
   locale: Locale;
-  downloading: "vi" | "en" | null;
+  downloading: ReadonlySet<string>;
   contractLoading: boolean;
   error: string;
-  onDownload: (locale: "vi" | "en") => void;
+  versionPdfErrors: Record<string, string>;
+  onDownload: (locale: "vi" | "en", versionId?: string) => void;
   onRetryContract: () => void;
   onReset: () => void;
 }) {
@@ -144,7 +148,7 @@ function TrackerDetails({
       className="result-card"
       aria-labelledby="csa-tracker-result-title"
       aria-live="polite"
-      aria-busy={downloading !== null || contractLoading}
+      aria-busy={downloading.size > 0 || contractLoading}
     >
       <div className="result-shell">
         <header className="result-head">
@@ -260,6 +264,15 @@ function TrackerDetails({
           ) : null}
         </dl>
 
+        {approved ? (
+          <CSAPaymentSchedule
+            plan={contract.payment_plan}
+            summary={contract.payment_summary}
+            payments={contract.payments}
+            locale={locale}
+          />
+        ) : null}
+
         <p
           className={[
             "notice",
@@ -278,23 +291,41 @@ function TrackerDetails({
               <button
                 className="ghost-link primary"
                 type="button"
-                disabled={downloading !== null}
+                disabled={downloading.has("current:vi")}
                 onClick={() => onDownload("vi")}
               >
-                {downloading === "vi" ? copy.downloading : copy.downloadVi}
+                {downloading.has("current:vi")
+                  ? copy.downloading
+                  : copy.downloadVi}
               </button>
             ) : null}
             {contract.available_pdf_locales.includes("en") ? (
               <button
                 className="ghost-link"
                 type="button"
-                disabled={downloading !== null}
+                disabled={downloading.has("current:en")}
                 onClick={() => onDownload("en")}
               >
-                {downloading === "en" ? copy.downloading : copy.downloadEn}
+                {downloading.has("current:en")
+                  ? copy.downloading
+                  : copy.downloadEn}
               </button>
             ) : null}
           </div>
+        ) : null}
+
+        {approved ? (
+          <CSAContractVersionHistory
+            versions={contract.versions ?? []}
+            currentVersionId={contract.current_version?.id}
+            locale={locale}
+            buttonClassName="ghost-link"
+            downloading={downloading}
+            errors={versionPdfErrors}
+            onDownload={(versionId, pdfLocale) =>
+              onDownload(pdfLocale, versionId)
+            }
+          />
         ) : null}
 
         {error ? (
@@ -357,7 +388,11 @@ export function CSAContractTrackerPage({ locale }: { locale: Locale }) {
     initialMemory?.errorKey ?? null,
   );
   const error = errorKey ? copy[errorKey] : "";
-  const [downloading, setDownloading] = useState<"vi" | "en" | null>(null);
+  const downloadsInFlight = useRef(new Set<string>());
+  const [downloading, setDownloading] = useState<Set<string>>(new Set());
+  const [versionPdfErrors, setVersionPdfErrors] = useState<
+    Record<string, string>
+  >({});
   const [contractLoading, setContractLoading] = useState(false);
   const contractAttempt = useRef(0);
   const lookupInFlight = useRef(false);
@@ -410,6 +445,7 @@ export function CSAContractTrackerPage({ locale }: { locale: Locale }) {
     setContractLoading(false);
     setResult(null);
     setContract(null);
+    setVersionPdfErrors({});
     setErrorKey(nextErrorKey);
   }
 
@@ -437,11 +473,9 @@ export function CSAContractTrackerPage({ locale }: { locale: Locale }) {
       if (isTrackerSessionExpired(caught)) {
         resetLookup("sessionExpired", true);
       } else {
-        setErrorKey(
-          trackerErrorKey(caught) === "rateLimited"
-            ? "rateLimited"
-            : "contractUnavailable",
-        );
+        const key = trackerErrorKey(caught);
+        if (key === "rateLimited") setErrorKey(key);
+        else setErrorKey("contractUnavailable");
       }
     } finally {
       if (contractAttempt.current === attempt) setContractLoading(false);
@@ -475,13 +509,32 @@ export function CSAContractTrackerPage({ locale }: { locale: Locale }) {
     }
   }
 
-  async function download(localeToDownload: "vi" | "en") {
-    if (downloading) return;
-    setDownloading(localeToDownload);
-    setErrorKey(null);
+  async function download(localeToDownload: "vi" | "en", versionId?: string) {
+    const version = versionId
+      ? contract?.versions?.find((entry) => entry.id === versionId)
+      : null;
+    const available = version
+      ? version.available_locales.includes(localeToDownload)
+      : !versionId &&
+        contract?.available_pdf_locales.includes(localeToDownload);
+    const downloadKey = `${versionId ?? "current"}:${localeToDownload}`;
+    if (
+      result?.status !== "approved" ||
+      !contract ||
+      !available ||
+      downloadsInFlight.current.has(downloadKey)
+    )
+      return;
+    downloadsInFlight.current.add(downloadKey);
+    setDownloading(new Set(downloadsInFlight.current));
+    if (versionId)
+      setVersionPdfErrors((current) => ({ ...current, [downloadKey]: "" }));
+    else setErrorKey(null);
     try {
-      const { blob, filename } =
-        await downloadTrackedCSAContract(localeToDownload);
+      const { blob, filename } = await downloadTrackedCSAContract(
+        localeToDownload,
+        versionId,
+      );
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -492,9 +545,15 @@ export function CSAContractTrackerPage({ locale }: { locale: Locale }) {
     } catch (caught) {
       const key = trackerErrorKey(caught);
       if (isTrackerSessionExpired(caught)) resetLookup(key, true);
+      else if (versionId)
+        setVersionPdfErrors((current) => ({
+          ...current,
+          [downloadKey]: copy[key],
+        }));
       else setErrorKey(key);
     } finally {
-      setDownloading(null);
+      downloadsInFlight.current.delete(downloadKey);
+      setDownloading(new Set(downloadsInFlight.current));
     }
   }
 
@@ -665,9 +724,12 @@ export function CSAContractTrackerPage({ locale }: { locale: Locale }) {
                   contract={contract}
                   locale={locale}
                   downloading={downloading}
+                  versionPdfErrors={versionPdfErrors}
                   contractLoading={contractLoading}
                   error={error}
-                  onDownload={(pdfLocale) => void download(pdfLocale)}
+                  onDownload={(pdfLocale, versionId) =>
+                    void download(pdfLocale, versionId)
+                  }
                   onRetryContract={() => void loadApprovedContract()}
                   onReset={() => {
                     clearTracker();

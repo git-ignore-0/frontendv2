@@ -8,6 +8,7 @@ import { accountApi, AccountApiError } from "@/features/account/api";
 import type {
   AdministrativeUnit,
   CSAPurchaseRequestCreated,
+  CSAPaymentPlan,
   MembershipPackage,
   MembershipPackagePriceOption,
   PaginationMeta,
@@ -29,8 +30,11 @@ import type { CoreUser } from "@/lib/auth/schemas";
 import { normalizeVietnamPhone } from "@/lib/contact";
 import { localizedPath, type Locale } from "@/lib/i18n";
 
+type PurchaseCopy = ReturnType<typeof getCSAPurchaseCopy>;
+
 const AUTH_ACCOUNT_URL = "https://auth.naturalfarmingvietnam.com/account";
 const termsErrorId = "csa-purchase-terms-error";
+const SINGLE_MONTH_FULL_PAYMENT_ID = "__single_month_full__";
 
 const emptyGuestDetails: CSAGuestDetails = {
   name: "",
@@ -53,6 +57,11 @@ function purchaseErrorKey(error: unknown): CSAPurchaseErrorKey {
     return "packageUnavailable";
   if (error.code === "csa_purchase_payment_unavailable")
     return "paymentUnavailable";
+  if (error.code === "csa_purchase_payment_plan_required")
+    return "paymentPlanRequired";
+  if (error.code === "csa_purchase_payment_plan_unavailable")
+    return "paymentPlanUnavailable";
+  if (error.code === "csa_purchase_terms_required") return "termsRequired";
   if (error.code === "csa_purchase_request_open_exists") return "duplicate";
   if (error.code === "csa_purchase_request_expired") return "expired";
   if (
@@ -98,7 +107,7 @@ function durationLabel(option: MembershipPackagePriceOption, template: string) {
 }
 
 function positiveInteger(value: string) {
-  return /^[1-9]\d*$/.test(value) ? BigInt(value) : null;
+  return /^[1-9]\d*(?:\.0+)?$/.test(value) ? BigInt(value.split(".")[0]) : null;
 }
 
 function priceOptionSaving(
@@ -128,6 +137,123 @@ function priceOptionSaving(
 
 function activePriceOptions(item: MembershipPackage) {
   return item.price_options.filter((option) => option.is_active !== false);
+}
+
+function validPaymentPlan(plan: CSAPaymentPlan, durationMonths: number) {
+  if (!plan.id || !positiveInteger(plan.total_amount)) return false;
+  if (plan.payment_type !== "full" && plan.payment_type !== "installment")
+    return false;
+  if (!Array.isArray(plan.installments)) return false;
+  if (plan.payment_type === "full" && plan.installment_count !== 1)
+    return false;
+  if (plan.payment_type === "installment" && plan.installment_count < 2)
+    return false;
+  const installments = [...plan.installments].sort(
+    (a, b) => a.sequence - b.sequence,
+  );
+  if (installments.length !== plan.installment_count) return false;
+  const amounts = installments.map((row) => positiveInteger(row.amount));
+  if (amounts.some((amount) => amount === null)) return false;
+  if (
+    installments.some(
+      (row, index) =>
+        row.sequence !== index + 1 ||
+        !Number.isSafeInteger(row.cycle_count) ||
+        row.cycle_count < 1,
+    )
+  )
+    return false;
+  const summedAmount = amounts.reduce<bigint>(
+    (total, amount) => total + (amount ?? BigInt(0)),
+    BigInt(0),
+  );
+  return (
+    summedAmount === positiveInteger(plan.total_amount) &&
+    installments.reduce((total, row) => total + row.cycle_count, 0) ===
+      durationMonths
+  );
+}
+
+function sortedInstallments(plan: CSAPaymentPlan) {
+  return [...plan.installments].sort((a, b) => a.sequence - b.sequence);
+}
+
+function paymentPlanLabel(plan: CSAPaymentPlan, copy: PurchaseCopy) {
+  return plan.payment_type === "full"
+    ? copy.payFull
+    : copy.payInstallments.replace("{count}", String(plan.installment_count));
+}
+
+function installmentMonthsLabel(
+  cycleCount: number,
+  index: number,
+  total: number,
+  copy: PurchaseCopy,
+) {
+  const template =
+    index === 0
+      ? copy.installmentBeginning
+      : index === total - 1
+        ? copy.installmentFinal
+        : copy.installmentFollowing;
+  return template.replace("{count}", String(cycleCount));
+}
+
+function validPaymentPlans(option: MembershipPackagePriceOption) {
+  return (option.payment_plans ?? []).filter((plan) =>
+    validPaymentPlan(plan, option.duration_months),
+  );
+}
+
+function singleMonthFullPaymentPlan(
+  option: MembershipPackagePriceOption | undefined,
+): CSAPaymentPlan | null {
+  if (!option || option.duration_months !== 1) return null;
+  return {
+    id: SINGLE_MONTH_FULL_PAYMENT_ID,
+    name: "",
+    payment_type: "full",
+    total_amount: option.total_price_vnd,
+    installment_count: 1,
+    initial_payment_amount: option.total_price_vnd,
+    installments: [
+      { sequence: 1, amount: option.total_price_vnd, cycle_count: 1 },
+    ],
+  };
+}
+
+function plansForOption(
+  option: MembershipPackagePriceOption | undefined,
+  plans: CSAPaymentPlan[],
+) {
+  return plans.length
+    ? plans
+    : ([singleMonthFullPaymentPlan(option)].filter(
+        Boolean,
+      ) as CSAPaymentPlan[]);
+}
+
+function paymentPlanSaving(
+  plan: CSAPaymentPlan,
+  option: MembershipPackagePriceOption,
+  options: MembershipPackagePriceOption[],
+) {
+  const monthly = options.find((item) => item.duration_months === 1);
+  const baseline = monthly ? positiveInteger(monthly.total_price_vnd) : null;
+  const total = positiveInteger(plan.total_amount);
+  if (
+    !baseline ||
+    !total ||
+    !Number.isSafeInteger(option.duration_months) ||
+    option.duration_months < 1
+  )
+    return null;
+  const regular = baseline * BigInt(option.duration_months);
+  const amount = regular - total;
+  if (amount <= 0) return null;
+  const hundredths = (amount * BigInt(10000) + regular / BigInt(2)) / regular;
+  const percent = `${hundredths / BigInt(100)}.${(hundredths % BigInt(100)).toString().padStart(2, "0")}`;
+  return { amount: amount.toString(), percent };
 }
 
 function firstAvailableSelection(items: MembershipPackage[]) {
@@ -296,13 +422,18 @@ function CSAPurchaseWizard({
   const [selectedOptionId, setSelectedOptionId] = useState(
     initialMemory?.selectedOptionId ?? "",
   );
+  const [selectedPlanId, setSelectedPlanId] = useState(
+    initialMemory?.selectedPlanId ?? "",
+  );
   const selectionRef = useRef({
     packageId: selectedPackageId,
     optionId: selectedOptionId,
+    planId: selectedPlanId,
   });
   selectionRef.current = {
     packageId: selectedPackageId,
     optionId: selectedOptionId,
+    planId: selectedPlanId,
   };
   const [guest, setGuest] = useState(initialMemory?.guest ?? emptyGuestDetails);
   const currentWardSelection = useRef({
@@ -365,6 +496,7 @@ function CSAPurchaseWizard({
       wardsResourceKey,
       selectedPackageId,
       selectedOptionId,
+      selectedPlanId,
       guest,
       termsAccepted,
       informationSubmitted,
@@ -393,6 +525,7 @@ function CSAPurchaseWizard({
     qrFailed,
     savePurchase,
     selectedOptionId,
+    selectedPlanId,
     selectedPackageId,
     sessionReady,
     step,
@@ -554,10 +687,19 @@ function CSAPurchaseWizard({
       )
         ? previousSelection.optionId
         : (options[0]?.id ?? "");
+      const optionForPlans = options.find((option) => option.id === optionId);
+      const plans = optionForPlans ? validPaymentPlans(optionForPlans) : [];
+      const planId = plans.some((plan) => plan.id === previousSelection.planId)
+        ? previousSelection.planId
+        : (plans[0]?.id ??
+          (optionForPlans?.duration_months === 1
+            ? SINGLE_MONTH_FULL_PAYMENT_ID
+            : ""));
       setPackages(allPackages);
       setPackagesLocale(locale);
       setSelectedPackageId(packageId);
       setSelectedOptionId(optionId);
+      setSelectedPlanId(planId);
       setPackagesState("ready");
     } catch {
       if (isCurrent()) {
@@ -670,6 +812,11 @@ function CSAPurchaseWizard({
   const selectedOption = availableOptions.find(
     (item) => item.id === selectedOptionId,
   );
+  const availablePlans = selectedOption
+    ? validPaymentPlans(selectedOption)
+    : [];
+  const displayPlans = plansForOption(selectedOption, availablePlans);
+  const selectedPlan = displayPlans.find((item) => item.id === selectedPlanId);
   const normalizedPhone = normalizeVietnamPhone(guest.phone);
   const guestComplete = Boolean(
     guest.name.trim() &&
@@ -678,7 +825,9 @@ function CSAPurchaseWizard({
     guest.ward_code &&
     guest.address.trim(),
   );
-  const packageComplete = Boolean(selectedPackage && selectedOption);
+  const packageComplete = Boolean(
+    selectedPackage && selectedOption && selectedPlan,
+  );
   const informationComplete = Boolean(sessionReady && (user || guestComplete));
   const canCreate = Boolean(
     packageComplete && informationComplete && termsAccepted && !creating,
@@ -704,7 +853,8 @@ function CSAPurchaseWizard({
     setTermsSubmitted(true);
     setErrorKey(null);
     setProfileIncomplete(false);
-    if (!canCreate || !selectedPackage || !selectedOption) return;
+    if (!canCreate || !selectedPackage || !selectedOption || !selectedPlan)
+      return;
     const identity = user
       ? {}
       : {
@@ -720,6 +870,9 @@ function CSAPurchaseWizard({
         body: JSON.stringify({
           package_id: selectedPackage.id,
           price_option_id: selectedOption.id,
+          ...(selectedPlan.id !== SINGLE_MONTH_FULL_PAYMENT_ID
+            ? { payment_plan_id: selectedPlan.id }
+            : {}),
           terms_accepted: true,
           terms_locale: locale,
           ...identity,
@@ -896,8 +1049,47 @@ function CSAPurchaseWizard({
     );
 
   if (purchase && step === 4) {
-    const qrUrl = buildVietQRUrl(purchase);
+    const paymentPlan =
+      purchase.payment_plan ??
+      (purchase.price_option_snapshot.duration_months === 1
+        ? {
+            id: SINGLE_MONTH_FULL_PAYMENT_ID,
+            name: "",
+            payment_type: "full" as const,
+            total_amount: purchase.amount,
+            installment_count: 1,
+            initial_payment_amount: purchase.initial_payment_amount,
+            installments: [
+              {
+                sequence: 1,
+                amount: purchase.amount,
+                cycle_count: 1,
+              },
+            ],
+          }
+        : null);
+    const schedule = paymentPlan?.installments ?? [];
+    const firstPayment = schedule.find((item) => item.sequence === 1);
+    const initialAmount = positiveInteger(purchase.initial_payment_amount);
+    const paymentSnapshotComplete = Boolean(
+      paymentPlan &&
+      validPaymentPlan(
+        paymentPlan,
+        purchase.price_option_snapshot.duration_months,
+      ) &&
+      positiveInteger(paymentPlan.total_amount) ===
+        positiveInteger(purchase.amount) &&
+      firstPayment &&
+      initialAmount !== null &&
+      initialAmount === positiveInteger(firstPayment.amount) &&
+      (paymentPlan.payment_type !== "full" ||
+        initialAmount === positiveInteger(purchase.amount)) &&
+      positiveInteger(firstPayment.amount) ===
+        positiveInteger(purchase.qr_payload.amount),
+    );
+    const qrUrl = paymentSnapshotComplete ? buildVietQRUrl(purchase) : "";
     const bankDataComplete = Boolean(
+      paymentSnapshotComplete &&
       purchase.bank_name &&
       purchase.account_number &&
       purchase.account_name &&
@@ -927,12 +1119,12 @@ function CSAPurchaseWizard({
               >
                 {copy.steps[3]}
               </h2>
-              <p className="step-desc">{copy.paymentIntro}</p>
+              {paymentSnapshotComplete ? (
+                <p className="step-desc">{copy.paymentIntro}</p>
+              ) : null}
               <div className="payment-grid">
                 <div className="payment-qr">
-                  <h3 className="payment-qr-title">
-                    {locale === "vi" ? "Mã QR" : "QR code"}
-                  </h3>
+                  <h3 className="payment-qr-title">{copy.qrTitle}</h3>
                   {qrUrl && !qrFailed ? (
                     <div className="qr-wrap">
                       <div className="qr-image">
@@ -953,7 +1145,12 @@ function CSAPurchaseWizard({
                         />
                       </div>
                     </div>
-                  ) : null}
+                  ) : (
+                    <div
+                      className="qr-wrap qr-unavailable"
+                      aria-hidden="true"
+                    />
+                  )}
                 </div>
                 <div className="payment-information">
                   {bankDataComplete ? (
@@ -962,6 +1159,42 @@ function CSAPurchaseWizard({
                         {copy.paymentTitle}
                       </h3>
                       <dl className="bank-list">
+                        <div className="bank-row">
+                          <dt className="k">
+                            {paymentPlan?.payment_type === "installment"
+                              ? copy.initialPayment
+                              : copy.paymentAmountDue}
+                          </dt>
+                          <dd className="v">
+                            <strong>
+                              {formatMembershipMoney(
+                                purchase.initial_payment_amount,
+                                locale,
+                              )}
+                            </strong>
+                            {paymentPlan?.payment_type === "full" ? (
+                              <small>
+                                {copy.entirePackage.replace(
+                                  "{count}",
+                                  String(
+                                    purchase.price_option_snapshot
+                                      .duration_months,
+                                  ),
+                                )}
+                              </small>
+                            ) : null}
+                          </dd>
+                        </div>
+                        {paymentPlan?.payment_type === "installment" ? (
+                          <>
+                            <div className="bank-row">
+                              <dt className="k">{copy.packageValue}</dt>
+                              <dd className="v">
+                                {formatMembershipMoney(purchase.amount, locale)}
+                              </dd>
+                            </div>
+                          </>
+                        ) : null}
                         <div className="bank-row">
                           <dt className="k">{copy.bank}</dt>
                           <dd className="v">
@@ -999,14 +1232,6 @@ function CSAPurchaseWizard({
                           </dd>
                         </div>
                         <div className="bank-row">
-                          <dt className="k">{copy.amount}</dt>
-                          <dd className="v">
-                            <strong>
-                              {formatMembershipMoney(purchase.amount, locale)}
-                            </strong>
-                          </dd>
-                        </div>
-                        <div className="bank-row">
                           <dt className="k">{copy.transferContent}</dt>
                           <dd className="v">
                             <strong>{purchase.transfer_content}</strong>
@@ -1031,11 +1256,49 @@ function CSAPurchaseWizard({
                           </dd>
                         </div>
                       </dl>
+                      {paymentPlan?.payment_type === "installment" &&
+                      schedule.length > 0 ? (
+                        <div className="payment-schedule">
+                          <h4>{copy.paymentSchedule}</h4>
+                          <ol>
+                            {[...schedule]
+                              .sort((a, b) => a.sequence - b.sequence)
+                              .map((item, index, installments) => (
+                                <li
+                                  className="payment-schedule-row"
+                                  key={item.sequence}
+                                >
+                                  <span className="payment-schedule-label">
+                                    {copy.installmentNumber.replace(
+                                      "{number}",
+                                      String(item.sequence),
+                                    )}
+                                  </span>
+                                  <strong className="payment-schedule-amount">
+                                    {formatMembershipMoney(item.amount, locale)}
+                                  </strong>
+                                  <span className="payment-schedule-months">
+                                    {installmentMonthsLabel(
+                                      item.cycle_count,
+                                      index,
+                                      installments.length,
+                                      copy,
+                                    )}
+                                  </span>
+                                </li>
+                              ))}
+                          </ol>
+                        </div>
+                      ) : null}
                     </>
                   ) : null}
                   {!paymentComplete ? (
                     <p className="notice error" role="alert">
-                      {copy.paymentDataError}
+                      {initialAmount === null
+                        ? copy.initialPaymentMissing
+                        : !paymentSnapshotComplete
+                          ? copy.paymentSnapshotInvalid
+                          : copy.paymentDataError}
                     </p>
                   ) : null}
                   {error ? (
@@ -1043,27 +1306,27 @@ function CSAPurchaseWizard({
                       {error}
                     </p>
                   ) : null}
-                  <div className="btn-row">
-                    <button
-                      className="btn btn-secondary"
-                      type="button"
-                      disabled={confirming}
-                      onClick={() => setStep(3)}
-                    >
-                      {copy.previous}
-                    </button>
-                    {paymentComplete ? (
-                      <button
-                        className="btn btn-primary"
-                        type="button"
-                        disabled={confirming}
-                        onClick={() => void confirmPayment()}
-                      >
-                        {confirming ? copy.confirming : copy.confirm}
-                      </button>
-                    ) : null}
-                  </div>
                 </div>
+              </div>
+              <div className="btn-row payment-actions">
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  disabled={confirming}
+                  onClick={() => setStep(3)}
+                >
+                  {copy.previous}
+                </button>
+                {paymentComplete ? (
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    disabled={confirming}
+                    onClick={() => void confirmPayment()}
+                  >
+                    {confirming ? copy.confirming : copy.confirm}
+                  </button>
+                ) : null}
               </div>
             </div>
           </section>
@@ -1138,11 +1401,19 @@ function CSAPurchaseWizard({
                         type="button"
                         data-package={item.id}
                         aria-pressed={selectedPackageId === item.id}
-                        disabled={packageDisabled}
+                        disabled={packageDisabled || Boolean(purchase)}
                         key={item.id}
                         onClick={() => {
                           setSelectedPackageId(item.id);
                           setSelectedOptionId(firstOption?.id ?? "");
+                          setSelectedPlanId(
+                            firstOption
+                              ? (validPaymentPlans(firstOption)[0]?.id ??
+                                  (firstOption.duration_months === 1
+                                    ? SINGLE_MONTH_FULL_PAYMENT_ID
+                                    : ""))
+                              : "",
+                          );
                         }}
                       >
                         <span className="package-state" aria-hidden="true">
@@ -1211,8 +1482,17 @@ function CSAPurchaseWizard({
                           type="button"
                           data-months={option.duration_months}
                           aria-pressed={selectedOptionId === option.id}
+                          disabled={Boolean(purchase)}
                           key={option.id}
-                          onClick={() => setSelectedOptionId(option.id)}
+                          onClick={() => {
+                            setSelectedOptionId(option.id);
+                            setSelectedPlanId(
+                              validPaymentPlans(option)[0]?.id ??
+                                (option.duration_months === 1
+                                  ? SINGLE_MONTH_FULL_PAYMENT_ID
+                                  : ""),
+                            );
+                          }}
                         >
                           <span className="duration-term">
                             <span
@@ -1266,8 +1546,122 @@ function CSAPurchaseWizard({
                     })}
                   </div>
 
+                  <div className="payment-plan-section">
+                    <h3>{copy.paymentPlanTitle}</h3>
+                    {selectedOption &&
+                    selectedOption.duration_months > 1 &&
+                    availablePlans.length === 0 ? (
+                      <p className="notice error" role="alert">
+                        {copy.paymentPlanMissing}
+                      </p>
+                    ) : null}
+                    <div
+                      className="payment-plan-list"
+                      role="group"
+                      aria-label={copy.paymentPlanTitle}
+                    >
+                      {displayPlans.map((plan) => {
+                        const installments = sortedInstallments(plan);
+                        const saving = selectedOption
+                          ? paymentPlanSaving(
+                              plan,
+                              selectedOption,
+                              availableOptions,
+                            )
+                          : null;
+                        return (
+                          <button
+                            className={[
+                              "payment-plan-choice",
+                              selectedPlanId === plan.id && "selected",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            type="button"
+                            key={plan.id}
+                            data-payment-plan={plan.id}
+                            aria-label={paymentPlanLabel(plan, copy)}
+                            aria-pressed={selectedPlanId === plan.id}
+                            disabled={Boolean(purchase)}
+                            onClick={() => setSelectedPlanId(plan.id)}
+                          >
+                            <span className="payment-plan-main">
+                              <strong>{paymentPlanLabel(plan, copy)}</strong>
+                              <small>
+                                {(plan.payment_type === "full"
+                                  ? copy.entirePackage
+                                  : copy.packageDuration
+                                ).replace(
+                                  "{count}",
+                                  String(selectedOption?.duration_months ?? 0),
+                                )}
+                              </small>
+                            </span>
+                            <span className="payment-plan-price">
+                              <strong>
+                                {formatMembershipMoney(
+                                  plan.total_amount,
+                                  locale,
+                                )}
+                              </strong>
+                              {saving ? (
+                                <span className="saving-badge">
+                                  {copy.savingPercent.replace(
+                                    "{percent}",
+                                    locale === "vi"
+                                      ? saving.percent.replace(".", ",")
+                                      : saving.percent,
+                                  )}
+                                </span>
+                              ) : null}
+                            </span>
+                            {plan.payment_type === "installment" ? (
+                              <span className="payment-plan-detail">
+                                {installments.map((row, index) => (
+                                  <span
+                                    className="payment-plan-installment"
+                                    key={row.sequence}
+                                  >
+                                    <strong>
+                                      {copy.installmentNumber.replace(
+                                        "{number}",
+                                        String(row.sequence),
+                                      )}
+                                    </strong>
+                                    <strong>
+                                      {formatMembershipMoney(
+                                        row.amount,
+                                        locale,
+                                      )}
+                                    </strong>
+                                    <small>
+                                      {installmentMonthsLabel(
+                                        row.cycle_count,
+                                        index,
+                                        installments.length,
+                                        copy,
+                                      )}
+                                    </small>
+                                  </span>
+                                ))}
+                              </span>
+                            ) : null}
+                            {saving ? (
+                              <span className="payment-plan-saving duration-saving">
+                                {copy.savingAmount.replace(
+                                  "{amount}",
+                                  formatMembershipMoney(saving.amount, locale),
+                                )}
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="chosen-total">
-                    <div>
+                    <div className="chosen-total-selection">
                       <span>{copy.selectionSummary}</span>
                       <small>
                         {selectedPackage && selectedOption
@@ -1275,14 +1669,32 @@ function CSAPurchaseWizard({
                           : "—"}
                       </small>
                     </div>
-                    <strong>
-                      {selectedOption
-                        ? formatMembershipMoney(
-                            selectedOption.total_price_vnd,
-                            locale,
-                          )
-                        : "—"}
-                    </strong>
+                    {selectedPlan ? (
+                      <>
+                        <div className="chosen-total-method">
+                          <span>{copy.summaryMethod}</span>
+                          <small>{paymentPlanLabel(selectedPlan, copy)}</small>
+                        </div>
+                        <div className="chosen-total-payment">
+                          <span>
+                            {selectedPlan.payment_type === "full"
+                              ? copy.summaryAmountDue
+                              : copy.summaryFirstPayment}
+                          </span>
+                          <strong>
+                            {formatMembershipMoney(
+                              selectedPlan.payment_type === "full"
+                                ? selectedPlan.total_amount
+                                : (selectedPlan.initial_payment_amount ??
+                                    sortedInstallments(selectedPlan)[0]
+                                      ?.amount ??
+                                    "0"),
+                              locale,
+                            )}
+                          </strong>
+                        </div>
+                      </>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -1540,7 +1952,13 @@ function CSAPurchaseWizard({
                         <span className="term-number">{index + 1}</span>
                         <div>
                           <h3>{section.heading}</h3>
-                          <p>{section.text}</p>
+                          {"paragraphs" in section ? (
+                            section.paragraphs.map((paragraph) => (
+                              <p key={paragraph}>{paragraph}</p>
+                            ))
+                          ) : (
+                            <p>{section.text}</p>
+                          )}
                         </div>
                       </section>
                     );

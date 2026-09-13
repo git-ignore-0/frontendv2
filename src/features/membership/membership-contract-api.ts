@@ -14,11 +14,12 @@ export async function getMembershipContract(
 export async function downloadMembershipContract(
   membershipId: string,
   locale: "vi" | "en",
+  versionId?: string,
 ) {
   let response: Response;
   try {
     response = await fetch(
-      `/api/account/memberships/${membershipId}/contract/pdf?locale=${locale}`,
+      `/api/account/memberships/${membershipId}/contract/pdf?locale=${locale}${versionId ? `&version_id=${encodeURIComponent(versionId)}` : ""}`,
       {
         cache: "no-store",
       },
