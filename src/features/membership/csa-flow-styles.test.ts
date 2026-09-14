@@ -130,6 +130,41 @@ describe("CSA demo style contract", () => {
     );
   });
 
+  it("keeps the incomplete-profile notice readable without overlapping its account link", () => {
+    const notice = declarationBlock(
+      ".csa-purchase-ui .profile-incomplete-notice",
+    );
+    expect(notice).toContain("display: grid");
+    expect(notice).toContain(
+      "grid-template-columns: minmax(0, 1fr) max-content",
+    );
+    expect(notice).toContain("min-width: 0");
+    expect(notice).not.toContain("position:");
+
+    const message = declarationBlock(
+      ".csa-purchase-ui .profile-incomplete-notice-message",
+    );
+    expect(message).toContain("min-width: 0");
+    expect(message).toContain("overflow-wrap: anywhere");
+
+    const link = declarationBlock(
+      ".csa-purchase-ui .profile-incomplete-notice .btn",
+    );
+    expect(link).toContain("display: inline-flex");
+    expect(link).toContain("align-items: center");
+    expect(link).toContain("justify-content: center");
+    expect(link).toContain("text-align: center");
+    expect(link).toContain("width: fit-content");
+    expect(link).toContain("max-width: 100%");
+
+    expect(csaCss).toMatch(
+      /@media \(max-width: 768px\)[\s\S]*?\.csa-purchase-ui \.profile-incomplete-notice\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\)/,
+    );
+    expect(csaCss).toMatch(
+      /@media \(max-width: 768px\)[\s\S]*?\.csa-purchase-ui \.profile-incomplete-notice \.btn\s*\{[^}]*justify-self: start/,
+    );
+  });
+
   it("ports the demo package choice grid and package cards", () => {
     expect(declarationBlock(".csa-purchase-ui .package-choice-grid")).toContain(
       "gap: 18px",

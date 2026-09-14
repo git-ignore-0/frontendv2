@@ -622,6 +622,46 @@ describe("account BFF proxy", () => {
     expect(response.status).toBe(201);
   });
 
+  it("proxies only exact Payment Quote and confirm-transfer POST paths", async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      expect(String(input)).toBe(
+        "https://auth.example.test/api/v1/public/csa-payment-quotes",
+      );
+      return Response.json(
+        { data: { quote_token: "opaque" } },
+        { status: 201 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const quote = await POST(
+      new NextRequest(
+        "https://site.example.test/api/account/csa-payment-quotes",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "https://site.example.test",
+            "X-NFV-Public-Request": "1",
+          },
+          body: JSON.stringify({ package_id: "package-id" }),
+        },
+      ),
+      { params: Promise.resolve({ path: ["csa-payment-quotes"] }) },
+    );
+    expect(quote.status).toBe(201);
+
+    const invalid = await POST(
+      new NextRequest(
+        "https://site.example.test/api/account/csa-payment-quotes?amount=1",
+        { method: "POST" },
+      ),
+      { params: Promise.resolve({ path: ["csa-payment-quotes"] }) },
+    );
+    expect(invalid.status).toBe(404);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("proxies successful and rejected submit-code responses", async () => {
     vi.stubGlobal(
       "fetch",

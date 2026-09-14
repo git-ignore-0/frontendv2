@@ -181,6 +181,38 @@ export type CSAPurchaseRequestCreated = {
   guest_confirmation_token?: string;
 };
 
+/** A short-lived, server-signed payment snapshot. It never leaves CSA flow memory. */
+export type CSAPaymentQuote = {
+  quote_token: string;
+  expires_at: string;
+  request_code: string;
+  payment: {
+    amount: string;
+    bank_code: string;
+    bank_name: string;
+    account_number: string;
+    account_name: string;
+    transfer_content: string;
+  };
+  payment_summary: {
+    payment_type: "full" | "installment";
+    total_amount: string;
+    initial_payment_amount: string;
+    installment_count: number;
+    installments: CSAPaymentInstallment[];
+  };
+  terms: { version: string; locale: "vi" | "en"; hash: string };
+  qr_payload: {
+    acqId: string;
+    accountNo: string;
+    accountName: string;
+    amount: string;
+    addInfo: string;
+    format: string;
+    template: string;
+  };
+};
+
 export type CSATrackerStatus =
   "pending" | "payment_confirmed" | "approved" | "rejected" | "expired";
 

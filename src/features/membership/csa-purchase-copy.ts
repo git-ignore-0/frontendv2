@@ -19,6 +19,9 @@ const copy = {
     totalPrice: "Total",
     savingPercent: "Save {percent}%",
     savingAmount: "Save {amount} compared with buying monthly",
+    monthlyPurchase: "Buying monthly: {amount}",
+    durationSaving: "Save: {amount} · {percent}%",
+    paymentPlanSaving: "Save {amount} · {percent}%",
     selectionSummary: "Your selection",
     paymentPlanTitle: "Payment method",
     paymentPlanMissing:
@@ -135,9 +138,17 @@ const copy = {
     termsRequired: "You must accept the CSA terms before continuing.",
     continue: "Continue to payment",
     creating: "Creating request…",
+    creatingQuote: "Preparing secure payment details…",
+    recreateQuote: "Refresh payment details",
+    quoteExpired:
+      "These payment details have expired. Please create a new request before transferring money.",
+    quoteUnavailable:
+      "Payment details are unavailable. Please refresh them before transferring money.",
+    quoteIdentityMismatch:
+      "Your details no longer match this payment quote. Please refresh the payment details.",
     profileIncomplete:
       "Your Auth Account profile is incomplete. Update your name, phone number and address before purchasing CSA.",
-    updateAccount: "Update Auth Account",
+    updateAccount: "Update account information",
     paymentTitle: "Transfer payment",
     paymentIntro:
       "Transfer the exact amount with the content below. Do not create another request for this purchase.",
@@ -191,6 +202,9 @@ const copy = {
     totalPrice: "Thành tiền",
     savingPercent: "Tiết kiệm {percent}%",
     savingAmount: "Giảm {amount} so với mua từng tháng",
+    monthlyPurchase: "Mua từng tháng: {amount}",
+    durationSaving: "Tiết kiệm: {amount} · {percent}%",
+    paymentPlanSaving: "Tiết kiệm {amount} · {percent}%",
     selectionSummary: "Gói bạn đã chọn",
     paymentPlanTitle: "Phương thức thanh toán",
     paymentPlanMissing: "Thời hạn này chưa có phương thức thanh toán hợp lệ.",
@@ -306,9 +320,17 @@ const copy = {
     termsRequired: "Bạn phải đồng ý với Điều khoản CSA trước khi tiếp tục.",
     continue: "Tiếp tục thanh toán",
     creating: "Đang tạo yêu cầu…",
+    creatingQuote: "Đang chuẩn bị thông tin thanh toán an toàn…",
+    recreateQuote: "Tạo lại thông tin thanh toán",
+    quoteExpired:
+      "Thông tin thanh toán này đã hết hạn. Vui lòng tạo yêu cầu mới trước khi chuyển khoản.",
+    quoteUnavailable:
+      "Thông tin thanh toán không khả dụng. Vui lòng tạo lại trước khi chuyển khoản.",
+    quoteIdentityMismatch:
+      "Thông tin của bạn không còn khớp với báo giá thanh toán. Vui lòng tạo lại thông tin thanh toán.",
     profileIncomplete:
       "Thông tin Auth Account chưa đầy đủ. Vui lòng cập nhật họ tên, số điện thoại và địa chỉ trước khi mua CSA.",
-    updateAccount: "Cập nhật Auth Account",
+    updateAccount: "Cập nhật thông tin tài khoản",
     paymentTitle: "Thông tin chuyển khoản",
     paymentIntro:
       "Chuyển đúng số tiền và nội dung bên dưới. Không tạo thêm yêu cầu khác cho giao dịch này.",

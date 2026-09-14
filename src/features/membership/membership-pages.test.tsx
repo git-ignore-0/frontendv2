@@ -880,7 +880,7 @@ describe("Account Membership", () => {
     vi.useFakeTimers();
     await act(async () => {
       fireEvent.click(
-        screen.getByRole("button", { name: "Download Vietnamese PDF" }),
+        screen.getByRole("button", { name: "Download Vietnamese contract" }),
       );
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -893,7 +893,7 @@ describe("Account Membership", () => {
 
     await act(async () => {
       fireEvent.click(
-        screen.getByRole("button", { name: "Download English PDF" }),
+        screen.getByRole("button", { name: "Download English contract" }),
       );
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -977,15 +977,23 @@ describe("Account Membership", () => {
     expect(within(rows[0]).queryByText("Current version")).toBeNull();
     expect(within(rows[0]).getByText("VI")).toBeVisible();
     expect(
-      within(rows[0]).queryByRole("button", { name: "Download English PDF" }),
+      within(rows[0]).queryByRole("button", {
+        name: "Download English contract",
+      }),
     ).toBeNull();
+    expect(
+      screen.getAllByRole("button", { name: "Download Vietnamese contract" }),
+    ).toHaveLength(2);
+    expect(
+      screen.getAllByRole("button", { name: "Download English contract" }),
+    ).toHaveLength(1);
     expect(within(rows[1]).getByText("₫1,000,000")).toBeVisible();
 
     vi.useFakeTimers();
     await act(async () =>
       fireEvent.click(
         within(rows[0]).getByRole("button", {
-          name: "Download Vietnamese PDF",
+          name: "Download Vietnamese contract",
         }),
       ),
     );
@@ -999,7 +1007,9 @@ describe("Account Membership", () => {
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:version");
     await act(async () =>
       fireEvent.click(
-        within(rows[1]).getByRole("button", { name: "Download English PDF" }),
+        within(rows[1]).getByRole("button", {
+          name: "Download English contract",
+        }),
       ),
     );
     expect(fetchMock).toHaveBeenCalledWith(
@@ -1043,12 +1053,12 @@ describe("Account Membership", () => {
     );
     const row = (await screen.findByText("Version 1")).closest("li")!;
     const button = within(row).getByRole("button", {
-      name: "Download Vietnamese PDF",
+      name: "Download Vietnamese contract",
     });
     fireEvent.click(button);
     expect(button).toBeDisabled();
     expect(
-      within(row).getByRole("button", { name: "Download English PDF" }),
+      within(row).getByRole("button", { name: "Download English contract" }),
     ).toBeEnabled();
     fireEvent.click(button);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -1110,10 +1120,10 @@ describe("Account Membership", () => {
       <AccountMembershipPage copy={getSiteContent("en").account} locale="en" />,
     );
     fireEvent.click(
-      await screen.findByRole("button", { name: "Download English PDF" }),
+      await screen.findByRole("button", { name: "Download English contract" }),
     );
     expect(
-      await screen.findByText("The contract PDF is temporarily unavailable."),
+      await screen.findByText("The contract is temporarily unavailable."),
     ).toBeVisible();
     expect(screen.queryByText("internal_storage_key_failure")).toBeNull();
   });

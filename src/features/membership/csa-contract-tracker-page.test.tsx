@@ -148,8 +148,8 @@ describe("CSA contract guest tracker", () => {
     ["csa_tracker_lookup_unavailable", "Không thể tìm thấy yêu cầu"],
     ["csa_tracker_session_expired", "Phiên tra cứu an toàn đã hết hạn"],
     ["csa_tracker_contract_unavailable", "Hợp đồng chưa khả dụng"],
-    ["csa_contract_pdf_unavailable", "PDF hợp đồng đang tạm thời"],
-    ["invalid_contract_locale", "Ngôn ngữ PDF này không khả dụng"],
+    ["csa_contract_pdf_unavailable", "Hợp đồng đang tạm thời"],
+    ["invalid_contract_locale", "Ngôn ngữ hợp đồng này không khả dụng"],
   ] as const)("maps stable error %s", (code, message) => {
     expect(
       trackerErrorMessage(new CSATrackerApiError(code, 400), "vi"),
@@ -304,10 +304,10 @@ describe("CSA contract guest tracker", () => {
     expect(screen.getByText("31/12/2026")).toBeVisible();
     expect(screen.queryByText("01/01/2027")).toBeNull();
     expect(
-      screen.getByRole("button", { name: "Tải PDF tiếng Việt" }),
+      screen.getByRole("button", { name: "Tải hợp đồng tiếng Việt" }),
     ).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Tải PDF tiếng Anh" }),
+      screen.getByRole("button", { name: "Tải hợp đồng tiếng Anh" }),
     ).toBeVisible();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -500,7 +500,7 @@ describe("CSA contract guest tracker", () => {
       ?.querySelector("button") as HTMLButtonElement;
     fireEvent.click(versionButton);
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "PDF hợp đồng đang tạm thời",
+      "Hợp đồng đang tạm thời",
     );
     expect(screen.getByRole("heading", { name: "Đã duyệt" })).toBeVisible();
     expect(screen.getByText("CSACT-ABC123")).toBeVisible();
@@ -578,7 +578,9 @@ describe("CSA contract guest tracker", () => {
     expect(screen.getByText("Gói Rau")).toBeVisible();
     expect(screen.getByText("3 tháng")).toBeVisible();
     expect(screen.getByText(/1\.200\.000/)).toBeVisible();
-    expect(screen.queryByRole("button", { name: /Tải PDF/ })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Tải (PDF|hợp đồng)/ }),
+    ).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
     fireEvent.click(
@@ -586,7 +588,7 @@ describe("CSA contract guest tracker", () => {
     );
     expect(await screen.findByText("CSACT-ABC123")).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Tải PDF tiếng Việt" }),
+      screen.getByRole("button", { name: "Tải hợp đồng tiếng Việt" }),
     ).toBeVisible();
     expect(
       screen.queryByText("Hợp đồng chưa khả dụng cho yêu cầu này."),
@@ -835,7 +837,7 @@ describe("CSA contract guest tracker", () => {
     render(<CSAContractTrackerPage locale="vi" />);
     submitLookup();
     fireEvent.click(
-      await screen.findByRole("button", { name: "Tải PDF tiếng Việt" }),
+      await screen.findByRole("button", { name: "Tải hợp đồng tiếng Việt" }),
     );
     await waitFor(() => expect(anchorClick).toHaveBeenCalledTimes(1));
 

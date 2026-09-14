@@ -354,32 +354,34 @@ export function AccountMembershipPage({
                     payments={contract.payments}
                     locale={locale}
                   />
-                  <div className="membership-contract-actions">
-                    {contract.available_locales.includes("vi") ? (
-                      <button
-                        className="account-primary-action"
-                        disabled={downloadingContracts.has("current:vi")}
-                        onClick={() => void downloadContract("vi")}
-                        type="button"
-                      >
-                        {downloadingContracts.has("current:vi")
-                          ? copy.membershipContractDownloading
-                          : copy.membershipContractDownloadVi}
-                      </button>
-                    ) : null}
-                    {contract.available_locales.includes("en") ? (
-                      <button
-                        className="account-primary-action"
-                        disabled={downloadingContracts.has("current:en")}
-                        onClick={() => void downloadContract("en")}
-                        type="button"
-                      >
-                        {downloadingContracts.has("current:en")
-                          ? copy.membershipContractDownloading
-                          : copy.membershipContractDownloadEn}
-                      </button>
-                    ) : null}
-                  </div>
+                  {!contract.current_version && !contract.versions?.length ? (
+                    <div className="membership-contract-actions">
+                      {contract.available_locales.includes("vi") ? (
+                        <button
+                          className="account-primary-action"
+                          disabled={downloadingContracts.has("current:vi")}
+                          onClick={() => void downloadContract("vi")}
+                          type="button"
+                        >
+                          {downloadingContracts.has("current:vi")
+                            ? copy.membershipContractDownloading
+                            : copy.membershipContractDownloadVi}
+                        </button>
+                      ) : null}
+                      {contract.available_locales.includes("en") ? (
+                        <button
+                          className="account-primary-action"
+                          disabled={downloadingContracts.has("current:en")}
+                          onClick={() => void downloadContract("en")}
+                          type="button"
+                        >
+                          {downloadingContracts.has("current:en")
+                            ? copy.membershipContractDownloading
+                            : copy.membershipContractDownloadEn}
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <CSAContractVersionHistory
                     versions={contract.versions ?? []}
                     currentVersionId={contract.current_version?.id}

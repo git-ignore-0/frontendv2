@@ -6149,6 +6149,9 @@ tbody th {
   font-weight: 600;
   line-height: 1.35;
 }
+.csa-purchase-ui .duration-saving span {
+  display: block;
+}
 .csa-purchase-ui .duration-monthly,
 .csa-purchase-ui .duration-total {
   color: var(--ink);
@@ -6268,6 +6271,8 @@ tbody th {
 }
 .csa-purchase-ui .payment-plan-section .saving-badge {
   font-size: 12px;
+  white-space: normal;
+  text-align: right;
 }
 .csa-purchase-ui .payment-schedule ol {
   display: grid;
@@ -7074,6 +7079,36 @@ tbody th {
 }
 .csa-ui .notice > p:first-child {
   margin-top: 0;
+}
+.csa-purchase-ui .profile-incomplete-notice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 10px 12px;
+  min-width: 0;
+}
+.csa-purchase-ui .profile-incomplete-notice-message {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.csa-purchase-ui .profile-incomplete-notice .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .csa-purchase-ui .profile-incomplete-notice {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .csa-purchase-ui .profile-incomplete-notice .btn {
+    justify-self: start;
+  }
 }
 .csa-ui .download-row {
   display: flex;

@@ -20,6 +20,7 @@ import {
   buildVietQRUrl,
   purchaseErrorMessage,
 } from "@/features/membership/csa-purchase-page";
+import { getCSAPurchaseCopy } from "@/features/membership/csa-purchase-copy";
 import type { CSAPurchaseRequestCreated } from "@/features/account/types";
 
 const packageId = "11111111-1111-4111-8111-111111111111";
@@ -116,6 +117,30 @@ const purchasePayload = {
     guest_confirmation_token: "guest-secret",
   },
 };
+const quotePayload = {
+  data: {
+    quote_token: "quote-token",
+    expires_at: "2099-01-01T00:00:00Z",
+    request_code: "CSA-ABC123",
+    payment: {
+      amount: "1200000",
+      bank_code: "970422",
+      bank_name: "MB Bank",
+      account_number: "123456789",
+      account_name: "NFV FARM",
+      transfer_content: "CSA-ABC123",
+    },
+    payment_summary: {
+      payment_type: "full",
+      total_amount: "1200000",
+      initial_payment_amount: "1200000",
+      installment_count: 1,
+      installments: [{ sequence: 1, amount: "1200000", cycle_count: 3 }],
+    },
+    terms: { version: "CSA_TERMS_V2", locale: "vi", hash: "test" },
+    qr_payload: purchasePayload.data.qr_payload,
+  },
+};
 
 let nextAnimationFrameId = 0;
 let animationFrames = new Map<number, FrameRequestCallback>();
@@ -132,17 +157,48 @@ function json(data: unknown, status = 200) {
   return Response.json(data, { status });
 }
 
+function asQuote(payload: unknown) {
+  const source = payload as { data?: typeof purchasePayload.data };
+  if (!source.data?.payment_plan) return payload;
+  const request = source.data;
+  return {
+    data: {
+      quote_token: "quote-token",
+      expires_at: request.expires_at ?? "2099-01-01T00:00:00Z",
+      request_code: request.request_code,
+      payment: {
+        amount: request.initial_payment_amount,
+        bank_code: "970422",
+        bank_name: request.bank_name,
+        account_number: request.account_number,
+        account_name: request.account_name,
+        transfer_content: request.transfer_content,
+      },
+      payment_summary: {
+        payment_type: request.payment_plan.payment_type,
+        total_amount: request.amount,
+        initial_payment_amount: request.initial_payment_amount,
+        installment_count: request.payment_plan.installment_count,
+        installments: request.payment_plan.installments,
+      },
+      terms: { version: "CSA_TERMS_V2", locale: "vi", hash: "test" },
+      qr_payload: request.qr_payload,
+    },
+  };
+}
+
 function installApi({
   user = null,
-  create = purchasePayload,
+  create = quotePayload,
   createStatus = 201,
   pendingCreate,
-  confirm = { data: { status: "payment_confirmed" } },
+  confirm = purchasePayload,
   confirmStatus = 200,
   packages = packagePayload,
   packageStatus = 200,
   packageResponse,
   wardResponse,
+  sessionResponse,
 }: {
   user?: Record<string, unknown> | null;
   create?: unknown;
@@ -161,8 +217,10 @@ function installApi({
     provinceCode: string,
     init?: RequestInit,
   ) => Promise<Response>;
+  sessionResponse?: (call: number) => Response;
 } = {}) {
   const calls: Array<{ url: string; init?: RequestInit }> = [];
+  let sessionCall = 0;
   const fetchMock = vi.fn(
     async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input);
@@ -200,8 +258,16 @@ function installApi({
         );
       if (url.includes("administrative-wards"))
         return json({ data: [{ code: "22015", name: "Phường Mỹ Ngãi" }] });
-      if (url === "/api/auth/session") return json({ data: { user } });
-      if (url.endsWith("/confirm-payment")) return json(confirm, confirmStatus);
+      if (url === "/api/auth/session")
+        return sessionResponse
+          ? sessionResponse(sessionCall++)
+          : json({ data: { user } });
+      if (url.endsWith("/confirm-transfer"))
+        return json(confirm, confirmStatus);
+      if (url.includes("csa-payment-quotes"))
+        return pendingCreate
+          ? pendingCreate
+          : json(asQuote(create), createStatus);
       if (url.includes("csa-purchase-requests"))
         return pendingCreate ? pendingCreate : json(create, createStatus);
       throw new Error(`Unexpected request: ${url}`);
@@ -302,6 +368,21 @@ afterEach(() => {
 });
 
 describe("CSA purchase wizard", () => {
+  it("keeps both localized incomplete-profile notices complete", () => {
+    expect(getCSAPurchaseCopy("vi").profileIncomplete).toBe(
+      "Thông tin Auth Account chưa đầy đủ. Vui lòng cập nhật họ tên, số điện thoại và địa chỉ trước khi mua CSA.",
+    );
+    expect(getCSAPurchaseCopy("en").profileIncomplete).toBe(
+      "Your Auth Account profile is incomplete. Update your name, phone number and address before purchasing CSA.",
+    );
+    expect(getCSAPurchaseCopy("vi").updateAccount).toBe(
+      "Cập nhật thông tin tài khoản",
+    );
+    expect(getCSAPurchaseCopy("en").updateAccount).toBe(
+      "Update account information",
+    );
+  });
+
   it("uses only the qr_only VietQR image template and preserves encoded payment fields", () => {
     const request = {
       ...purchasePayload.data,
@@ -365,7 +446,7 @@ describe("CSA purchase wizard", () => {
       "true",
     );
     expect(
-      calls.filter((call) => call.url === "/api/account/csa-purchase-requests"),
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(0);
     expect(
       calls.filter((call) => call.url === "/api/auth/session"),
@@ -397,7 +478,7 @@ describe("CSA purchase wizard", () => {
       calls.filter((call) => call.url === "/api/auth/session"),
     ).toHaveLength(2);
     expect(
-      calls.filter((call) => call.url === "/api/account/csa-purchase-requests"),
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(0);
   });
 
@@ -430,7 +511,7 @@ describe("CSA purchase wizard", () => {
     expect(screen.getByText("MB Bank")).toBeVisible();
     expect(screen.getByText("CSA-ABC123")).toBeVisible();
     expect(
-      calls.filter((call) => call.url === "/api/account/csa-purchase-requests"),
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(1);
     expect(window.localStorage.length).toBe(0);
     expect(window.sessionStorage.length).toBe(0);
@@ -460,7 +541,7 @@ describe("CSA purchase wizard", () => {
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
     expect(
-      calls.filter((call) => call.url === "/api/account/csa-purchase-requests"),
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(1);
 
     rerender(
@@ -469,26 +550,163 @@ describe("CSA purchase wizard", () => {
         <CSAPurchasePage key="en" locale="en" />
       </CSAFlowStateProvider>,
     );
-    await screen.findByRole("heading", { name: "Review the CSA terms" });
     expect(
-      screen.getByRole("button", { name: "Creating request…" }),
-    ).toBeDisabled();
-    resolveCreate(json(purchasePayload, 201));
+      await screen.findByText("Preparing secure payment details…"),
+    ).toBeVisible();
+    resolveCreate(json(quotePayload, 201));
 
     expect(
       await screen.findByAltText("VietQR code for CSA bank transfer"),
     ).toBeVisible();
     expect(screen.getByText("CSA-ABC123")).toBeVisible();
-    expect(memory.current?.purchase?.guest_confirmation_token).toBe(
-      "guest-secret",
-    );
+    expect(memory.current?.quote?.quote_token).toBe("quote-token");
     expect(
-      calls.filter((call) => call.url === "/api/account/csa-purchase-requests"),
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(1);
     expect(window.localStorage.length).toBe(0);
     expect(window.sessionStorage.length).toBe(0);
     expect(window.location.href).not.toMatch(/guest-secret|0901234567/);
   });
+
+  it("rejects a malformed quote response without retaining it or exposing payment actions", async () => {
+    const malformedQuote = {
+      ...quotePayload,
+      data: {
+        ...quotePayload.data,
+        payment: {
+          ...quotePayload.data.payment,
+          bank_name: "",
+        },
+      },
+    };
+    const { calls } = installApi({ create: malformedQuote });
+    const memory: { current: CSAPurchaseFlowMemory | null } = { current: null };
+    function MemoryProbe() {
+      memory.current = useCSAFlowState().purchase;
+      return null;
+    }
+    render(
+      <CSAFlowStateProvider>
+        <MemoryProbe />
+        <CSAPurchasePage locale="vi" />
+      </CSAFlowStateProvider>,
+    );
+
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+
+    expect(
+      await screen.findByText(
+        "Thông tin thanh toán không khả dụng. Vui lòng tạo lại trước khi chuyển khoản.",
+      ),
+    ).toBeVisible();
+    expect(memory.current?.quote).toBeNull();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+    expect(
+      calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+    ).toHaveLength(0);
+  });
+
+  it.each([
+    [
+      "name",
+      async () => {
+        fireEvent.change(screen.getByLabelText("Họ tên"), {
+          target: { value: "Nguyễn Văn Bình" },
+        });
+      },
+    ],
+    [
+      "phone",
+      async () => {
+        fireEvent.change(screen.getByLabelText("Số điện thoại"), {
+          target: { value: "090 123 4568" },
+        });
+      },
+    ],
+    [
+      "province",
+      async () => {
+        fireEvent.change(screen.getByLabelText("Tỉnh/thành phố"), {
+          target: { value: "01" },
+        });
+        await screen.findByRole("option", { name: "Phường Mỹ Ngãi" });
+        fireEvent.change(screen.getByLabelText("Phường/xã"), {
+          target: { value: "22015" },
+        });
+      },
+    ],
+    [
+      "ward",
+      async () => {
+        fireEvent.change(screen.getByLabelText("Phường/xã"), {
+          target: { value: "22015" },
+        });
+      },
+    ],
+    [
+      "address",
+      async () => {
+        fireEvent.change(screen.getByLabelText("Địa chỉ chi tiết"), {
+          target: { value: "Số 99, đường mới" },
+        });
+      },
+    ],
+  ])(
+    "invalidates an existing quote when the guest changes %s",
+    async (_field, updateIdentity: () => Promise<void>) => {
+      const { calls } = installApi();
+      const memory: { current: CSAPurchaseFlowMemory | null } = {
+        current: null,
+      };
+      function MemoryProbe() {
+        memory.current = useCSAFlowState().purchase;
+        return null;
+      }
+      render(
+        <CSAFlowStateProvider>
+          <MemoryProbe />
+          <CSAPurchasePage locale="vi" />
+        </CSAFlowStateProvider>,
+      );
+
+      await goToGuestTerms();
+      acceptTerms();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+      );
+      await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+      await waitFor(() => expect(memory.current?.quote).toBeDefined());
+
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+      await screen.findByRole("heading", { name: "Đọc điều khoản CSA" });
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+      await screen.findByRole("heading", { name: "Thông tin của bạn" });
+      await updateIdentity();
+
+      await waitFor(() => expect(memory.current?.quote).toBeNull());
+      expect(
+        calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+      ).toHaveLength(0);
+
+      continueWizard();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+      );
+      await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+      expect(
+        calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
+      ).toHaveLength(2);
+    },
+  );
 
   it("hides payment and lets the guest reset an already-expired request", async () => {
     const { calls } = installApi({
@@ -503,7 +721,9 @@ describe("CSA purchase wizard", () => {
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
 
-    expect(await screen.findByText(/Yêu cầu mua này đã hết hạn/)).toBeVisible();
+    expect(
+      await screen.findByText(/Thông tin thanh toán này đã hết hạn/),
+    ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
     ).toBeNull();
@@ -518,7 +738,7 @@ describe("CSA purchase wizard", () => {
     expect(await screen.findByLabelText("Họ tên")).toHaveValue("");
     expect(screen.getByLabelText("Số điện thoại")).toHaveValue("");
     expect(
-      calls.filter((call) => call.url === "/api/account/csa-purchase-requests"),
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(1);
   });
 
@@ -537,7 +757,9 @@ describe("CSA purchase wizard", () => {
       await screen.findByRole("button", { name: "Tôi đã chuyển khoản" }),
     );
 
-    expect(await screen.findByText(/Yêu cầu mua này đã hết hạn/)).toBeVisible();
+    expect(
+      await screen.findByText(/Thông tin thanh toán này đã hết hạn/),
+    ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
     ).toBeNull();
@@ -545,7 +767,7 @@ describe("CSA purchase wizard", () => {
       screen.queryByText("Không thể hoàn tất yêu cầu. Vui lòng thử lại sau."),
     ).toBeNull();
     expect(
-      calls.filter((call) => call.url.endsWith("/confirm-payment")),
+      calls.filter((call) => call.url.endsWith("/confirm-transfer")),
     ).toHaveLength(1);
   });
 
@@ -593,7 +815,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(continueButton);
     expect(await screen.findByText("User B")).toBeVisible();
     expect(
-      calls.filter((call) => call.url === "/api/account/csa-purchase-requests"),
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(1);
     expect(window.localStorage.length).toBe(0);
     expect(window.sessionStorage.length).toBe(0);
@@ -664,7 +886,9 @@ describe("CSA purchase wizard", () => {
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
     await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
-    await waitFor(() => expect(memory.current?.purchase?.id).toBe(requestId));
+    await waitFor(() =>
+      expect(memory.current?.quote?.quote_token).toBe("quote-token"),
+    );
     expect(memory.current?.selectedPackageId).toBe(packageId);
     expect(memory.current?.selectedOptionId).toBe(optionId);
     expect(memory.current?.selectedPlanId).toBe(planId);
@@ -981,7 +1205,7 @@ describe("CSA purchase wizard", () => {
     expect(calls).toHaveLength(requestCount);
   });
 
-  it("uses the one-month total as baseline and shows amount and rounded percent savings", async () => {
+  it("uses the current duration monthly price as its buying-monthly baseline", async () => {
     installApi({
       packages: {
         data: [
@@ -992,22 +1216,33 @@ describe("CSA purchase wizard", () => {
                 ...packagePayload.data[0].price_options[0],
                 id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
                 duration_months: 1,
-                monthly_price_vnd: "999999",
-                total_price_vnd: "500000",
+                monthly_price_vnd: "300000",
+                total_price_vnd: "300000",
                 payment_plans: [
                   {
                     ...packagePayload.data[0].price_options[0].payment_plans[0],
                     id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-                    total_amount: "500000",
+                    total_amount: "300000",
                     installments: [
-                      { sequence: 1, amount: "500000", cycle_count: 1 },
+                      { sequence: 1, amount: "300000", cycle_count: 1 },
                     ],
                   },
                 ],
               },
               {
                 ...packagePayload.data[0].price_options[0],
-                total_price_vnd: "1200000",
+                duration_months: 6,
+                monthly_price_vnd: "900000",
+                total_price_vnd: "5000000",
+                payment_plans: [
+                  {
+                    ...packagePayload.data[0].price_options[0].payment_plans[0],
+                    total_amount: "5000000",
+                    installments: [
+                      { sequence: 1, amount: "5000000", cycle_count: 6 },
+                    ],
+                  },
+                ],
               },
             ],
           },
@@ -1016,30 +1251,28 @@ describe("CSA purchase wizard", () => {
     });
     render(<CSAPurchasePage locale="vi" />);
 
-    expect(await screen.findByText("1 tháng")).toBeVisible();
-    expect(screen.getByText("Tiết kiệm 20%")).toBeVisible();
-    expect(
-      screen.getByText(/Giảm 300\.000.*so với mua từng tháng/),
-    ).toBeVisible();
-    expect(screen.getAllByText(/1\.200\.000/).length).toBeGreaterThan(0);
+    expect(await screen.findByText("6 tháng")).toBeVisible();
+    expect(screen.getByText("Tiết kiệm 7,41%")).toBeVisible();
+    expect(screen.getByText("Mua từng tháng: 5.400.000 ₫")).toBeVisible();
+    expect(screen.getByText("Tiết kiệm: 400.000 ₫ · 7,41%")).toBeVisible();
     expect(
       screen.getByRole("button", { name: /1 tháng/ }),
     ).not.toHaveTextContent(/Tiết kiệm|Giảm/);
     expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
   });
 
-  it("does not show savings without a one-month baseline", async () => {
+  it("does not show duration savings when the current monthly price is invalid", async () => {
     installApi({
       packages: {
         data: [
           {
             ...packagePayload.data[0],
             price_options: [
-              packagePayload.data[0].price_options[0],
               {
                 ...packagePayload.data[0].price_options[0],
                 id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
                 duration_months: 6,
+                monthly_price_vnd: "0",
                 total_price_vnd: "2400000",
               },
             ],
@@ -1049,7 +1282,7 @@ describe("CSA purchase wizard", () => {
     });
     render(<CSAPurchasePage locale="vi" />);
 
-    await screen.findByRole("button", { name: /3 tháng/ });
+    await screen.findByRole("button", { name: /6 tháng/ });
     expect(screen.queryByText(/Tiết kiệm|Giảm .*mua từng tháng/)).toBeNull();
   });
 
@@ -1079,7 +1312,7 @@ describe("CSA purchase wizard", () => {
     expect(screen.getAllByText(/1\.200\.000/).length).toBeGreaterThan(0);
   });
 
-  it("renders the saving copy in English", async () => {
+  it("renders the current-duration saving copy in English", async () => {
     installApi({
       packages: {
         data: [
@@ -1089,12 +1322,18 @@ describe("CSA purchase wizard", () => {
               {
                 ...packagePayload.data[0].price_options[0],
                 id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-                duration_months: 1,
-                total_price_vnd: "500000",
-              },
-              {
-                ...packagePayload.data[0].price_options[0],
-                total_price_vnd: "1200000",
+                duration_months: 6,
+                monthly_price_vnd: "900000",
+                total_price_vnd: "5000000",
+                payment_plans: [
+                  {
+                    ...packagePayload.data[0].price_options[0].payment_plans[0],
+                    total_amount: "5000000",
+                    installments: [
+                      { sequence: 1, amount: "5000000", cycle_count: 6 },
+                    ],
+                  },
+                ],
               },
             ],
           },
@@ -1103,10 +1342,9 @@ describe("CSA purchase wizard", () => {
     });
     render(<CSAPurchasePage locale="en" />);
 
-    expect(await screen.findByText("Save 20%")).toBeVisible();
-    expect(
-      screen.getByText(/Save .*300,000.* compared with buying monthly/),
-    ).toBeVisible();
+    expect(await screen.findByText("Save 7.41%")).toBeVisible();
+    expect(screen.getByText(/Buying monthly:.*5,400,000/)).toBeVisible();
+    expect(screen.getByText(/Save:.*400,000.*7\.41%/)).toBeVisible();
   });
 
   it("preserves the backend's oldest-to-newest package response order", async () => {
@@ -1369,7 +1607,7 @@ describe("CSA purchase wizard", () => {
 
     await screen.findByRole("heading", { name: "Thanh toán" });
     const createCall = calls.find(
-      (call) => call.url === "/api/account/csa-purchase-requests",
+      (call) => call.url === "/api/account/csa-payment-quotes",
     );
     expect(JSON.parse(String(createCall?.init?.body))).toEqual({
       package_id: packageId,
@@ -1377,11 +1615,13 @@ describe("CSA purchase wizard", () => {
       payment_plan_id: planId,
       terms_accepted: true,
       terms_locale: "vi",
-      name: "Nguyễn Văn An",
-      phone: "+84901234567",
-      province_code: "66",
-      ward_code: "22015",
-      address: "Số 12, ngõ 5",
+      guest_identity: {
+        name: "Nguyễn Văn An",
+        phone: "+84901234567",
+        province_code: "66",
+        ward_code: "22015",
+        address: "Số 12, ngõ 5",
+      },
     });
   });
 
@@ -1602,7 +1842,7 @@ describe("CSA purchase wizard", () => {
     );
     await screen.findByRole("heading", { name: "Thanh toán" });
     const createCall = calls.find(
-      (call) => call.url === "/api/account/csa-purchase-requests",
+      (call) => call.url === "/api/account/csa-payment-quotes",
     );
     expect(JSON.parse(String(createCall?.init?.body))).toEqual({
       package_id: packageId,
@@ -1626,9 +1866,109 @@ describe("CSA purchase wizard", () => {
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
     expect(
-      await screen.findByRole("link", { name: "Cập nhật Auth Account" }),
-    ).toHaveAttribute("href", "https://auth.naturalfarmingvietnam.com/account");
+      await screen.findByRole("link", { name: "Cập nhật thông tin tài khoản" }),
+    ).toHaveAttribute(
+      "href",
+      "/api/auth/account?returnTo=%2Fcsa%2Fpurchase%2Fvi",
+    );
+    const profileNotice = screen.getByRole("alert");
+    expect(profileNotice).toHaveClass("profile-incomplete-notice");
+    expect(profileNotice).toHaveTextContent(
+      "Thông tin Auth Account chưa đầy đủ. Vui lòng cập nhật họ tên, số điện thoại và địa chỉ trước khi mua CSA.",
+    );
+    expect(
+      profileNotice.querySelector(".profile-incomplete-notice-message"),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText("Số điện thoại")).toBeNull();
+  });
+
+  it("refreshes the Auth Account session once after return and preserves the purchase selection", async () => {
+    const { calls } = installApi({
+      user: member,
+      create: { errors: [{ code: "csa_purchase_auth_account_incomplete" }] },
+      createStatus: 400,
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToAuthenticatedTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    const accountLink = await screen.findByRole("link", {
+      name: "Cập nhật thông tin tài khoản",
+    });
+    accountLink.addEventListener("click", (event) => event.preventDefault(), {
+      once: true,
+    });
+    fireEvent.click(accountLink);
+
+    act(() => {
+      window.dispatchEvent(new Event("focus"));
+      window.dispatchEvent(new Event("pageshow"));
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("link", { name: "Cập nhật thông tin tài khoản" }),
+      ).toBeNull(),
+    );
+    expect(
+      calls.filter((call) => call.url === "/api/auth/session"),
+    ).toHaveLength(2);
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
+    ).toHaveLength(1);
+    expect(
+      screen.getByRole("heading", { name: "Thông tin của bạn" }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    expect(screen.getByRole("button", { name: /Gói Rau/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("keeps the incomplete-profile notice when Auth Account revalidation fails", async () => {
+    const { calls } = installApi({
+      user: member,
+      create: { errors: [{ code: "csa_purchase_auth_account_incomplete" }] },
+      createStatus: 400,
+      sessionResponse: (call) =>
+        call === 0
+          ? json({ data: { user: member } })
+          : json({ error: "upstream_unavailable" }, 502),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToAuthenticatedTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    const accountLink = await screen.findByRole("link", {
+      name: "Cập nhật thông tin tài khoản",
+    });
+    accountLink.addEventListener("click", (event) => event.preventDefault(), {
+      once: true,
+    });
+    fireEvent.click(accountLink);
+
+    act(() => {
+      window.dispatchEvent(new Event("focus"));
+      window.dispatchEvent(new Event("pageshow"));
+    });
+
+    await waitFor(() =>
+      expect(
+        calls.filter((call) => call.url === "/api/auth/session"),
+      ).toHaveLength(2),
+    );
+    expect(
+      screen.getByRole("link", { name: "Cập nhật thông tin tài khoản" }),
+    ).toBeVisible();
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
+    ).toHaveLength(1);
   });
 
   it("shows backend payment data, supports copy, confirms with guest token and renders success", async () => {
@@ -1823,10 +2163,17 @@ describe("CSA purchase wizard", () => {
       screen.queryByText("Prototype giao diện đăng ký & tra cứu"),
     ).toBeNull();
     const confirmCall = calls.find((call) =>
-      call.url.endsWith("/confirm-payment"),
+      call.url.endsWith("/confirm-transfer"),
     );
     expect(JSON.parse(String(confirmCall?.init?.body))).toEqual({
-      guest_confirmation_token: "guest-secret",
+      quote_token: "quote-token",
+      guest_identity: {
+        name: "Nguyễn Văn An",
+        phone: "+84901234567",
+        province_code: "66",
+        ward_code: "22015",
+        address: "Số 12, ngõ 5",
+      },
     });
   });
 
@@ -1900,40 +2247,29 @@ describe("CSA purchase wizard", () => {
     await goToAuthenticatedTerms();
     acceptTerms();
     const submit = screen.getByRole("button", { name: "Tiếp tục thanh toán" });
-    const termsCheckbox = screen.getByRole("checkbox", {
-      name: /đồng ý với toàn bộ Điều khoản tham gia chương trình CSA/i,
-    });
     fireEvent.click(submit);
     fireEvent.submit(submit.closest("form")!);
-    expect(submit.closest("form")).toHaveAttribute("aria-busy", "true");
-    expect(termsCheckbox).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Quay lại" })).toBeDisabled();
     expect(
-      calls.filter((call) => call.url === "/api/account/csa-purchase-requests"),
+      await screen.findByText("Đang chuẩn bị thông tin thanh toán an toàn…"),
+    ).toBeVisible();
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(1);
-    resolveCreate(
-      json(
-        {
-          data: {
-            ...purchasePayload.data,
-            guest_confirmation_token: undefined,
-          },
-        },
-        201,
-      ),
-    );
+    resolveCreate(json(quotePayload, 201));
     fireEvent.click(
       await screen.findByRole("button", { name: "Tôi đã chuyển khoản" }),
     );
     await waitFor(() =>
-      expect(calls.some((call) => call.url.endsWith("/confirm-payment"))).toBe(
+      expect(calls.some((call) => call.url.endsWith("/confirm-transfer"))).toBe(
         true,
       ),
     );
     const confirmCall = calls.find((call) =>
-      call.url.endsWith("/confirm-payment"),
+      call.url.endsWith("/confirm-transfer"),
     );
-    expect(JSON.parse(String(confirmCall?.init?.body))).toEqual({});
+    expect(JSON.parse(String(confirmCall?.init?.body))).toEqual({
+      quote_token: "quote-token",
+    });
   });
 
   it("shows localized package loading/error and request failure states", async () => {
@@ -1982,6 +2318,18 @@ describe("CSA purchase wizard", () => {
         { sequence: 1, amount: "600000", cycle_count: 1 },
       ],
     };
+    const installmentWithHigherTotal = {
+      id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      name: "Trả góp ba lần",
+      payment_type: "installment",
+      total_amount: "1300000",
+      installment_count: 3,
+      installments: [
+        { sequence: 1, amount: "433333", cycle_count: 1 },
+        { sequence: 2, amount: "433333", cycle_count: 1 },
+        { sequence: 3, amount: "433334", cycle_count: 1 },
+      ],
+    };
     installApi({
       packages: {
         data: [
@@ -2006,7 +2354,7 @@ describe("CSA purchase wizard", () => {
               },
               {
                 ...packagePayload.data[0].price_options[0],
-                payment_plans: [full, installment],
+                payment_plans: [full, installment, installmentWithHigherTotal],
               },
             ],
           },
@@ -2017,12 +2365,15 @@ describe("CSA purchase wizard", () => {
     await screen.findByRole("heading", { name: "Phương thức thanh toán" });
     fireEvent.click(await screen.findByRole("button", { name: /3 tháng/ }));
     const plans = screen.getAllByRole("button", {
-      name: /Thanh toán một lần|Trả góp 2 lần/,
+      name: /Thanh toán một lần|Trả góp 2 lần|Trả góp 3 lần/,
     });
     expect(plans[0]).toHaveAttribute("aria-pressed", "true");
     expect(plans[1]).toHaveAttribute("aria-pressed", "false");
-    expect(within(plans[0]).getByText("Tiết kiệm 8,33%")).toBeVisible();
-    expect(within(plans[1]).queryByText(/Tiết kiệm|Giảm/)).toBeNull();
+    expect(
+      within(plans[0]).getByText("Tiết kiệm 100.000 ₫ · 8,33%"),
+    ).toBeVisible();
+    expect(within(plans[1]).queryByText(/^Tiết kiệm \d/)).toBeNull();
+    expect(within(plans[2]).queryByText(/^Tiết kiệm \d/)).toBeNull();
     expect(within(plans[0]).queryByText("Lần 1")).toBeNull();
     expect(
       within(plans[0]).getByText("Thanh toán toàn bộ gói · 3 tháng"),
@@ -2042,6 +2393,118 @@ describe("CSA purchase wizard", () => {
     expect(screen.getByText("Phương thức")).toBeVisible();
     expect(screen.getByText("Khoản thanh toán đầu tiên")).toBeVisible();
     expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+
+    fireEvent.click(plans[2]);
+    expect(
+      within(plans[0]).getByText("Tiết kiệm 200.000 ₫ · 15,38%"),
+    ).toBeVisible();
+  });
+
+  it("does not compare payment methods when full and installment totals match", async () => {
+    const option = packagePayload.data[0].price_options[0];
+    installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              {
+                ...option,
+                payment_plans: [
+                  { ...option.payment_plans[0], total_amount: "1200000" },
+                  {
+                    id: "77777777-7777-4777-8777-777777777777",
+                    name: "installment",
+                    payment_type: "installment",
+                    total_amount: "1200000",
+                    installment_count: 2,
+                    installments: [
+                      { sequence: 1, amount: "600000", cycle_count: 1 },
+                      { sequence: 2, amount: "600000", cycle_count: 2 },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    render(<CSAPurchasePage locale="vi" />);
+
+    await screen.findByRole("heading", { name: "Phương thức thanh toán" });
+    expect(screen.queryByText(/^Tiết kiệm \d/)).toBeNull();
+  });
+
+  it("does not show a full-payment saving when installments cost less", async () => {
+    const option = packagePayload.data[0].price_options[0];
+    installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              {
+                ...option,
+                payment_plans: [
+                  { ...option.payment_plans[0], total_amount: "1200000" },
+                  {
+                    id: "77777777-7777-4777-8777-777777777777",
+                    name: "installment",
+                    payment_type: "installment",
+                    total_amount: "1100000",
+                    installment_count: 2,
+                    installments: [
+                      { sequence: 1, amount: "550000", cycle_count: 1 },
+                      { sequence: 2, amount: "550000", cycle_count: 2 },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    render(<CSAPurchasePage locale="vi" />);
+
+    await screen.findByRole("heading", { name: "Phương thức thanh toán" });
+    expect(screen.queryByText(/^Tiết kiệm \d/)).toBeNull();
+  });
+
+  it("does not compare payment methods without a valid full-payment plan", async () => {
+    const option = packagePayload.data[0].price_options[0];
+    installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              {
+                ...option,
+                payment_plans: [
+                  {
+                    id: "77777777-7777-4777-8777-777777777777",
+                    name: "installment",
+                    payment_type: "installment",
+                    total_amount: "1200000",
+                    installment_count: 2,
+                    installments: [
+                      { sequence: 1, amount: "600000", cycle_count: 1 },
+                      { sequence: 2, amount: "600000", cycle_count: 2 },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    render(<CSAPurchasePage locale="vi" />);
+
+    await screen.findByRole("heading", { name: "Phương thức thanh toán" });
+    expect(screen.queryByText(/^Tiết kiệm \d/)).toBeNull();
   });
 
   it("renders payment-plan wording and installment months in English", async () => {
@@ -2055,7 +2518,13 @@ describe("CSA purchase wizard", () => {
               {
                 ...option,
                 payment_plans: [
-                  option.payment_plans[0],
+                  {
+                    ...option.payment_plans[0],
+                    total_amount: "1100000",
+                    installments: [
+                      { sequence: 1, amount: "1100000", cycle_count: 3 },
+                    ],
+                  },
                   {
                     id: "77777777-7777-4777-8777-777777777777",
                     name: "unused backend name",
@@ -2086,6 +2555,8 @@ describe("CSA purchase wizard", () => {
       within(installment).getByText("1 months at the beginning"),
     ).toBeVisible();
     expect(within(installment).getByText("2 final months")).toBeVisible();
+    expect(within(full).getByText("Save ₫100,000 · 8.33%")).toBeVisible();
+    expect(within(installment).queryByText(/^Save ₫/)).toBeNull();
     expect(screen.queryByText("Thanh toán một lần")).toBeNull();
   });
 
@@ -2252,7 +2723,7 @@ describe("CSA purchase wizard", () => {
       await screen.findByRole("heading", { name: "Thanh toán" }),
     ).toBeVisible();
     const post = calls.find(
-      (call) => call.url === "/api/account/csa-purchase-requests",
+      (call) => call.url === "/api/account/csa-payment-quotes",
     );
     expect(JSON.parse(String(post?.init?.body))).toMatchObject({
       payment_plan_id: installment.id,
@@ -2265,7 +2736,7 @@ describe("CSA purchase wizard", () => {
       screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
     ).toBeNull();
     expect(
-      await screen.findByText(/Không thể xác minh thông tin thanh toán/),
+      await screen.findByText(/Thông tin thanh toán không khả dụng/),
     ).toBeVisible();
     expect(
       calls.filter((call) => call.url.endsWith("/confirm-payment")),
@@ -2346,8 +2817,8 @@ describe("CSA purchase wizard", () => {
   });
 
   it.each([
-    ["", "Chưa có số tiền thanh toán đầu tiên"],
-    ["1100000", "Không thể xác minh thông tin thanh toán"],
+    ["", "Thông tin thanh toán không khả dụng"],
+    ["1100000", "Thông tin thanh toán không khả dụng"],
   ])(
     "blocks QR and confirmation for an invalid first payment amount %s",
     async (amount, message) => {
@@ -2362,7 +2833,7 @@ describe("CSA purchase wizard", () => {
       fireEvent.click(
         screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
       );
-      expect(await screen.findByText(new RegExp(message))).toBeVisible();
+      expect(await screen.findByRole("alert")).toHaveTextContent(message);
       expect(
         screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
       ).toBeNull();
@@ -2370,7 +2841,7 @@ describe("CSA purchase wizard", () => {
         screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
       ).toBeNull();
       expect(
-        calls.filter((call) => call.url.endsWith("/confirm-payment")),
+        calls.filter((call) => call.url.endsWith("/confirm-transfer")),
       ).toHaveLength(0);
     },
   );

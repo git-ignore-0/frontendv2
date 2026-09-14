@@ -2,7 +2,8 @@ export type AccountUpstreamTarget = {
   path: string;
   session: "none" | "optional" | "required";
   trackerCookie?: boolean;
-  query?: "contract-reference" | "membership-contract" | "contract-pdf";
+  query?:
+    "none" | "contract-reference" | "membership-contract" | "contract-pdf";
 };
 
 export const uuidPattern =
@@ -22,6 +23,12 @@ export function accountUpstreamTarget(
       return {
         path: "/api/v1/public/csa-purchase-requests",
         session: "optional",
+      };
+    if (path[0] === "csa-payment-quotes" && method === "POST")
+      return {
+        path: "/api/v1/public/csa-payment-quotes",
+        session: "optional",
+        query: "none",
       };
     if (path[0] === "administrative-provinces" && method === "GET")
       return {
@@ -104,6 +111,18 @@ export function accountUpstreamTarget(
       path: "/api/v1/public/csa-contract-tracker/lookup",
       session: "none",
       trackerCookie: true,
+    };
+  }
+  if (
+    method === "POST" &&
+    path.length === 2 &&
+    path[0] === "csa-purchase-requests" &&
+    path[1] === "confirm-transfer"
+  ) {
+    return {
+      path: "/api/v1/public/csa-purchase-requests/confirm-transfer",
+      session: "optional",
+      query: "none",
     };
   }
   if (

@@ -131,6 +131,21 @@ describe("account BFF allowlist", () => {
       path: "/api/v1/public/csa-purchase-requests",
       session: "optional",
     });
+    expect(accountUpstreamTarget(["csa-payment-quotes"], "POST")).toEqual({
+      path: "/api/v1/public/csa-payment-quotes",
+      session: "optional",
+      query: "none",
+    });
+    expect(
+      accountUpstreamTarget(
+        ["csa-purchase-requests", "confirm-transfer"],
+        "POST",
+      ),
+    ).toEqual({
+      path: "/api/v1/public/csa-purchase-requests/confirm-transfer",
+      session: "optional",
+      query: "none",
+    });
     expect(
       accountUpstreamTarget(
         ["csa-purchase-requests", redemptionId, "confirm-payment"],

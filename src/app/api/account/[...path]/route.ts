@@ -102,6 +102,8 @@ async function proxy(
   const method = request.method === "POST" ? "POST" : "GET";
   const upstream = accountUpstreamTarget(path, method);
   if (!upstream) return jsonError("not_found", 404);
+  if (upstream.query === "none" && request.nextUrl.searchParams.size > 0)
+    return jsonError("not_found", 404);
   if (
     upstream.query === "contract-reference" &&
     invalidContractReferenceQuery(request)

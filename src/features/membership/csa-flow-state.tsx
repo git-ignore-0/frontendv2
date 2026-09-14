@@ -13,6 +13,7 @@ import {
 
 import type {
   AdministrativeUnit,
+  CSAPaymentQuote,
   CSAPurchaseRequestCreated,
   CSATrackerContract,
   CSATrackerResult,
@@ -33,7 +34,10 @@ export type CSAPurchaseErrorKey =
   | "duplicate"
   | "invalidDetails"
   | "notPending"
-  | "expired";
+  | "expired"
+  | "quoteExpired"
+  | "quoteUnavailable"
+  | "quoteIdentityMismatch";
 export type PurchaseCreationState =
   | { status: "idle" | "pending" | "success"; error: null }
   | { status: "error"; error: { code: string; status: number } };
@@ -76,6 +80,7 @@ export type CSAPurchaseFlowMemory = {
   profileIncomplete: boolean;
   errorKey: CSAPurchaseErrorKey | null;
   purchase: CSAPurchaseRequestCreated | null;
+  quote?: CSAPaymentQuote | null;
   confirmed: boolean;
   qrFailed: boolean;
   expired: boolean;
@@ -98,12 +103,20 @@ type CSAFlowStateValue = {
   setPurchase: Dispatch<SetStateAction<CSAPurchaseFlowMemory | null>>;
   setTracker: (state: CSATrackerFlowMemory | null) => void;
   clearPurchase: () => void;
-  purchaseCreation: PurchaseCreationState;
-  createPurchase: (
+  quoteCreation: PurchaseCreationState;
+  createQuote: (
+    identity: string | null,
+    submit: () => Promise<CSAPaymentQuote>,
+  ) => void;
+  confirmation: PurchaseCreationState;
+  confirmTransfer: (
     identity: string | null,
     submit: () => Promise<CSAPurchaseRequestCreated>,
   ) => void;
   clearTracker: () => void;
+  profileRefreshPending: boolean;
+  markProfileRefreshPending: () => void;
+  completeProfileRefresh: () => void;
 };
 
 const detachedState: CSAFlowStateValue = {
@@ -113,9 +126,14 @@ const detachedState: CSAFlowStateValue = {
   setPurchase: () => undefined,
   setTracker: () => undefined,
   clearPurchase: () => undefined,
-  purchaseCreation: { status: "idle", error: null },
-  createPurchase: () => undefined,
+  quoteCreation: { status: "idle", error: null },
+  createQuote: () => undefined,
+  confirmation: { status: "idle", error: null },
+  confirmTransfer: () => undefined,
   clearTracker: () => undefined,
+  profileRefreshPending: false,
+  markProfileRefreshPending: () => undefined,
+  completeProfileRefresh: () => undefined,
 };
 
 const CSAFlowStateContext = createContext<CSAFlowStateValue>(detachedState);
@@ -126,38 +144,49 @@ export function CSAFlowStateProvider({
   children: React.ReactNode;
 }) {
   const [purchase, setPurchase] = useState<CSAPurchaseFlowMemory | null>(null);
-  const [purchaseCreation, setPurchaseCreation] =
-    useState<PurchaseCreationState>({
-      status: "idle",
-      error: null,
-    });
-  const creationInFlight = useRef(false);
+  const [quoteCreation, setQuoteCreation] = useState<PurchaseCreationState>({
+    status: "idle",
+    error: null,
+  });
+  const quoteInFlight = useRef(false);
+  const confirmationInFlight = useRef(false);
+  const [confirmation, setConfirmation] = useState<PurchaseCreationState>({
+    status: "idle",
+    error: null,
+  });
   const purchaseGeneration = useRef(0);
   const [tracker, setTracker] = useState<CSATrackerFlowMemory | null>(null);
+  const [profileRefreshPending, setProfileRefreshPending] = useState(false);
   const clearPurchase = useCallback(() => {
     purchaseGeneration.current += 1;
-    creationInFlight.current = false;
-    setPurchaseCreation({ status: "idle", error: null });
+    quoteInFlight.current = false;
+    confirmationInFlight.current = false;
+    setQuoteCreation({ status: "idle", error: null });
+    setConfirmation({ status: "idle", error: null });
     setPurchase(null);
   }, []);
-  const createPurchase = useCallback(
-    (
-      identity: string | null,
-      submit: () => Promise<CSAPurchaseRequestCreated>,
-    ) => {
-      if (creationInFlight.current) return;
-      creationInFlight.current = true;
+  const createQuote = useCallback(
+    (identity: string | null, submit: () => Promise<CSAPaymentQuote>) => {
+      if (quoteInFlight.current) return;
+      quoteInFlight.current = true;
       const generation = purchaseGeneration.current;
-      setPurchaseCreation({ status: "pending", error: null });
+      setQuoteCreation({ status: "pending", error: null });
       void submit()
-        .then((created) => {
+        .then((quote) => {
           if (generation !== purchaseGeneration.current) return;
           setPurchase((current) =>
             current?.identity === identity
-              ? { ...current, purchase: created, step: 4 }
+              ? {
+                  ...current,
+                  quote,
+                  purchase: null,
+                  confirmed: false,
+                  expired: false,
+                  step: 4,
+                }
               : current,
           );
-          setPurchaseCreation({ status: "success", error: null });
+          setQuoteCreation({ status: "success", error: null });
         })
         .catch((error: unknown) => {
           if (generation !== purchaseGeneration.current) return;
@@ -165,16 +194,64 @@ export function CSAFlowStateProvider({
             error instanceof Error && "code" in error && "status" in error
               ? { code: String(error.code), status: Number(error.status) }
               : { code: "request_failed", status: 0 };
-          setPurchaseCreation({ status: "error", error: safeError });
+          setQuoteCreation({ status: "error", error: safeError });
         })
         .finally(() => {
           if (generation === purchaseGeneration.current)
-            creationInFlight.current = false;
+            quoteInFlight.current = false;
+        });
+    },
+    [],
+  );
+  const confirmTransfer = useCallback(
+    (
+      identity: string | null,
+      submit: () => Promise<CSAPurchaseRequestCreated>,
+    ) => {
+      if (confirmationInFlight.current) return;
+      confirmationInFlight.current = true;
+      const generation = purchaseGeneration.current;
+      setConfirmation({ status: "pending", error: null });
+      void submit()
+        .then((created) => {
+          if (generation !== purchaseGeneration.current) return;
+          setPurchase((current) =>
+            current?.identity === identity
+              ? {
+                  ...current,
+                  purchase: created,
+                  quote: null,
+                  confirmed: true,
+                  step: 4,
+                }
+              : current,
+          );
+          setConfirmation({ status: "success", error: null });
+        })
+        .catch((error: unknown) => {
+          if (generation !== purchaseGeneration.current) return;
+          const safeError =
+            error instanceof Error && "code" in error && "status" in error
+              ? { code: String(error.code), status: Number(error.status) }
+              : { code: "request_failed", status: 0 };
+          setConfirmation({ status: "error", error: safeError });
+        })
+        .finally(() => {
+          if (generation === purchaseGeneration.current)
+            confirmationInFlight.current = false;
         });
     },
     [],
   );
   const clearTracker = useCallback(() => setTracker(null), []);
+  const markProfileRefreshPending = useCallback(
+    () => setProfileRefreshPending(true),
+    [],
+  );
+  const completeProfileRefresh = useCallback(
+    () => setProfileRefreshPending(false),
+    [],
+  );
   const value = useMemo(
     () => ({
       hasProvider: true,
@@ -183,16 +260,26 @@ export function CSAFlowStateProvider({
       setPurchase,
       setTracker,
       clearPurchase,
-      purchaseCreation,
-      createPurchase,
+      quoteCreation,
+      createQuote,
+      confirmation,
+      confirmTransfer,
       clearTracker,
+      profileRefreshPending,
+      markProfileRefreshPending,
+      completeProfileRefresh,
     }),
     [
       clearPurchase,
       clearTracker,
-      createPurchase,
+      createQuote,
+      confirmation,
+      confirmTransfer,
       purchase,
-      purchaseCreation,
+      quoteCreation,
+      profileRefreshPending,
+      markProfileRefreshPending,
+      completeProfileRefresh,
       tracker,
     ],
   );

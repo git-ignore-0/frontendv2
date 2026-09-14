@@ -305,9 +305,9 @@ const en = {
     membershipContractEmpty: "No contract yet",
     membershipContractError:
       "We could not load the contract. Please try again.",
-    membershipContractPdfError: "The contract PDF is temporarily unavailable.",
-    membershipContractDownloadVi: "Download Vietnamese PDF",
-    membershipContractDownloadEn: "Download English PDF",
+    membershipContractPdfError: "The contract is temporarily unavailable.",
+    membershipContractDownloadVi: "Download Vietnamese contract",
+    membershipContractDownloadEn: "Download English contract",
     membershipContractDownloading: "Downloading…",
   },
   csa: {
@@ -1144,9 +1144,9 @@ const vi: SiteContent = {
     membershipContractEmpty: "Chưa có hợp đồng",
     membershipContractError:
       "Không thể tải thông tin hợp đồng. Vui lòng thử lại.",
-    membershipContractPdfError: "PDF hợp đồng đang tạm thời không khả dụng.",
-    membershipContractDownloadVi: "Tải PDF tiếng Việt",
-    membershipContractDownloadEn: "Tải PDF tiếng Anh",
+    membershipContractPdfError: "Hợp đồng đang tạm thời không khả dụng.",
+    membershipContractDownloadVi: "Tải hợp đồng tiếng Việt",
+    membershipContractDownloadEn: "Tải hợp đồng tiếng Anh",
     membershipContractDownloading: "Đang tải…",
   },
   csa: {
