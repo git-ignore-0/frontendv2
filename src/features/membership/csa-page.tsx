@@ -6,7 +6,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ChevronDownIcon } from "@/components/icons";
 import { ZaloHelpSection } from "@/components/zalo-help";
-import type { SiteContent } from "@/content/site-content";
+import {
+  getCsaQuotaPolicyText,
+  type SiteContent,
+} from "@/content/site-content";
 import { accountApi } from "@/features/account/api";
 import { CsaComparisonSection } from "@/features/membership/csa-comparison-section";
 import { CsaFloatingBuyNow } from "@/features/membership/csa-floating-buy-now";
@@ -288,9 +291,7 @@ export function CsaPage({
                               <path d="M12 11v5M12 8h.01" />
                             </svg>
                             <p>
-                              {item.quota_policy === "expire"
-                                ? copy.expire
-                                : copy.rollover}
+                              {getCsaQuotaPolicyText(locale, item.quota_policy)}
                             </p>
                           </div>
                         </div>

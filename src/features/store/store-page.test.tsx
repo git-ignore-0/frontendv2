@@ -67,7 +67,7 @@ describe("StorePage", () => {
       "en",
       "CSA & Membership",
       "New to CSA? For more information",
-      "Ready to purchase CSA",
+      "Ready to signup for CSA",
       "View this week’s CSA items",
       "/csa/en",
     ],
@@ -75,7 +75,7 @@ describe("StorePage", () => {
       "vi",
       "CSA & Thành Viên",
       "Mới biết đến CSA? Xem thêm thông tin",
-      "Sẵn sàng mua CSA",
+      "Đăng ký CSA",
       "Xem sản phẩm CSA tuần này",
       "/csa/vi",
     ],
@@ -149,9 +149,25 @@ describe("StorePage", () => {
     const allProductsLink = within(allProductsCard).getByRole("link");
     const livePlantsLink = within(livePlantsCard).getByRole("link");
     const csaCtas = within(csaCard).getAllByRole("link");
+    const allProductsMediaAction = allProductsCard.querySelector(
+      ".store-card-media-action",
+    );
+    const livePlantsMediaAction = livePlantsCard.querySelector(
+      ".store-card-media-action",
+    );
 
     expect(within(allProductsCard).getAllByRole("link")).toHaveLength(1);
     expect(within(livePlantsCard).getAllByRole("link")).toHaveLength(1);
+    for (const mediaAction of [allProductsMediaAction, livePlantsMediaAction]) {
+      expect(mediaAction).toBeInTheDocument();
+      expect(
+        mediaAction?.querySelector(".store-card-image"),
+      ).toBeInTheDocument();
+      expect(within(mediaAction as HTMLElement).getByRole("link")).toHaveClass(
+        "store-card-cta",
+      );
+    }
+    expect(csaCard.querySelector(".store-card-media-action")).toBeNull();
     expect(allProductsLink).toHaveAttribute("href", farmbriteUrls[1]);
     expect(livePlantsLink).toHaveAttribute("href", farmbriteUrls[2]);
     for (const cta of [...csaCtas, allProductsLink, livePlantsLink]) {
@@ -163,6 +179,52 @@ describe("StorePage", () => {
     expect(zaloLink).not.toHaveAttribute("target");
     expect(zaloLink).not.toHaveAttribute("rel");
   });
+
+  it.each([
+    [
+      "en",
+      "Fresh produce and grocery selection",
+      "Live ornamental plants from the farm",
+    ],
+    [
+      "vi",
+      "Quầy rau củ và sản phẩm tươi",
+      "Cây cảnh và cây sống từ trang trại",
+    ],
+  ] as const)(
+    "adds the localized Store images for %s without adding one to CSA",
+    (locale, groceriesAlt, plantsAlt) => {
+      const copy = getSiteContent(locale).storeGuide;
+      render(<StorePage copy={copy} />);
+
+      const groceries = screen.getByAltText(groceriesAlt);
+      const plants = screen.getByAltText(plantsAlt);
+      expect(
+        new URL(
+          groceries.getAttribute("src")!,
+          "http://localhost",
+        ).searchParams.get("url"),
+      ).toBe("/images/groceries.jpg");
+      expect(
+        new URL(
+          plants.getAttribute("src")!,
+          "http://localhost",
+        ).searchParams.get("url"),
+      ).toBe("/images/ornaentals.jpg");
+
+      const csaCard = screen.getByRole("heading", {
+        level: 3,
+        name: copy.csaCard.title,
+      }).parentElement as HTMLElement;
+      expect(csaCard.querySelector(".store-card-image")).toBeNull();
+      expect(
+        screen.getByRole("link", { name: copy.individualCard.cta }),
+      ).toHaveAttribute("href", copy.individualCard.url);
+      expect(
+        screen.getByRole("link", { name: copy.livePlantsCard.cta }),
+      ).toHaveAttribute("href", copy.livePlantsCard.url);
+    },
+  );
 
   it("opens the first FAQ initially and hides every closed answer from assistive technology", () => {
     const copy = getSiteContent("en").storeGuide;

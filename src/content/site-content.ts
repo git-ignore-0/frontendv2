@@ -729,7 +729,7 @@ const en = {
           type: "internal",
         },
         {
-          label: "Ready to purchase CSA",
+          label: "Ready to signup for CSA",
           href: "/csa/purchase/en",
           kind: "ghost",
           type: "internal",
@@ -745,12 +745,14 @@ const en = {
     individualCard: {
       title: "All Products",
       body: "Browse all available vegetables, herbs, fruit, and other products. You can also add extra items beyond your CSA allowance.",
+      imageAlt: "Fresh produce and grocery selection",
       cta: "Browse all products",
       url: "https://store.farmbrite.com/store/nntn",
     },
     livePlantsCard: {
       title: "Live plants",
       body: "Browse live plants and seedlings currently available from our farm.",
+      imageAlt: "Live ornamental plants from the farm",
       cta: "Browse live plants",
       url: "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
     },
@@ -866,7 +868,7 @@ const vi: SiteContent = {
     primaryNavigation: "Điều hướng chính",
     mobileNavigation: "Điều hướng di động",
     footerNavigation: "Điều hướng chân trang",
-    referralFab: "Chia sẻ với bạn bè",
+    referralFab: "Giới thiệu bạn",
     homeLabel: "Trang chủ Natural Farming Vietnam",
     nav: {
       home: "Trang chủ",
@@ -1581,7 +1583,7 @@ const vi: SiteContent = {
           type: "internal",
         },
         {
-          label: "Sẵn sàng mua CSA",
+          label: "Đăng ký CSA",
           href: "/csa/purchase/vi",
           kind: "ghost",
           type: "internal",
@@ -1597,12 +1599,14 @@ const vi: SiteContent = {
     individualCard: {
       title: "Tất Cả Sản Phẩm",
       body: "Xem toàn bộ rau, gia vị, trái cây và các sản phẩm hiện có. Bạn cũng có thể mua thêm ngoài quyền lợi CSA.",
+      imageAlt: "Quầy rau củ và sản phẩm tươi",
       cta: "Xem tất cả sản phẩm",
       url: "https://store.farmbrite.com/store/nntn",
     },
     livePlantsCard: {
       title: "Cây sống và cây giống",
       body: "Xem các loại cây sống và cây giống hiện đang có từ trang trại.",
+      imageAlt: "Cây cảnh và cây sống từ trang trại",
       cta: "Xem cây sống và cây giống",
       url: "https://store.farmbrite.com/store/nntn/products?category=Live%20Plants",
     },
@@ -1652,7 +1656,7 @@ const vi: SiteContent = {
     zaloUrl: "https://zalo.me/84988158285",
   },
   testimonials: {
-    launcher: "Câu chuyện",
+    launcher: "Lời chứng",
     drawerEyebrow: "Cộng đồng Natural Farming",
     drawerTitle: "Những câu chuyện",
     viewAll: "Xem tất cả câu chuyện",
@@ -1694,4 +1698,12 @@ const vi: SiteContent = {
 export const siteContent: Record<Locale, SiteContent> = { en, vi };
 export function getSiteContent(locale: Locale) {
   return siteContent[locale];
+}
+
+export function getCsaQuotaPolicyText(
+  locale: Locale,
+  policy: "expire" | "rollover",
+) {
+  const csaCopy = getSiteContent(locale).csa;
+  return policy === "expire" ? csaCopy.expire : csaCopy.rollover;
 }

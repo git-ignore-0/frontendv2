@@ -11,9 +11,11 @@ import { getSiteSettings, linkFromSettings } from "@/lib/content-api";
 export async function LocaleShell({
   children,
   locale,
+  showCommunityActions = true,
 }: {
   children: React.ReactNode;
   locale: string;
+  showCommunityActions?: boolean;
 }) {
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
@@ -36,14 +38,18 @@ export async function LocaleShell({
         initialUser={session?.user ?? null}
       />
       <main id="main">{children}</main>
-      <TestimonialsWidget locale={locale as Locale} />
-      <div className="csa-fab-stack">
-        <div className="csa-fab-buy-slot" data-csa-fab-buy-slot />
-        <ReferralFloatingAction
-          locale={locale as Locale}
-          label={t.referralFab}
-        />
-      </div>
+      {showCommunityActions ? (
+        <>
+          <TestimonialsWidget locale={locale as Locale} />
+          <div className="csa-fab-stack">
+            <div className="csa-fab-buy-slot" data-csa-fab-buy-slot />
+            <ReferralFloatingAction
+              locale={locale as Locale}
+              label={t.referralFab}
+            />
+          </div>
+        </>
+      ) : null}
       <SiteFooter locale={locale as Locale} settings={settings} />
     </div>
   );

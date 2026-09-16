@@ -29,6 +29,7 @@ import {
 } from "@/features/membership/format";
 import type { CoreUser } from "@/lib/auth/schemas";
 import { normalizeVietnamPhone } from "@/lib/contact";
+import { getCsaQuotaPolicyText } from "@/content/site-content";
 import { localizedPath, type Locale } from "@/lib/i18n";
 
 type PurchaseCopy = ReturnType<typeof getCSAPurchaseCopy>;
@@ -1686,9 +1687,7 @@ function CSAPurchaseWizard({
                             )}
                           </span>
                           <span className="package-policy">
-                            {item.quota_policy === "expire"
-                              ? copy.policyExpire
-                              : copy.policyRollover}
+                            {getCsaQuotaPolicyText(locale, item.quota_policy)}
                           </span>
                         </span>
                       </button>

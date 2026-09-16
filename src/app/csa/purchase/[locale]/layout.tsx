@@ -13,5 +13,9 @@ export default async function CSAPurchaseLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  return <LocaleShell locale={locale}>{children}</LocaleShell>;
+  return (
+    <LocaleShell locale={locale} showCommunityActions={false}>
+      {children}
+    </LocaleShell>
+  );
 }

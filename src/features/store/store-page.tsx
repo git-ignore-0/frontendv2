@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { SiteContent } from "@/content/site-content";
 import { ZaloHelpSection } from "@/components/zalo-help";
 import {
@@ -133,13 +134,24 @@ export function StorePage({ copy }: { copy: Copy }) {
                 </div>
                 <h3>{copy.individualCard.title}</h3>
                 <p>{copy.individualCard.body}</p>
-                <a
-                  href={copy.individualCard.url}
-                  className="store-btn store-btn-secondary store-card-cta"
-                >
-                  {copy.individualCard.cta}
-                  <Arrow />
-                </a>
+                <div className="store-card-media-action">
+                  <div className="store-card-image">
+                    <Image
+                      src="/images/groceries.jpg"
+                      alt={copy.individualCard.imageAlt}
+                      width={600}
+                      height={338}
+                      sizes="(min-width: 768px) 20rem, 100vw"
+                    />
+                  </div>
+                  <a
+                    href={copy.individualCard.url}
+                    className="store-btn store-btn-secondary store-card-cta"
+                  >
+                    {copy.individualCard.cta}
+                    <Arrow />
+                  </a>
+                </div>
               </div>
 
               <div className="store-card">
@@ -148,13 +160,24 @@ export function StorePage({ copy }: { copy: Copy }) {
                 </div>
                 <h3>{copy.livePlantsCard.title}</h3>
                 <p>{copy.livePlantsCard.body}</p>
-                <a
-                  href={copy.livePlantsCard.url}
-                  className="store-btn store-btn-secondary store-card-cta"
-                >
-                  {copy.livePlantsCard.cta}
-                  <Arrow />
-                </a>
+                <div className="store-card-media-action">
+                  <div className="store-card-image">
+                    <Image
+                      src="/images/ornaentals.jpg"
+                      alt={copy.livePlantsCard.imageAlt}
+                      width={600}
+                      height={338}
+                      sizes="(min-width: 768px) 20rem, 100vw"
+                    />
+                  </div>
+                  <a
+                    href={copy.livePlantsCard.url}
+                    className="store-btn store-btn-secondary store-card-cta"
+                  >
+                    {copy.livePlantsCard.cta}
+                    <Arrow />
+                  </a>
+                </div>
               </div>
             </div>
           </section>
