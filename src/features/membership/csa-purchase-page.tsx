@@ -45,6 +45,17 @@ const emptyGuestDetails: CSAGuestDetails = {
   address: "",
 };
 
+function sortAdministrativeUnits(
+  units: AdministrativeUnit[],
+  locale: Locale,
+): AdministrativeUnit[] {
+  return [...units].sort(
+    (left, right) =>
+      left.name.localeCompare(right.name, locale, { sensitivity: "base" }) ||
+      left.code.localeCompare(right.code),
+  );
+}
+
 function purchaseErrorKey(error: unknown): CSAPurchaseErrorKey {
   if (!(error instanceof AccountApiError)) return "genericError";
   if (error.status === 429) return "rateLimited";
@@ -427,8 +438,7 @@ function currentStep(number: number, current: number) {
 }
 
 function describedBy(invalid: boolean, errorId: string) {
-  if (invalid) return errorId;
-  return undefined;
+  return invalid ? errorId : undefined;
 }
 
 function packageOptionClass(selected: boolean) {
@@ -967,6 +977,14 @@ function CSAPurchaseWizard({
         : [],
     [packages, packagesState],
   );
+  const orderedProvinces = useMemo(
+    () => sortAdministrativeUnits(provinces, locale),
+    [locale, provinces],
+  );
+  const orderedWards = useMemo(
+    () => sortAdministrativeUnits(wards, locale),
+    [locale, wards],
+  );
   const selectedPackage = useMemo(
     () => availablePackages.find((item) => item.id === selectedPackageId),
     [availablePackages, selectedPackageId],
@@ -984,6 +1002,10 @@ function CSAPurchaseWizard({
   const displayPlans = plansForOption(selectedOption, availablePlans);
   const selectedPlan = displayPlans.find((item) => item.id === selectedPlanId);
   const normalizedPhone = normalizeVietnamPhone(guest.phone);
+  const phoneHasValue = Boolean(guest.phone.trim());
+  const phoneInvalid = phoneHasValue && !normalizedPhone;
+  const phoneHasError =
+    phoneInvalid || (informationSubmitted && !normalizedPhone);
   const guestComplete = Boolean(
     guest.name.trim() &&
     normalizedPhone &&
@@ -2024,6 +2046,7 @@ function CSAPurchaseWizard({
                         }))
                       }
                       autoComplete="name"
+                      placeholder={copy.nameHint}
                       aria-invalid={informationSubmitted && !guest.name.trim()}
                       aria-describedby={describedBy(
                         informationSubmitted && !guest.name.trim(),
@@ -2051,14 +2074,15 @@ function CSAPurchaseWizard({
                       }
                       inputMode="tel"
                       autoComplete="tel"
-                      aria-invalid={informationSubmitted && !normalizedPhone}
+                      placeholder={copy.phoneHint}
+                      aria-invalid={phoneHasError}
                       aria-describedby={describedBy(
-                        informationSubmitted && !normalizedPhone,
+                        phoneHasError,
                         "csa-purchase-phone-error",
                       )}
                       required
                     />
-                    {informationSubmitted && !normalizedPhone ? (
+                    {phoneHasError ? (
                       <small id="csa-purchase-phone-error" role="alert">
                         {copy.invalidPhone}
                       </small>
@@ -2084,7 +2108,7 @@ function CSAPurchaseWizard({
                       required
                     >
                       <option value="">{copy.selectProvince}</option>
-                      {provinces.map((item) => (
+                      {orderedProvinces.map((item) => (
                         <option key={item.code} value={item.code}>
                           {item.name}
                         </option>
@@ -2123,7 +2147,7 @@ function CSAPurchaseWizard({
                         {wardsLoading ? copy.wardsLoading : copy.selectWard}
                       </option>
                       {(wardsResourceKey === `${locale}:${guest.province_code}`
-                        ? wards
+                        ? orderedWards
                         : []
                       ).map((item) => (
                         <option key={item.code} value={item.code}>
@@ -2149,6 +2173,7 @@ function CSAPurchaseWizard({
                         }))
                       }
                       autoComplete="street-address"
+                      placeholder={copy.addressHint}
                       aria-invalid={
                         informationSubmitted && !guest.address.trim()
                       }

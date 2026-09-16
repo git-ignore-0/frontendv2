@@ -1625,6 +1625,71 @@ describe("CSA purchase wizard", () => {
     });
   });
 
+  it("sorts province and ward choices alphabetically by their localized names", async () => {
+    const { calls } = installApi({
+      wardResponse: async () =>
+        json({
+          data: [
+            { code: "2", name: "Xã Zeta" },
+            { code: "1", name: "Xã Alpha" },
+          ],
+        }),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestInformation();
+
+    const provinceOptions = screen
+      .getByLabelText("Tỉnh/thành phố")
+      .querySelectorAll("option");
+    expect([...provinceOptions].map((option) => option.textContent)).toEqual([
+      "Chọn tỉnh/thành phố",
+      "Đồng Tháp",
+      "Hà Nội",
+    ]);
+
+    fireEvent.change(screen.getByLabelText("Tỉnh/thành phố"), {
+      target: { value: "66" },
+    });
+    await screen.findByRole("option", { name: "Xã Alpha" });
+    const wardOptions = screen
+      .getByLabelText("Phường/xã")
+      .querySelectorAll("option");
+    expect([...wardOptions].map((option) => option.textContent)).toEqual([
+      "Chọn phường/xã",
+      "Xã Alpha",
+      "Xã Zeta",
+    ]);
+    expect(
+      calls.some((call) => call.url.includes("administrative-wards")),
+    ).toBe(true);
+  });
+
+  it("shows guest input hints and validates an invalid phone number immediately", async () => {
+    installApi();
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestInformation();
+
+    expect(screen.getByLabelText("Họ tên")).toHaveAttribute(
+      "placeholder",
+      "Nhập đầy đủ họ và tên để ghi trên hợp đồng.",
+    );
+    expect(screen.getByLabelText("Số điện thoại")).toHaveAttribute(
+      "placeholder",
+      "0987654321",
+    );
+    expect(screen.getByLabelText("Địa chỉ chi tiết")).toHaveAttribute(
+      "placeholder",
+      "Nhập số nhà, tên đường/thôn/ấp và thông tin cần thiết để giao hàng.",
+    );
+
+    const phoneInput = screen.getByLabelText("Số điện thoại");
+    fireEvent.change(phoneInput, { target: { value: "123" } });
+    expect(phoneInput).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Vui lòng nhập số điện thoại Việt Nam hợp lệ.",
+    );
+  });
+
   it("ignores an older province response and keeps the ward selector tied to the latest province", async () => {
     let resolveA!: (response: Response) => void;
     let resolveB!: (response: Response) => void;

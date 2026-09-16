@@ -68,11 +68,15 @@ const copy = {
     signedInNote:
       "Your name, phone number and address will be taken securely from Auth Account.",
     name: "Full name",
+    nameHint: "Enter your full name as it should appear on the contract.",
     email: "Email",
     phone: "Phone number",
+    phoneHint: "0987654321",
     province: "Province / city",
     ward: "Ward / commune",
     address: "Detailed address",
+    addressHint:
+      "Include house number, street/hamlet and any delivery details.",
     selectProvince: "Select a province or city",
     selectWard: "Select a ward or commune",
     wardsLoading: "Loading wards…",
@@ -248,11 +252,15 @@ const copy = {
     signedInNote:
       "Họ tên, số điện thoại và địa chỉ được lấy an toàn từ Auth Account.",
     name: "Họ tên",
+    nameHint: "Nhập đầy đủ họ và tên để ghi trên hợp đồng.",
     email: "Email",
     phone: "Số điện thoại",
+    phoneHint: "0987654321",
     province: "Tỉnh/thành phố",
     ward: "Phường/xã",
     address: "Địa chỉ chi tiết",
+    addressHint:
+      "Nhập số nhà, tên đường/thôn/ấp và thông tin cần thiết để giao hàng.",
     selectProvince: "Chọn tỉnh/thành phố",
     selectWard: "Chọn phường/xã",
     wardsLoading: "Đang tải phường/xã…",
