@@ -55,9 +55,9 @@ const copy = {
     informationStepDescription:
       "Provide the details needed to process your request.",
     loadingAccount: "Loading account information…",
-    termsStepTitle: "Review the CSA terms",
+    termsStepTitle: "How the program works",
     termsStepDescription:
-      "Please read all terms before confirming your acceptance.",
+      "By checking each box, I confirm that I have read, fully understood, and agree to each item below.",
     previous: "Back",
     next: "Continue",
     packagesLoading: "Loading available packages…",
@@ -83,61 +83,22 @@ const copy = {
     required: "Please complete this field.",
     invalidPhone: "Enter a valid Vietnamese phone number.",
     terms: {
-      title: "CSA Program Participation Terms",
-      sections: [
-        {
-          heading: "Party information",
-          text: "The program is provided by Natural Farming Vietnam to the member identified in the CSA purchase request and contract.",
-        },
-        {
-          heading: "Payment",
-          paragraphs: [
-            "Depending on the package configuration, a member may pay in full or in installments. The total, number of payments, amount of each payment, and corresponding cycles are shown before the member accepts the request.",
-            "The first payment must be transferred for the request to be received and processed under the current workflow. Membership is created only after the request is approved. Later installments must be paid by their due dates.",
-            "An admin reviews and may manually confirm or reject each transaction. A later payment that misses its deadline may become overdue, and the Membership may be revoked under the applicable rules.",
-          ],
-        },
-        {
-          heading: "How the program works",
-          text: "CSA connects members with seasonal production during the package term. Product collection rights arise by cycle under the program schedule.",
-        },
-        {
-          heading: "Product quotas",
-          text: "Each product follows the quota snapshotted with the package. Unused quantities follow the package's expire or rollover policy at purchase time.",
-        },
-        {
-          heading: "Seasonal changes",
-          text: "Product varieties, sizes, and availability may change because of seasons, weather, disease, and actual farming conditions.",
-        },
-        {
-          heading: "Product substitution",
-          text: "When an expected product is unavailable, the program may propose a substitute of comparable value or use and communicate it through an appropriate channel.",
-        },
-        {
-          heading: "Delivery and collection",
-          text: "Schedules, collection locations, service areas, and delivery charges are communicated by area. Members must provide accurate address and contact information.",
-        },
-        {
-          heading: "Pausing or skipping a collection",
-          text: "A pause or skip request must be submitted before the announced deadline. Whether quota is preserved depends on the snapshotted package policy.",
-        },
-        {
-          heading: "Communication channels",
-          text: "Notices may be sent by email, telephone, Zalo, or WhatsApp using the member's supplied contact details. Members should report contact changes.",
-        },
-        {
-          heading: "Program adjustments",
-          text: "The program may reasonably adjust schedules, collection points, or operations with notice, without changing the price and term snapshots of an issued contract.",
-        },
-        {
-          heading: "Limitation of liability",
-          text: "To the extent permitted by law, program liability is limited to providing or resolving the package's remaining benefits and excludes indirect loss caused by events beyond reasonable control.",
-        },
+      items: [
+        "Naturally farmed — grown with no pesticides, herbicides, or fungicides; fertilized with fermented organic inputs; pests managed with beneficial insects, crop rotation, and healthy soil.",
+        "Each week I choose from that week's CSA list (items marked “|C”). The list shows only what's ready, so nothing I pick is out of stock.",
+        "I can mix any of the three groups — leafy greens; herbs; and roots, fruits & vegetables — up to my plan's limit per group (1 person: 10 · 2–3 people: 20 · 4–7 people: 30 items per group, each week).",
+        "What's offered changes each week with the season, weather, and harvest.",
+        "If something runs low, the farm may substitute an equally fresh item and will let me know first.",
+        "My share is delivered free to my registered address every Friday, within 24 hours of harvest, roughly 8:00–18:00. I will stay reachable on delivery day; if I cannot be reached, next-day delivery and product quality are my responsibility. The farm is not liable for third-party courier problems but will help resolve them.",
+        "I can skip or pause a week (for example, when traveling) by telling the farm in advance.",
+        "The farm contacts me mainly by Zalo/WhatsApp, and posts each week's available crops on the website. I will report any change to my address or contact details, and I am welcome to send feedback anytime.",
+        "I agree to be added to a group chat of all members on Zalo and/or WhatsApp.",
+        "The farm may adjust parts of this agreement (how it grows and delivers) over time, and will notify me before any change.",
+        "To the extent permitted by law, I release Natural Farming Vietnam, its owner, agents, and employees from liability for claims or damages relating to farm property, delivery/pickup, or my membership.",
       ],
     },
-    termsAccept:
-      "I have read and agree to the full CSA Program Participation Terms.",
-    termsRequired: "You must accept the CSA terms before continuing.",
+    termsCheckAll: "Check all",
+    termsRequired: "Please tick every agreement checkbox before continuing.",
     continue: "Continue to payment",
     creating: "Creating request…",
     creatingQuote: "Preparing secure payment details…",
@@ -239,9 +200,9 @@ const copy = {
     informationStepDescription:
       "Cung cấp thông tin cần thiết để xử lý yêu cầu.",
     loadingAccount: "Đang tải thông tin tài khoản…",
-    termsStepTitle: "Đọc điều khoản CSA",
+    termsStepTitle: "Chương trình hoạt động thế nào",
     termsStepDescription:
-      "Vui lòng đọc toàn bộ điều khoản trước khi xác nhận đồng ý.",
+      "Bằng việc tích vào từng ô, tôi xác nhận đã đọc, hiểu rõ và đồng ý với từng nội dung dưới đây.",
     previous: "Quay lại",
     next: "Tiếp tục",
     packagesLoading: "Đang tải các gói hiện có…",
@@ -267,61 +228,23 @@ const copy = {
     required: "Vui lòng nhập thông tin này.",
     invalidPhone: "Vui lòng nhập số điện thoại Việt Nam hợp lệ.",
     terms: {
-      title: "Điều khoản tham gia chương trình CSA",
-      sections: [
-        {
-          heading: "Thông tin các bên",
-          text: "Chương trình được cung cấp bởi Natural Farming Vietnam cho thành viên có thông tin được ghi trong yêu cầu mua và hợp đồng CSA.",
-        },
-        {
-          heading: "Thanh toán",
-          paragraphs: [
-            "Tùy cấu hình từng gói, thành viên có thể trả thẳng hoặc trả góp. Tổng tiền, số lần thanh toán, số tiền từng lần và số kỳ tương ứng được hiển thị trước khi thành viên xác nhận yêu cầu.",
-            "Khoản thanh toán đầu tiên cần được chuyển để yêu cầu được tiếp nhận và xử lý theo quy trình hiện hành. Membership chỉ được tạo sau khi yêu cầu được duyệt. Các khoản tiếp theo phải thanh toán đúng hạn.",
-            "Admin kiểm tra và có quyền xác nhận hoặc từ chối thủ công từng giao dịch. Khoản tiếp theo quá hạn có thể chuyển trạng thái quá hạn và Membership có thể bị thu hồi theo quy định.",
-          ],
-        },
-        {
-          heading: "Cách chương trình hoạt động",
-          text: "CSA kết nối thành viên với hoạt động sản xuất theo mùa vụ trong thời hạn của gói. Quyền nhận sản phẩm phát sinh theo từng kỳ và lịch của chương trình.",
-        },
-        {
-          heading: "Hạn mức sản phẩm",
-          text: "Số lượng được nhận của từng sản phẩm tuân theo hạn mức đã snapshot trong gói. Phần chưa sử dụng được xử lý theo chính sách expire hoặc rollover của gói tại thời điểm mua.",
-        },
-        {
-          heading: "Thay đổi theo mùa vụ",
-          text: "Chủng loại, kích thước và thời điểm có sản phẩm có thể thay đổi do mùa vụ, thời tiết, dịch bệnh và điều kiện canh tác thực tế.",
-        },
-        {
-          heading: "Thay thế sản phẩm",
-          text: "Khi sản phẩm dự kiến không có sẵn, chương trình có thể đề xuất sản phẩm thay thế có giá trị hoặc công dụng tương đương và thông báo qua kênh liên lạc phù hợp.",
-        },
-        {
-          heading: "Giao và nhận sản phẩm",
-          text: "Lịch, địa điểm, phạm vi và chi phí giao nhận được thông báo theo từng khu vực. Thành viên có trách nhiệm cung cấp địa chỉ và thông tin liên lạc chính xác.",
-        },
-        {
-          heading: "Tạm dừng hoặc bỏ qua kỳ nhận",
-          text: "Yêu cầu tạm dừng hoặc bỏ qua một kỳ phải được gửi trước thời hạn chương trình thông báo. Khả năng bảo lưu hạn mức phụ thuộc chính sách của gói đã snapshot.",
-        },
-        {
-          heading: "Kênh liên lạc",
-          text: "Thông báo có thể được gửi qua email, điện thoại, Zalo hoặc WhatsApp theo thông tin thành viên cung cấp. Thành viên cần thông báo khi thông tin liên lạc thay đổi.",
-        },
-        {
-          heading: "Điều chỉnh chương trình",
-          text: "Chương trình có thể điều chỉnh lịch, điểm nhận hoặc cách vận hành khi cần thiết và sẽ thông báo trong thời gian hợp lý, nhưng không làm thay đổi snapshot giá và thời hạn của hợp đồng đã phát hành.",
-        },
-        {
-          heading: "Giới hạn trách nhiệm",
-          text: "Trong phạm vi pháp luật cho phép, trách nhiệm của chương trình được giới hạn ở nghĩa vụ cung cấp hoặc xử lý quyền lợi còn lại của gói; chương trình không chịu trách nhiệm cho thiệt hại gián tiếp do sự kiện ngoài khả năng kiểm soát hợp lý.",
-        },
+      items: [
+        "Canh tác tự nhiên — không dùng thuốc trừ sâu, thuốc diệt cỏ hay thuốc diệt nấm; bón phân từ sản phẩm lên men hữu cơ; kiểm soát sâu bệnh bằng côn trùng có ích, luân canh và quản lý đất hợp lý.",
+        "Mỗi tuần tôi chọn từ danh sách CSA của tuần đó (sản phẩm có ký hiệu “|C”). Danh sách chỉ hiển thị những gì đã sẵn sàng, nên món tôi chọn không bao giờ hết hàng.",
+        "Tôi có thể phối hợp cả ba nhóm — rau ăn lá; rau thơm; và củ, quả & rau — trong hạn mức mỗi nhóm theo gói (1 người: 10 · 2–3 người: 20 · 4–7 người: 30 món mỗi nhóm, mỗi tuần).",
+        "Các loại thực phẩm thay đổi theo tuần, tùy mùa vụ, thời tiết và thu hoạch.",
+        "Nếu một món sắp hết, nông trại có thể thay bằng món tươi tương đương và sẽ báo cho tôi trước.",
+        "Phần của tôi được giao miễn phí đến địa chỉ đã đăng ký vào mỗi thứ Sáu, trong vòng 24 giờ sau thu hoạch, khoảng 8:00–18:00. Tôi sẽ giữ liên lạc trong ngày giao; nếu không liên lạc được, việc giao và chất lượng sản phẩm ngày hôm sau thuộc trách nhiệm của tôi. Nông trại không chịu trách nhiệm về sự cố từ đơn vị vận chuyển bên thứ ba nhưng sẽ hỗ trợ giải quyết.",
+        "Tôi có thể tạm dừng hoặc bỏ qua một tuần (ví dụ khi đi xa) bằng cách báo trước cho nông trại.",
+        "Nông trại liên hệ với tôi chủ yếu qua Zalo/WhatsApp, và cập nhật các loại rau có sẵn mỗi tuần trên trang web. Tôi sẽ báo mọi thay đổi về địa chỉ hoặc thông tin liên hệ, và có thể gửi nhận xét bất cứ lúc nào.",
+        "Tôi đồng ý được thêm vào nhóm trò chuyện chung của tất cả thành viên trên Zalo và/hoặc WhatsApp.",
+        "Nông trại có thể điều chỉnh một số phần của thỏa thuận này (cách trồng và giao hàng) theo thời gian, và sẽ thông báo cho tôi trước khi thay đổi.",
+        "Trong phạm vi pháp luật cho phép, tôi miễn trừ trách nhiệm cho Natural Farming Vietnam, chủ sở hữu, đại lý và nhân viên đối với các khiếu nại hay thiệt hại liên quan đến tài sản nông trại, việc giao/nhận hàng, hoặc tư cách thành viên của tôi.",
       ],
     },
-    termsAccept:
-      "Tôi đã đọc và đồng ý với toàn bộ Điều khoản tham gia chương trình CSA.",
-    termsRequired: "Bạn phải đồng ý với Điều khoản CSA trước khi tiếp tục.",
+    termsCheckAll: "Chọn tất cả",
+    termsRequired:
+      "Vui lòng đánh dấu tất cả các ô xác nhận trước khi tiếp tục.",
     continue: "Tiếp tục thanh toán",
     creating: "Đang tạo yêu cầu…",
     creatingQuote: "Đang chuẩn bị thông tin thanh toán an toàn…",

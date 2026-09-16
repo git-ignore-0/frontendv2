@@ -315,7 +315,9 @@ async function goToGuestTerms() {
   await goToGuestInformation();
   await completeGuest();
   continueWizard();
-  await screen.findByRole("heading", { name: "Đọc điều khoản CSA" });
+  await screen.findByRole("heading", {
+    name: "Chương trình hoạt động thế nào",
+  });
 }
 
 async function goToAuthenticatedTerms() {
@@ -323,15 +325,22 @@ async function goToAuthenticatedTerms() {
   continueWizard();
   await screen.findByText("Member");
   continueWizard();
-  await screen.findByRole("heading", { name: "Đọc điều khoản CSA" });
+  await screen.findByRole("heading", {
+    name: "Chương trình hoạt động thế nào",
+  });
 }
 
 function acceptTerms() {
   fireEvent.click(
-    screen.getByRole("checkbox", {
-      name: /đồng ý với toàn bộ Điều khoản tham gia chương trình CSA/i,
-    }),
+    screen.queryByRole("checkbox", { name: "Chọn tất cả" }) ??
+      screen.getByRole("checkbox", { name: "Check all" }),
   );
+}
+
+function agreementCheckboxes() {
+  return screen
+    .getAllByRole("checkbox")
+    .filter((checkbox) => checkbox.getAttribute("name") === "csa_program_term");
 }
 
 beforeEach(() => {
@@ -419,9 +428,13 @@ describe("CSA purchase wizard", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Review the CSA terms" }),
+      await screen.findByRole("heading", {
+        name: "How the program works",
+      }),
     ).toBeVisible();
-    expect(screen.getByRole("checkbox")).toBeChecked();
+    expect(agreementCheckboxes()).toHaveLength(11);
+    agreementCheckboxes().forEach((checkbox) => expect(checkbox).toBeChecked());
+    expect(screen.getByRole("checkbox", { name: "Check all" })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(
       await screen.findByRole("heading", { name: "Your information" }),
@@ -469,9 +482,13 @@ describe("CSA purchase wizard", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { name: "Review the CSA terms" }),
+      await screen.findByRole("heading", {
+        name: "How the program works",
+      }),
     ).toBeVisible();
-    expect(screen.getByRole("checkbox")).toBeChecked();
+    expect(agreementCheckboxes()).toHaveLength(11);
+    agreementCheckboxes().forEach((checkbox) => expect(checkbox).toBeChecked());
+    expect(screen.getByRole("checkbox", { name: "Check all" })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(await screen.findByText("Member")).toBeVisible();
     expect(
@@ -687,7 +704,9 @@ describe("CSA purchase wizard", () => {
       await waitFor(() => expect(memory.current?.quote).toBeDefined());
 
       fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
-      await screen.findByRole("heading", { name: "Đọc điều khoản CSA" });
+      await screen.findByRole("heading", {
+        name: "Chương trình hoạt động thế nào",
+      });
       fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
       await screen.findByRole("heading", { name: "Thông tin của bạn" });
       await updateIdentity();
@@ -1200,7 +1219,9 @@ describe("CSA purchase wizard", () => {
     expect(screen.getByLabelText("Họ tên")).toHaveValue("Nguyễn Văn An");
 
     continueWizard();
-    await screen.findByRole("heading", { name: "Đọc điều khoản CSA" });
+    await screen.findByRole("heading", {
+      name: "Chương trình hoạt động thế nào",
+    });
     flushAnimationFrames();
     expect(calls).toHaveLength(requestCount);
   });
@@ -1782,41 +1803,74 @@ describe("CSA purchase wizard", () => {
     expect(screen.getByRole("option", { name: "Phường Hà Nội" })).toBeVisible();
   });
 
-  it("renders all 11 terms in the demo document layout", async () => {
+  it("renders the 11 individual agreement checkboxes from the Vietnamese document", async () => {
     installApi();
     render(<CSAPurchasePage locale="vi" />);
     await goToGuestTerms();
 
-    const terms = screen.getByText(
-      "Điều khoản tham gia chương trình CSA",
-    ).parentElement!;
-    expect(terms.querySelectorAll(".term-section")).toHaveLength(11);
-    expect(within(terms).getByText("Thông tin các bên")).toBeVisible();
-    expect(screen.getByText(/Chương trình được cung cấp bởi/)).toBeVisible();
-    expect(within(terms).getByText("Thanh toán")).toBeVisible();
     expect(
-      within(terms).getByText(
-        /Tùy cấu hình từng gói, thành viên có thể trả thẳng hoặc trả góp/,
+      screen.getByRole("heading", {
+        name: "Chương trình hoạt động thế nào",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Bằng việc tích vào từng ô, tôi xác nhận đã đọc, hiểu rõ và đồng ý với từng nội dung dưới đây.",
       ),
     ).toBeVisible();
+    expect(screen.queryByText(/4\. Chương trình hoạt động thế nào/)).toBeNull();
+    expect(agreementCheckboxes()).toHaveLength(11);
     expect(
-      within(terms).getByText(/Khoản thanh toán đầu tiên cần được chuyển/),
+      screen.getByText(/Canh tác tự nhiên — không dùng thuốc trừ sâu/),
     ).toBeVisible();
     expect(
-      within(terms).getByText(
-        /Admin kiểm tra và có quyền xác nhận hoặc từ chối thủ công/,
+      screen.getByText(/Tôi đồng ý được thêm vào nhóm trò chuyện chung/),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        /Trong phạm vi pháp luật cho phép, tôi miễn trừ trách nhiệm/,
       ),
     ).toBeVisible();
-    expect(within(terms).queryByText("Thanh toán một lần")).toBeNull();
+    expect(screen.getByRole("checkbox", { name: "Chọn tất cả" })).toBeVisible();
+    expect(screen.queryByText(/^1\.$/)).toBeNull();
+  });
+
+  it("requires all 11 terms and lets the user toggle every agreement at once", async () => {
+    installApi();
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+
+    const continueButton = screen.getByRole("button", {
+      name: "Tiếp tục thanh toán",
+    });
+    const checkboxes = agreementCheckboxes();
+    fireEvent.click(checkboxes[0]);
+    expect(continueButton).toBeDisabled();
+
+    const allTerms = screen.getByRole("checkbox", { name: "Chọn tất cả" });
+    fireEvent.click(allTerms);
+    checkboxes.forEach((checkbox) => expect(checkbox).toBeChecked());
+    expect(continueButton).toBeEnabled();
+    expect(allTerms).toBeChecked();
+
+    fireEvent.click(allTerms);
+    checkboxes.forEach((checkbox) => expect(checkbox).not.toBeChecked());
+    expect(continueButton).toBeDisabled();
+
+    checkboxes.forEach((checkbox) => fireEvent.click(checkbox));
+    expect(allTerms).toBeChecked();
+    fireEvent.click(checkboxes[4]);
+    expect(allTerms).not.toBeChecked();
+    expect(continueButton).toBeDisabled();
   });
 
   it("maps the backend terms-required error to localized copy", () => {
     const error = new AccountApiError("csa_purchase_terms_required", 400);
     expect(purchaseErrorMessage(error, "vi")).toBe(
-      "Bạn phải đồng ý với Điều khoản CSA trước khi tiếp tục.",
+      "Vui lòng đánh dấu tất cả các ô xác nhận trước khi tiếp tục.",
     );
     expect(purchaseErrorMessage(error, "en")).toBe(
-      "You must accept the CSA terms before continuing.",
+      "Please tick every agreement checkbox before continuing.",
     );
   });
 
@@ -1826,19 +1880,15 @@ describe("CSA purchase wizard", () => {
     await goToGuestTerms();
     flushAnimationFrames();
     scrollIntoViewMock.mockClear();
-    const checkbox = screen.getByRole("checkbox", {
-      name: /đồng ý với toàn bộ Điều khoản tham gia chương trình CSA/i,
-    });
+    const checkbox = agreementCheckboxes()[0];
     const checkboxFocus = vi.spyOn(checkbox, "focus");
-    expect(checkbox).toHaveAccessibleName(
-      "Tôi đã đọc và đồng ý với toàn bộ Điều khoản tham gia chương trình CSA.",
-    );
+    expect(checkbox).toHaveAccessibleName(/Canh tác tự nhiên/);
     const submit = screen.getByRole("button", { name: "Tiếp tục thanh toán" });
     expect(submit).toBeDisabled();
     fireEvent.submit(checkbox.closest("form")!);
     expect(
       screen.getByText(
-        "Bạn phải đồng ý với Điều khoản CSA trước khi tiếp tục.",
+        "Vui lòng đánh dấu tất cả các ô xác nhận trước khi tiếp tục.",
       ),
     ).toBeVisible();
     expect(checkbox).toHaveAttribute("aria-invalid", "true");
@@ -1876,24 +1926,29 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await screen.findByText("Member");
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    const terms = await screen.findByText("CSA Program Participation Terms");
-    expect(terms.parentElement!.querySelectorAll(".term-section")).toHaveLength(
-      11,
-    );
+    await screen.findByRole("heading", {
+      name: "How the program works",
+    });
+    expect(agreementCheckboxes()).toHaveLength(11);
     expect(
       screen.getByText(
-        /Depending on the package configuration, a member may pay in full or in installments/,
+        /Naturally farmed — grown with no pesticides, herbicides, or fungicides/,
       ),
     ).toBeVisible();
     expect(
-      screen.getByText(/The first payment must be transferred/),
+      screen.getByText(/I agree to be added to a group chat of all members/),
     ).toBeVisible();
     expect(
       screen.getByText(
-        /An admin reviews and may manually confirm or reject each transaction/,
+        /To the extent permitted by law, I release Natural Farming Vietnam/,
       ),
     ).toBeVisible();
-    expect(screen.queryByText("One-time payment")).toBeNull();
+    expect(
+      screen.getByText(
+        "By checking each box, I confirm that I have read, fully understood, and agree to each item below.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole("checkbox", { name: "Check all" })).toBeVisible();
   });
 
   it("renders authenticated identity read-only and submits no client identity fields", async () => {
@@ -2141,9 +2196,11 @@ describe("CSA purchase wizard", () => {
         !call.url.endsWith("/confirm-payment"),
     ).length;
     fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
-    await screen.findByRole("heading", { name: "Đọc điều khoản CSA" });
+    await screen.findByRole("heading", {
+      name: "Chương trình hoạt động thế nào",
+    });
     flushAnimationFrames();
-    expect(screen.getByRole("checkbox")).toBeChecked();
+    agreementCheckboxes().forEach((checkbox) => expect(checkbox).toBeChecked());
     expect(
       screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
     ).toBeNull();
@@ -2253,12 +2310,10 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(continueButton);
     await screen.findByRole("heading", { name: "Your information" });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    await screen.findByRole("heading", { name: "Review the CSA terms" });
-    fireEvent.click(
-      screen.getByRole("checkbox", {
-        name: /agree to the full CSA Program Participation Terms/i,
-      }),
-    );
+    await screen.findByRole("heading", {
+      name: "How the program works",
+    });
+    acceptTerms();
     fireEvent.click(
       screen.getByRole("button", { name: "Continue to payment" }),
     );

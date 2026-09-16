@@ -328,6 +328,14 @@ describe("CSA demo style contract", () => {
     ).toContain("font-size: 0.90625rem");
   });
 
+  it("aligns the terms reader with the step heading", () => {
+    const termsReader = declarationBlock(".csa-ui .terms-reader");
+
+    expect(termsReader).toContain("width: 100%");
+    expect(termsReader).toContain("margin: 14px 0 0");
+    expect(termsReader).not.toContain("margin: 14px auto 0");
+  });
+
   it("matches tracker typography to the purchase visual system", () => {
     const tracker = declarationBlock(".csa-ui.csa-tracker-ui");
     expect(tracker).toContain("font-family: var(--font-body), sans-serif");

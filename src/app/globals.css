@@ -6504,61 +6504,49 @@ tbody th {
   color: var(--forest);
 }
 .csa-ui .terms-reader {
-  margin-top: 14px;
+  width: 100%;
+  margin: 14px 0 0;
 }
-.csa-ui .terms-document {
-  width: min(100%, 760px);
-  margin: 0 auto;
-}
-.csa-ui .term-section {
+.csa-ui .terms-checklist {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 8px;
+}
+.csa-ui .term-check-item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
   gap: 10px;
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(23, 63, 52, 0.1);
+  align-items: start;
+  padding: 8px 0;
 }
-.csa-ui .term-section:last-child {
-  border-bottom: 0;
+.csa-ui .term-check-item input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--forest);
 }
-.csa-ui .term-number {
-  padding-top: 1px;
-  color: var(--moss);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.5;
-}
-.csa-ui .term-section h3 {
-  margin: 0 0 5px;
-  color: var(--forest);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-.csa-ui .term-section p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.65;
-}
-.csa-ui .agree {
-  width: min(100%, 760px);
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 18px auto 0;
-  padding: 12px 0 0;
-  border-top: 1px solid var(--line);
-  background: transparent;
-}
-.csa-ui .agree input {
-  margin-top: 2px;
-}
-.csa-ui .agree label {
+.csa-ui .term-check-item label {
   min-width: 0;
   margin: 0;
-  color: var(--ink);
-  font-weight: 700;
-  line-height: 1.5;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.csa-ui .terms-check-all {
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.csa-ui .term-check-item input:focus-visible + label {
+  outline: 2px solid var(--forest);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.csa-ui .terms-error {
+  display: block;
+  margin-top: 10px;
 }
 .csa-purchase-ui .payment-grid {
   min-width: 0;
@@ -6720,7 +6708,6 @@ tbody th {
 .csa-ui.csa-purchase-ui .package-desc,
 .csa-ui.csa-purchase-ui .package-policy,
 .csa-ui.csa-purchase-ui .duration-head p,
-.csa-ui.csa-purchase-ui .term-section p,
 .csa-ui.csa-purchase-ui .notice {
   color: var(--muted);
   font-size: 0.90625rem;
@@ -6744,10 +6731,15 @@ tbody th {
   letter-spacing: normal;
   line-height: 1.6;
 }
+.csa-ui.csa-purchase-ui .term-check-item label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+}
 .csa-ui.csa-purchase-ui .package-meta,
 .csa-ui.csa-purchase-ui .duration-list-head,
 .csa-ui.csa-purchase-ui .helper,
-.csa-ui.csa-purchase-ui .term-number,
 .csa-ui.csa-purchase-ui .duration-saving,
 .csa-ui.csa-purchase-ui .chosen-total span,
 .csa-ui.csa-purchase-ui .chosen-total small {
@@ -7346,25 +7338,23 @@ tbody th {
 }
 @media (max-width: 599px) {
   .csa-ui .terms-reader {
-    margin-top: 10px;
+    margin: 10px 0 0;
   }
-  .csa-ui .term-section {
-    grid-template-columns: 20px minmax(0, 1fr);
+  .csa-ui .term-check-item {
+    grid-template-columns: 18px minmax(0, 1fr);
     gap: 8px;
-    padding: 12px 0;
+    padding: 7px 0;
   }
-  .csa-ui .term-number {
-    font-size: 10px;
+  .csa-ui .term-check-item input {
+    width: 16px;
+    height: 16px;
   }
-  .csa-ui .term-section h3 {
-    font-size: 13px;
-  }
-  .csa-ui .term-section p {
+  .csa-ui .term-check-item label {
     font-size: 12px;
     line-height: 1.6;
   }
-  .csa-ui .agree {
-    padding-top: 11px;
+  .csa-ui.csa-purchase-ui .term-check-item label {
+    font-size: 12px;
   }
 }
 @media (max-width: 480px) {

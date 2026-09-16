@@ -75,6 +75,7 @@ export type CSAPurchaseFlowMemory = {
   selectedPlanId: string;
   guest: CSAGuestDetails;
   termsAccepted: boolean;
+  acceptedTermIds?: string[];
   informationSubmitted: boolean;
   termsSubmitted: boolean;
   profileIncomplete: boolean;

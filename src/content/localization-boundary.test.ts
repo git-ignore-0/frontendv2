@@ -114,13 +114,11 @@ describe("localization boundary", () => {
     );
   });
 
-  it("keeps CSA purchase copy keys and terms sections in sync across locales", () => {
+  it("keeps CSA purchase copy keys and agreement items in sync across locales", () => {
     const english = getCSAPurchaseCopy("en");
     const vietnamese = getCSAPurchaseCopy("vi");
     expect(Object.keys(english).sort()).toEqual(Object.keys(vietnamese).sort());
-    expect(english.terms.sections).toHaveLength(
-      vietnamese.terms.sections.length,
-    );
+    expect(english.terms.items).toHaveLength(vietnamese.terms.items.length);
     expect(english.qrTitle).toBe("QR code");
     expect(vietnamese.qrTitle).toBe("Mã QR");
   });

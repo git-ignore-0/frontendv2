@@ -36,6 +36,10 @@ type PurchaseCopy = ReturnType<typeof getCSAPurchaseCopy>;
 
 const termsErrorId = "csa-purchase-terms-error";
 const SINGLE_MONTH_FULL_PAYMENT_ID = "__single_month_full__";
+const CSA_AGREEMENT_TERM_IDS = Array.from(
+  { length: 11 },
+  (_, index) => `csa-program-term-${index + 1}`,
+);
 
 const emptyGuestDetails: CSAGuestDetails = {
   name: "",
@@ -573,9 +577,15 @@ function CSAPurchaseWizard({
     provinceCode: guest.province_code,
   });
   currentWardSelection.current = { locale, provinceCode: guest.province_code };
-  const [termsAccepted, setTermsAccepted] = useState(
-    initialMemory?.termsAccepted ?? false,
-  );
+  const [acceptedTermIds, setAcceptedTermIds] = useState<string[]>(() => {
+    const restoredIds = initialMemory?.acceptedTermIds;
+    if (restoredIds) {
+      return CSA_AGREEMENT_TERM_IDS.filter((id) => restoredIds.includes(id));
+    }
+    return initialMemory?.termsAccepted ? CSA_AGREEMENT_TERM_IDS : [];
+  });
+  const termsAccepted =
+    acceptedTermIds.length === CSA_AGREEMENT_TERM_IDS.length;
   const [informationSubmitted, setInformationSubmitted] = useState(
     initialMemory?.informationSubmitted ?? false,
   );
@@ -640,6 +650,7 @@ function CSAPurchaseWizard({
       selectedPlanId,
       guest,
       termsAccepted,
+      acceptedTermIds,
       informationSubmitted,
       termsSubmitted,
       profileIncomplete,
@@ -672,6 +683,7 @@ function CSAPurchaseWizard({
     selectedPackageId,
     sessionReady,
     step,
+    acceptedTermIds,
     termsAccepted,
     termsSubmitted,
     user,
@@ -1092,6 +1104,19 @@ function CSAPurchaseWizard({
     );
   }
 
+  function setTermAccepted(termId: string, accepted: boolean) {
+    setAcceptedTermIds((current) => {
+      if (accepted) {
+        return current.includes(termId) ? current : [...current, termId];
+      }
+      return current.filter((id) => id !== termId);
+    });
+  }
+
+  function setAllTermsAccepted(accepted: boolean) {
+    setAcceptedTermIds(accepted ? [...CSA_AGREEMENT_TERM_IDS] : []);
+  }
+
   function submitWizard(event: React.FormEvent) {
     event.preventDefault();
     setErrorKey(null);
@@ -1118,7 +1143,7 @@ function CSAPurchaseWizard({
     }
     if (!termsAccepted) {
       setTermsSubmitted(true);
-      focusFirstInvalidField();
+      focusFirstInvalidField('input[name="csa_program_term"]:not(:checked)');
       return;
     }
     if (quote || purchase) {
@@ -2242,51 +2267,60 @@ function CSAPurchaseWizard({
                 <p className="step-desc">{copy.termsStepDescription}</p>
               </header>
               <div className="terms-reader">
-                <div className="terms-document">
-                  <h3>{copy.terms.title}</h3>
-                  {copy.terms.sections.map((section, index) => {
-                    return (
-                      <section className="term-section" key={section.heading}>
-                        <span className="term-number">{index + 1}</span>
-                        <div>
-                          <h3>{section.heading}</h3>
-                          {"paragraphs" in section ? (
-                            section.paragraphs.map((paragraph) => (
-                              <p key={paragraph}>{paragraph}</p>
-                            ))
-                          ) : (
-                            <p>{section.text}</p>
-                          )}
-                        </div>
-                      </section>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="agree">
-                <input
-                  id="csa-purchase-terms-accepted"
-                  type="checkbox"
-                  name="terms_accepted"
-                  checked={termsAccepted}
-                  onChange={(event) => setTermsAccepted(event.target.checked)}
-                  disabled={creating}
-                  aria-invalid={termsSubmitted && !termsAccepted}
+                <div
+                  className="terms-checklist"
+                  role="group"
                   aria-describedby={
                     termsSubmitted && !termsAccepted ? termsErrorId : undefined
                   }
-                  required
-                />
-                <div>
-                  <label htmlFor="csa-purchase-terms-accepted">
-                    <strong>{copy.termsAccept}</strong>
-                  </label>
-                  {termsSubmitted && !termsAccepted ? (
-                    <small id={termsErrorId} role="alert">
-                      {copy.termsRequired}
-                    </small>
-                  ) : null}
+                >
+                  {copy.terms.items.map((term, index) => {
+                    const termId = CSA_AGREEMENT_TERM_IDS[index];
+                    const isAccepted = acceptedTermIds.includes(termId);
+                    return (
+                      <div className="term-check-item" key={termId}>
+                        <input
+                          id={termId}
+                          type="checkbox"
+                          name="csa_program_term"
+                          checked={isAccepted}
+                          disabled={creating}
+                          onChange={(event) =>
+                            setTermAccepted(termId, event.target.checked)
+                          }
+                          aria-invalid={termsSubmitted && !isAccepted}
+                          aria-describedby={
+                            termsSubmitted && !isAccepted
+                              ? termsErrorId
+                              : undefined
+                          }
+                        />
+                        <label htmlFor={termId}>{term}</label>
+                      </div>
+                    );
+                  })}
+                  <div className="term-check-item terms-check-all">
+                    <input
+                      id="csa-program-terms-all"
+                      type="checkbox"
+                      name="csa_program_terms_all"
+                      checked={termsAccepted}
+                      disabled={creating}
+                      aria-controls={CSA_AGREEMENT_TERM_IDS.join(" ")}
+                      onChange={(event) =>
+                        setAllTermsAccepted(event.target.checked)
+                      }
+                    />
+                    <label htmlFor="csa-program-terms-all">
+                      {copy.termsCheckAll}
+                    </label>
+                  </div>
                 </div>
+                {termsSubmitted && !termsAccepted ? (
+                  <small className="terms-error" id={termsErrorId} role="alert">
+                    {copy.termsRequired}
+                  </small>
+                ) : null}
               </div>
               {error ? (
                 <p className="notice error" role="alert">
