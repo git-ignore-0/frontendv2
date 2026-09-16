@@ -225,14 +225,18 @@ function isPaymentQuote(value: unknown): value is CSAPaymentQuote {
   );
 }
 
-function priceOptionSaving(option: MembershipPackagePriceOption) {
-  const monthlyPrice = positiveInteger(option.monthly_price_vnd);
+function priceOptionSaving(
+  option: MembershipPackagePriceOption,
+  oneMonthOption?: MembershipPackagePriceOption,
+) {
+  if (!oneMonthOption) return null;
+  const monthlyPrice = positiveInteger(oneMonthOption.monthly_price_vnd);
   const selectedTotal = positiveInteger(option.total_price_vnd);
   if (
     monthlyPrice === null ||
     selectedTotal === null ||
     !Number.isSafeInteger(option.duration_months) ||
-    option.duration_months <= 0
+    option.duration_months <= 1
   ) {
     return null;
   }
@@ -445,12 +449,123 @@ function describedBy(invalid: boolean, errorId: string) {
   return invalid ? errorId : undefined;
 }
 
-function packageOptionClass(selected: boolean) {
-  return ["package-option", selected && "selected"].filter(Boolean).join(" ");
-}
-
-function durationChoiceClass(selected: boolean) {
-  return ["duration-choice", selected && "selected"].filter(Boolean).join(" ");
+function PaymentPlanSection({
+  selectedOption,
+  plans,
+  selectedPlanId,
+  locale,
+  copy,
+  disabled,
+  showInstallmentDetails = true,
+  onSelect,
+}: {
+  selectedOption: MembershipPackagePriceOption | undefined;
+  plans: CSAPaymentPlan[];
+  selectedPlanId: string;
+  locale: Locale;
+  copy: PurchaseCopy;
+  disabled: boolean;
+  showInstallmentDetails?: boolean;
+  onSelect: (planId: string) => void;
+}) {
+  return (
+    <div className="payment-plan-section">
+      <h3>{copy.paymentPlanTitle}</h3>
+      {selectedOption &&
+      selectedOption.duration_months > 1 &&
+      plans.length === 0 ? (
+        <p className="notice error" role="alert">
+          {copy.paymentPlanMissing}
+        </p>
+      ) : null}
+      <div
+        className="payment-plan-list"
+        role="group"
+        aria-label={copy.paymentPlanTitle}
+      >
+        {plans.map((plan) => {
+          const installments = sortedInstallments(plan);
+          const saving = paymentPlanSaving(plan, selectedPlanId, plans);
+          return (
+            <button
+              className={[
+                "payment-plan-choice",
+                selectedPlanId === plan.id && "selected",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              type="button"
+              key={plan.id}
+              data-payment-plan={plan.id}
+              aria-label={paymentPlanLabel(plan, copy)}
+              aria-pressed={selectedPlanId === plan.id}
+              disabled={disabled}
+              onClick={() => onSelect(plan.id)}
+            >
+              <span className="payment-plan-main">
+                <strong>{paymentPlanLabel(plan, copy)}</strong>
+                <small>
+                  {(plan.payment_type === "full"
+                    ? copy.entirePackage
+                    : copy.packageDuration
+                  ).replace(
+                    "{count}",
+                    String(selectedOption?.duration_months ?? 0),
+                  )}
+                </small>
+              </span>
+              <span className="payment-plan-price">
+                <strong>
+                  {formatMembershipMoney(plan.total_amount, locale)}
+                </strong>
+                {saving ? (
+                  <span className="saving-badge">
+                    {copy.paymentPlanSaving
+                      .replace(
+                        "{amount}",
+                        formatMembershipMoney(saving.amount, locale),
+                      )
+                      .replace(
+                        "{percent}",
+                        localizedSavingPercent(saving.percent, locale),
+                      )}
+                  </span>
+                ) : null}
+              </span>
+              {showInstallmentDetails && plan.payment_type === "installment" ? (
+                <span className="payment-plan-detail">
+                  {installments.map((row, index) => (
+                    <span
+                      className="payment-plan-installment"
+                      key={row.sequence}
+                    >
+                      <strong>
+                        {copy.installmentNumber.replace(
+                          "{number}",
+                          String(row.sequence),
+                        )}
+                      </strong>
+                      <strong>
+                        {formatMembershipMoney(row.amount, locale)}
+                      </strong>
+                      <small>
+                        {installmentMonthsLabel(
+                          row.cycle_count,
+                          index,
+                          installments.length,
+                          copy,
+                        )}
+                      </small>
+                    </span>
+                  ))}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function WizardProgress({
@@ -1025,9 +1140,7 @@ function CSAPurchaseWizard({
     guest.ward_code &&
     guest.address.trim(),
   );
-  const packageComplete = Boolean(
-    selectedPackage && selectedOption && selectedPlan,
-  );
+  const packageComplete = Boolean(selectedPackage && selectedOption);
   const informationComplete = Boolean(sessionReady && (user || guestComplete));
   const canCreate = Boolean(
     packageComplete && informationComplete && termsAccepted && !creating,
@@ -1067,11 +1180,20 @@ function CSAPurchaseWizard({
     if (provinceCode) await loadWards(provinceCode);
   }
 
-  function createQuote() {
+  function createQuote(planOverride?: CSAPaymentPlan) {
     setTermsSubmitted(true);
     setErrorKey(null);
     setProfileIncomplete(false);
-    if (!canCreate || !selectedPackage || !selectedOption || !selectedPlan)
+    const plan = planOverride ?? selectedPlan;
+    if (
+      !packageComplete ||
+      !informationComplete ||
+      !termsAccepted ||
+      creating ||
+      !selectedPackage ||
+      !selectedOption ||
+      !plan
+    )
       return;
     const guestIdentity = user
       ? null
@@ -1089,8 +1211,8 @@ function CSAPurchaseWizard({
         body: JSON.stringify({
           package_id: selectedPackage.id,
           price_option_id: selectedOption.id,
-          ...(selectedPlan.id !== SINGLE_MONTH_FULL_PAYMENT_ID
-            ? { payment_plan_id: selectedPlan.id }
+          ...(plan.id !== SINGLE_MONTH_FULL_PAYMENT_ID
+            ? { payment_plan_id: plan.id }
             : {}),
           terms_accepted: true,
           terms_locale: locale,
@@ -1126,8 +1248,8 @@ function CSAPurchaseWizard({
       } else {
         focusFirstInvalidField(
           selectedPackageId
-            ? ".duration-choice:not(:disabled)"
-            : ".package-option:not(:disabled)",
+            ? ".csa-price-option-button:not(:disabled)"
+            : ".csa-price-option-button:not(:disabled)",
         );
       }
       return;
@@ -1150,7 +1272,8 @@ function CSAPurchaseWizard({
       setStep(4);
       return;
     }
-    createQuote();
+    setStep(4);
+    if (displayPlans.length === 1 && selectedPlan) createQuote();
   }
 
   function confirmPayment() {
@@ -1313,9 +1436,38 @@ function CSAPurchaseWizard({
                 </p>
               ) : (
                 <>
-                  <p className="notice error" role="alert">
-                    {error || copy.quoteUnavailable}
-                  </p>
+                  <div className="payment-amount-preview">
+                    <span>{copy.paymentDurationTotal}</span>
+                    <strong>
+                      {selectedOption
+                        ? formatMembershipMoney(
+                            selectedOption.total_price_vnd,
+                            locale,
+                          )
+                        : "—"}
+                    </strong>
+                  </div>
+                  <PaymentPlanSection
+                    selectedOption={selectedOption}
+                    plans={displayPlans}
+                    selectedPlanId={selectedPlanId}
+                    locale={locale}
+                    copy={copy}
+                    disabled={Boolean(purchase)}
+                    onSelect={(planId) => {
+                      clearQuoteForSelection();
+                      setSelectedPlanId(planId);
+                      const plan = displayPlans.find(
+                        (item) => item.id === planId,
+                      );
+                      if (plan) createQuote(plan);
+                    }}
+                  />
+                  {selectedPlanId ? (
+                    <p className="notice error" role="alert">
+                      {error || copy.quoteUnavailable}
+                    </p>
+                  ) : null}
                   <div className="btn-row payment-actions">
                     <button
                       className="btn btn-secondary"
@@ -1328,7 +1480,7 @@ function CSAPurchaseWizard({
                       className="btn btn-primary"
                       type="button"
                       disabled={!canCreate}
-                      onClick={createQuote}
+                      onClick={() => createQuote()}
                     >
                       {copy.recreateQuote}
                     </button>
@@ -1404,7 +1556,7 @@ function CSAPurchaseWizard({
               >
                 {copy.steps[3]}
               </h2>
-              {paymentSnapshotComplete ? (
+              {paymentComplete ? (
                 <p className="step-desc">{copy.paymentIntro}</p>
               ) : null}
               <div className="payment-grid">
@@ -1598,7 +1750,10 @@ function CSAPurchaseWizard({
                   className="btn btn-secondary"
                   type="button"
                   disabled={confirming}
-                  onClick={() => setStep(3)}
+                  onClick={() => {
+                    clearQuoteForSelection();
+                    setStep(3);
+                  }}
                 >
                   {copy.previous}
                 </button>
@@ -1673,341 +1828,160 @@ function CSAPurchaseWizard({
               {packagesState === "ready" && availablePackages.length === 0 ? (
                 <p className="notice">{copy.packagesEmpty}</p>
               ) : null}
-              <div className="package-choice-grid">
-                <div className="package-list">
-                  {availablePackages.map((item) => {
-                    const firstOption = activePriceOptions(item)[0];
-                    const packageDisabled = !firstOption;
-                    return (
-                      <button
-                        className={packageOptionClass(
-                          selectedPackageId === item.id,
-                        )}
-                        type="button"
-                        data-package={item.id}
-                        aria-pressed={selectedPackageId === item.id}
-                        disabled={packageDisabled || Boolean(purchase)}
-                        key={item.id}
-                        onClick={() => {
-                          clearQuoteForSelection();
-                          setSelectedPackageId(item.id);
-                          setSelectedOptionId(firstOption?.id ?? "");
-                          setSelectedPlanId(
-                            firstOption
-                              ? (validPaymentPlans(firstOption)[0]?.id ??
-                                  (firstOption.duration_months === 1
-                                    ? SINGLE_MONTH_FULL_PAYMENT_ID
-                                    : ""))
-                              : "",
-                          );
-                        }}
-                      >
-                        <span className="package-state" aria-hidden="true">
-                          ✓
-                        </span>
-                        <span className="package-main">
-                          <span className="package-title-row">
-                            <strong>{item.name}</strong>
-                          </span>
-                          {item.description ? (
-                            <span className="package-desc">
-                              {item.description}
-                            </span>
-                          ) : null}
-                          <span className="package-meta">
-                            {item.items.length ? (
-                              item.items.map((product) => (
-                                <span key={product.product_id}>
-                                  {product.product_name}
-                                  <b>
-                                    {formatMembershipUnits(
-                                      product.unit_size,
-                                      product.quota_units,
-                                      locale,
-                                    )}{" "}
-                                    {membershipUnitLabel(locale, product)}
-                                  </b>
-                                </span>
-                              ))
-                            ) : (
-                              <span>{copy.noPackageProducts}</span>
-                            )}
-                          </span>
-                          <span className="package-policy">
-                            {getCsaQuotaPolicyText(locale, item.quota_policy)}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="duration-panel">
-                  <div className="duration-head">
-                    <h3>{copy.registrationDuration}</h3>
-                    <p>{selectedPackage?.name ?? "—"}</p>
-                  </div>
-                  <div className="duration-list">
-                    <div className="duration-list-head" aria-hidden="true">
-                      <span>{copy.durationColumn}</span>
-                      <span>{copy.monthlyPrice}</span>
-                      <span>{copy.totalPrice}</span>
-                    </div>
-                    {availableOptions.map((option) => {
-                      const saving = priceOptionSaving(option);
-                      return (
-                        <button
-                          className={durationChoiceClass(
-                            selectedOptionId === option.id,
-                          )}
-                          type="button"
-                          data-months={option.duration_months}
-                          aria-pressed={selectedOptionId === option.id}
-                          disabled={Boolean(purchase)}
-                          key={option.id}
-                          onClick={() => {
-                            clearQuoteForSelection();
-                            setSelectedOptionId(option.id);
-                            setSelectedPlanId(
-                              validPaymentPlans(option)[0]?.id ??
-                                (option.duration_months === 1
-                                  ? SINGLE_MONTH_FULL_PAYMENT_ID
-                                  : ""),
-                            );
-                          }}
-                        >
-                          <span className="duration-term">
-                            <span
-                              className="duration-check"
-                              aria-hidden="true"
-                            />
-                            <strong>
-                              {durationLabel(option, copy.duration)}
-                            </strong>
-                          </span>
-                          <span
-                            className="duration-price-cell"
-                            data-label={copy.monthlyPrice}
-                          >
-                            <span className="duration-price-main">
-                              <span className="duration-monthly">
-                                {formatMembershipMoney(
-                                  option.monthly_price_vnd,
-                                  locale,
-                                )}
-                              </span>
-                              {saving ? (
-                                <span className="saving-badge">
-                                  {copy.savingPercent.replace(
-                                    "{percent}",
-                                    localizedSavingPercent(
-                                      saving.percent,
-                                      locale,
-                                    ),
-                                  )}
-                                </span>
-                              ) : null}
-                            </span>
-                            {saving ? (
-                              <span className="duration-saving">
-                                <span>
-                                  {copy.monthlyPurchase.replace(
-                                    "{amount}",
-                                    formatMembershipMoney(
-                                      saving.baseline,
-                                      locale,
-                                    ),
-                                  )}
-                                </span>
-                                <span>
-                                  {copy.durationSaving
-                                    .replace(
-                                      "{amount}",
-                                      formatMembershipMoney(
-                                        saving.amount,
-                                        locale,
-                                      ),
-                                    )
-                                    .replace(
-                                      "{percent}",
-                                      localizedSavingPercent(
-                                        saving.percent,
-                                        locale,
-                                      ),
-                                    )}
-                                </span>
-                              </span>
-                            ) : null}
-                          </span>
-                          <span
-                            className="duration-total"
-                            data-label={copy.totalPrice}
-                          >
-                            {formatMembershipMoney(
-                              option.total_price_vnd,
-                              locale,
-                            )}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="payment-plan-section">
-                    <h3>{copy.paymentPlanTitle}</h3>
-                    {selectedOption &&
-                    selectedOption.duration_months > 1 &&
-                    availablePlans.length === 0 ? (
-                      <p className="notice error" role="alert">
-                        {copy.paymentPlanMissing}
-                      </p>
-                    ) : null}
-                    <div
-                      className="payment-plan-list"
-                      role="group"
-                      aria-label={copy.paymentPlanTitle}
+              <div
+                className={[
+                  "csa-package-list",
+                  availablePackages.length === 1 && "is-single",
+                  availablePackages.length === 2 && "is-pair",
+                  availablePackages.length > 3 && "is-scrollable",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {availablePackages.map((item) => {
+                  const options = activePriceOptions(item);
+                  const oneMonthOption = options.find(
+                    (option) => option.duration_months === 1,
+                  );
+                  const savings = options.map((option) =>
+                    priceOptionSaving(option, oneMonthOption),
+                  );
+                  return (
+                    <article
+                      className={[
+                        "csa-package-card",
+                        selectedPackageId === item.id && "selected",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      data-package={item.id}
+                      key={item.id}
                     >
-                      {displayPlans.map((plan) => {
-                        const installments = sortedInstallments(plan);
-                        const saving = selectedOption
-                          ? paymentPlanSaving(
-                              plan,
-                              selectedPlanId,
-                              displayPlans,
-                            )
-                          : null;
-                        return (
-                          <button
-                            className={[
-                              "payment-plan-choice",
-                              selectedPlanId === plan.id && "selected",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                            type="button"
-                            key={plan.id}
-                            data-payment-plan={plan.id}
-                            aria-label={paymentPlanLabel(plan, copy)}
-                            aria-pressed={selectedPlanId === plan.id}
-                            disabled={Boolean(purchase)}
-                            onClick={() => {
-                              clearQuoteForSelection();
-                              setSelectedPlanId(plan.id);
-                            }}
-                          >
-                            <span className="payment-plan-main">
-                              <strong>{paymentPlanLabel(plan, copy)}</strong>
-                              <small>
-                                {(plan.payment_type === "full"
-                                  ? copy.entirePackage
-                                  : copy.packageDuration
-                                ).replace(
-                                  "{count}",
-                                  String(selectedOption?.duration_months ?? 0),
-                                )}
-                              </small>
-                            </span>
-                            <span className="payment-plan-price">
-                              <strong>
-                                {formatMembershipMoney(
-                                  plan.total_amount,
-                                  locale,
-                                )}
-                              </strong>
-                              {saving ? (
-                                <span className="saving-badge">
-                                  {copy.paymentPlanSaving
-                                    .replace(
-                                      "{amount}",
-                                      formatMembershipMoney(
-                                        saving.amount,
-                                        locale,
-                                      ),
-                                    )
-                                    .replace(
-                                      "{percent}",
-                                      localizedSavingPercent(
-                                        saving.percent,
-                                        locale,
-                                      ),
-                                    )}
-                                </span>
-                              ) : null}
-                            </span>
-                            {plan.payment_type === "installment" ? (
-                              <span className="payment-plan-detail">
-                                {installments.map((row, index) => (
-                                  <span
-                                    className="payment-plan-installment"
-                                    key={row.sequence}
-                                  >
+                      <div className="csa-package-summary">
+                        <div>
+                          <h3>{item.name}</h3>
+                          {item.description ? <p>{item.description}</p> : null}
+                        </div>
+                      </div>
+                      <div className="csa-package-allocation">
+                        <h4>{copy.packageProducts}</h4>
+                        <ul>
+                          {item.items.length ? (
+                            item.items.map((product) => (
+                              <li key={product.product_id}>
+                                <span>{product.product_name}</span>
+                                <b>
+                                  {formatMembershipUnits(
+                                    product.unit_size,
+                                    product.quota_units,
+                                    locale,
+                                  )}{" "}
+                                  {membershipUnitLabel(locale, product)} /{" "}
+                                  {copy.cycle}
+                                </b>
+                              </li>
+                            ))
+                          ) : (
+                            <li>
+                              <span>{copy.noPackageProducts}</span>
+                            </li>
+                          )}
+                        </ul>
+                        <div className="csa-package-policy">
+                          <svg aria-hidden="true" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 11v5M12 8h.01" />
+                          </svg>
+                          <p>
+                            {getCsaQuotaPolicyText(locale, item.quota_policy)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="csa-package-price-options">
+                        <h4>{copy.durationOptionsTitle}</h4>
+                        <ul>
+                          {options.map((option, index) => {
+                            const saving = savings[index];
+                            return (
+                              <li
+                                key={option.id}
+                                className={
+                                  selectedOptionId === option.id
+                                    ? "selected"
+                                    : undefined
+                                }
+                              >
+                                <button
+                                  className="csa-price-option-button"
+                                  type="button"
+                                  aria-pressed={selectedOptionId === option.id}
+                                  disabled={Boolean(purchase)}
+                                  onClick={() => {
+                                    clearQuoteForSelection();
+                                    setSelectedPackageId(item.id);
+                                    setSelectedOptionId(option.id);
+                                    const plans = validPaymentPlans(option);
+                                    setSelectedPlanId(
+                                      plans.length === 1
+                                        ? plans[0].id
+                                        : option.duration_months === 1
+                                          ? SINGLE_MONTH_FULL_PAYMENT_ID
+                                          : "",
+                                    );
+                                  }}
+                                >
+                                  <span className="csa-price-option-heading">
                                     <strong>
-                                      {copy.installmentNumber.replace(
-                                        "{number}",
-                                        String(row.sequence),
-                                      )}
+                                      {durationLabel(option, copy.duration)}
                                     </strong>
-                                    <strong>
-                                      {formatMembershipMoney(
-                                        row.amount,
-                                        locale,
-                                      )}
-                                    </strong>
-                                    <small>
-                                      {installmentMonthsLabel(
-                                        row.cycle_count,
-                                        index,
-                                        installments.length,
-                                        copy,
-                                      )}
-                                    </small>
+                                    <span className="csa-price-option-badges">
+                                      {selectedOptionId === option.id ? (
+                                        <span className="csa-selected-badge">
+                                          {copy.selectedOption}
+                                        </span>
+                                      ) : null}
+                                    </span>
                                   </span>
-                                ))}
-                              </span>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="chosen-total">
-                    <div className="chosen-total-selection">
-                      <span>{copy.selectionSummary}</span>
-                      <small>
-                        {selectedPackage && selectedOption
-                          ? `${selectedPackage.name} · ${durationLabel(selectedOption, copy.duration)}`
-                          : "—"}
-                      </small>
-                    </div>
-                    {selectedPlan ? (
-                      <>
-                        <div className="chosen-total-method">
-                          <span>{copy.summaryMethod}</span>
-                          <small>{paymentPlanLabel(selectedPlan, copy)}</small>
-                        </div>
-                        <div className="chosen-total-payment">
-                          <span>
-                            {selectedPlan.payment_type === "full"
-                              ? copy.summaryAmountDue
-                              : copy.summaryFirstPayment}
-                          </span>
-                          <strong>
-                            {formatMembershipMoney(
-                              selectedPlan.payment_type === "full"
-                                ? selectedPlan.total_amount
-                                : (selectedPlan.initial_payment_amount ??
-                                    sortedInstallments(selectedPlan)[0]
-                                      ?.amount ??
-                                    "0"),
-                              locale,
-                            )}
-                          </strong>
-                        </div>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
+                                  <dl>
+                                    <div>
+                                      <dt>{copy.monthlyPrice}</dt>
+                                      <dd>
+                                        {formatMembershipMoney(
+                                          option.monthly_price_vnd,
+                                          locale,
+                                        )}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt>{copy.totalPrice}</dt>
+                                      <dd>
+                                        {formatMembershipMoney(
+                                          option.total_price_vnd,
+                                          locale,
+                                        )}
+                                      </dd>
+                                    </div>
+                                  </dl>
+                                  {saving ? (
+                                    <p className="csa-price-saving">
+                                      {copy.savingAmount.replace(
+                                        "{amount}",
+                                        formatMembershipMoney(
+                                          saving.amount,
+                                          locale,
+                                        ),
+                                      )}
+                                    </p>
+                                  ) : null}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
               <div className="btn-row">
                 <button

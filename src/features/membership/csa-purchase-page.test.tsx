@@ -277,17 +277,19 @@ function installApi({
   return { calls, fetchMock };
 }
 
-async function choosePackage() {
-  fireEvent.click(await screen.findByRole("button", { name: /Gói Rau/ }));
-  fireEvent.click(screen.getByRole("button", { name: /3 tháng/ }));
+async function choosePackage(durationPattern: RegExp = /3 tháng/) {
+  const option = await screen.findByRole("button", {
+    name: durationPattern,
+  });
+  fireEvent.click(option);
 }
 
 function continueWizard() {
   fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
 }
 
-async function goToGuestInformation() {
-  await choosePackage();
+async function goToGuestInformation(durationPattern?: RegExp) {
+  await choosePackage(durationPattern);
   continueWizard();
   await screen.findByRole("heading", { name: "Thông tin của bạn" });
 }
@@ -311,8 +313,8 @@ async function completeGuest() {
   });
 }
 
-async function goToGuestTerms() {
-  await goToGuestInformation();
+async function goToGuestTerms(durationPattern?: RegExp) {
+  await goToGuestInformation(durationPattern);
   await completeGuest();
   continueWizard();
   await screen.findByRole("heading", {
@@ -450,7 +452,7 @@ describe("CSA purchase wizard", () => {
         name: "Packages open for registration",
       }),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: /Gói Rau/ })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /3 month/ })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -1043,39 +1045,37 @@ describe("CSA purchase wizard", () => {
     ).toBeVisible();
     expect(screen.queryByText("Gói CSA đang mở đăng ký")).toBeNull();
     expect(
-      screen.getByRole("heading", { name: "Thời hạn đăng ký" }),
-    ).toBeVisible();
+      screen.queryByRole("heading", { name: "Thời hạn đăng ký" }),
+    ).toBeNull();
     expect(screen.queryByRole("heading", { name: "Chọn thời hạn" })).toBeNull();
+    await screen.findByText("Gói Rau");
+    expect(
+      container.querySelector(".csa-package-price-options"),
+    ).not.toBeNull();
     expect(screen.queryByLabelText("Họ tên")).toBeNull();
     expect(screen.queryByRole("checkbox")).toBeNull();
-    const packageCard = await screen.findByRole("button", { name: /Gói Rau/ });
+    const packageCard = await screen.findByText("Gói Rau");
     const defaultOption = screen.getByRole("button", { name: /3 tháng/ });
     const next = screen.getByRole("button", { name: "Tiếp tục" });
-    expect(packageCard).toHaveAttribute("aria-pressed", "true");
+    expect(packageCard.closest(".csa-package-card")).toHaveClass("selected");
     expect(defaultOption).toHaveAttribute("aria-pressed", "true");
     expect(next).toBeEnabled();
     expect(
-      container.querySelector(
-        ".package-choice-grid > .package-list > .package-option",
-      ),
+      container.querySelector(".csa-package-list > .csa-package-card"),
     ).not.toBeNull();
     expect(
-      container.querySelector(".package-choice-grid > .duration-panel"),
+      container.querySelector(".csa-package-card.selected"),
     ).not.toBeNull();
     expect(
-      container.querySelector(
-        ".duration-panel .duration-list > .duration-choice",
-      ),
+      container.querySelector(".csa-package-price-options > ul > li > button"),
     ).not.toBeNull();
-    expect(
-      container.querySelector(".duration-panel .chosen-total"),
-    ).not.toBeNull();
+    expect(container.querySelector(".chosen-total")).toBeNull();
     expect(container.querySelector(".packages, .package, .options")).toBeNull();
     expect(screen.getByText(/^3 tháng/)).toBeVisible();
     expect(screen.getAllByText(/1\.200\.000/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Tiết kiệm/)).toBeNull();
     expect(screen.getByText("Rau lá")).toBeVisible();
-    expect(screen.getByText("1 kg")).toBeVisible();
+    expect(screen.getByText("Rau lá").closest("li")).toHaveTextContent("1 kg");
     expect(next).toBeEnabled();
     continueWizard();
     expect(
@@ -1226,7 +1226,7 @@ describe("CSA purchase wizard", () => {
     expect(calls).toHaveLength(requestCount);
   });
 
-  it("uses the current duration monthly price as its buying-monthly baseline", async () => {
+  it("uses the package one-month price as its buying-monthly baseline", async () => {
     installApi({
       packages: {
         data: [
@@ -1237,8 +1237,8 @@ describe("CSA purchase wizard", () => {
                 ...packagePayload.data[0].price_options[0],
                 id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
                 duration_months: 1,
-                monthly_price_vnd: "300000",
-                total_price_vnd: "300000",
+                monthly_price_vnd: "1000000",
+                total_price_vnd: "1000000",
                 payment_plans: [
                   {
                     ...packagePayload.data[0].price_options[0].payment_plans[0],
@@ -1273,9 +1273,7 @@ describe("CSA purchase wizard", () => {
     render(<CSAPurchasePage locale="vi" />);
 
     expect(await screen.findByText("6 tháng")).toBeVisible();
-    expect(screen.getByText("Tiết kiệm 7,41%")).toBeVisible();
-    expect(screen.getByText("Mua từng tháng: 5.400.000 ₫")).toBeVisible();
-    expect(screen.getByText("Tiết kiệm: 400.000 ₫ · 7,41%")).toBeVisible();
+    expect(screen.getByText("Tiết kiệm 1.000.000 ₫")).toBeVisible();
     expect(
       screen.getByRole("button", { name: /1 tháng/ }),
     ).not.toHaveTextContent(/Tiết kiệm|Giảm/);
@@ -1333,7 +1331,7 @@ describe("CSA purchase wizard", () => {
     expect(screen.getAllByText(/1\.200\.000/).length).toBeGreaterThan(0);
   });
 
-  it("renders the current-duration saving copy in English", async () => {
+  it("renders duration saving against the package one-month option", async () => {
     installApi({
       packages: {
         data: [
@@ -1343,6 +1341,13 @@ describe("CSA purchase wizard", () => {
               {
                 ...packagePayload.data[0].price_options[0],
                 id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                duration_months: 1,
+                monthly_price_vnd: "1000000",
+                total_price_vnd: "1000000",
+              },
+              {
+                ...packagePayload.data[0].price_options[0],
+                id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
                 duration_months: 6,
                 monthly_price_vnd: "900000",
                 total_price_vnd: "5000000",
@@ -1363,9 +1368,7 @@ describe("CSA purchase wizard", () => {
     });
     render(<CSAPurchasePage locale="en" />);
 
-    expect(await screen.findByText("Save 7.41%")).toBeVisible();
-    expect(screen.getByText(/Buying monthly:.*5,400,000/)).toBeVisible();
-    expect(screen.getByText(/Save:.*400,000.*7\.41%/)).toBeVisible();
+    expect(await screen.findByText("Save ₫1,000,000")).toBeVisible();
   });
 
   it("preserves the backend's oldest-to-newest package response order", async () => {
@@ -1383,11 +1386,9 @@ describe("CSA purchase wizard", () => {
     });
     const { container } = render(<CSAPurchasePage locale="vi" />);
 
-    expect(
-      await screen.findByRole("button", { name: /Gói cũ nhất/ }),
-    ).toHaveAttribute("aria-pressed", "true");
+    expect(await screen.findByText("Gói cũ nhất")).toBeVisible();
     const packageIds = Array.from(
-      container.querySelectorAll(".package-list > .package-option"),
+      container.querySelectorAll(".csa-package-list > .csa-package-card"),
     ).map((item) => item.getAttribute("data-package"));
     expect(packageIds).toEqual([oldestId, middleId, newestId]);
   });
@@ -1419,19 +1420,14 @@ describe("CSA purchase wizard", () => {
     });
     const { container } = render(<CSAPurchasePage locale="vi" />);
 
+    expect(await screen.findByText("Gói cuối")).toBeVisible();
     expect(
-      await screen.findByRole("button", { name: /Gói cuối/ }),
-    ).toBeVisible();
-    expect(
-      Array.from(container.querySelectorAll(".package-option")).map((item) =>
+      Array.from(container.querySelectorAll(".csa-package-card")).map((item) =>
         item.getAttribute("data-package"),
       ),
     ).toEqual(pages.map((item) => item.id));
-    expect(screen.getByRole("button", { name: /Gói đầu/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /Gói kế/ })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByText("Gói đầu")).toBeVisible();
+    expect(screen.getByText("Gói kế")).toBeVisible();
     expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
     expect(
       calls
@@ -1457,8 +1453,10 @@ describe("CSA purchase wizard", () => {
     render(<CSAPurchasePage locale="vi" />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Không thể tải");
-    expect(screen.queryByRole("button", { name: /Gói Rau/ })).toBeNull();
-    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeDisabled();
+    expect(screen.queryByText("Gói Rau")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
     expect(
       calls.filter((call) => call.url.includes("membership-packages")),
     ).toHaveLength(2);
@@ -1498,12 +1496,10 @@ describe("CSA purchase wizard", () => {
         <CSAPurchasePage locale="en" />
       </CSAFlowStateProvider>,
     );
+    expect(await screen.findByText("English package")).toBeVisible();
     expect(
-      await screen.findByRole("button", { name: /English package/ }),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("button", { name: /English package/ }),
-    ).toHaveAttribute("aria-pressed", "true");
+      screen.getByText("English package").closest(".csa-package-card"),
+    ).toHaveClass("selected");
 
     await act(async () => {
       resolveOldPage(
@@ -1514,7 +1510,7 @@ describe("CSA purchase wizard", () => {
       );
       await oldPage;
     });
-    expect(screen.queryByRole("button", { name: /Gói Rau/ })).toBeNull();
+    expect(screen.queryByText("Gói Rau")).toBeNull();
     expect(
       calls.filter((call) =>
         call.url.includes("membership-packages?page=1&locale=en"),
@@ -1567,22 +1563,15 @@ describe("CSA purchase wizard", () => {
     });
     const { container } = render(<CSAPurchasePage locale="vi" />);
 
-    const disabledPackage = await screen.findByRole("button", {
-      name: /Gói chưa mở thời hạn/,
-    });
-    expect(disabledPackage).toBeDisabled();
-    expect(disabledPackage).toHaveAttribute("aria-pressed", "false");
-    expect(disabledPackage).toHaveClass("package-option");
-    expect(
-      screen.getByRole("button", { name: /Gói hợp lệ kế tiếp/ }),
-    ).toHaveAttribute("aria-pressed", "true");
+    expect(await screen.findByText("Gói chưa mở thời hạn")).toBeVisible();
+    expect(screen.getByText("Gói hợp lệ kế tiếp")).toBeVisible();
     expect(screen.getByRole("button", { name: /3 tháng/ })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     expect(screen.queryByText("Gói đã đóng")).toBeNull();
     expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
-    expect(container.querySelectorAll(".package-option")).toHaveLength(2);
+    expect(container.querySelectorAll(".csa-package-card")).toHaveLength(2);
   });
 
   it("validates guest fields inline, normalizes phone, loads wards lazily and posts unchanged data", async () => {
@@ -1921,8 +1910,7 @@ describe("CSA purchase wizard", () => {
         name: "Choose the right package for your family",
       }),
     ).toBeNull();
-    fireEvent.click(await screen.findByRole("button", { name: /Gói Rau/ }));
-    fireEvent.click(screen.getByRole("button", { name: /3 month/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /3 month/ }));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await screen.findByText("Member");
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
@@ -2043,10 +2031,7 @@ describe("CSA purchase wizard", () => {
       screen.getByRole("heading", { name: "Thông tin của bạn" }),
     ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
-    expect(screen.getByRole("button", { name: /Gói Rau/ })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByText("Gói Rau")).toBeVisible();
   });
 
   it("keeps the incomplete-profile notice when Auth Account revalidation fails", async () => {
@@ -2421,7 +2406,7 @@ describe("CSA purchase wizard", () => {
     expect(screen.queryByText(/csa_purchase_request_open_exists/)).toBeNull();
   });
 
-  it("renders backend payment plans in order, selects the first, and shows only real savings", async () => {
+  it("renders backend payment plans in order and shows only real savings", async () => {
     const full = {
       ...packagePayload.data[0].price_options[0].payment_plans[0],
       total_amount: "1100000",
@@ -2451,6 +2436,15 @@ describe("CSA purchase wizard", () => {
       ],
     };
     installApi({
+      create: {
+        data: {
+          ...purchasePayload.data,
+          amount: "1200000",
+          initial_payment_amount: "600000",
+          payment_plan: installment,
+          qr_payload: { ...purchasePayload.data.qr_payload, amount: "600000" },
+        },
+      },
       packages: {
         data: [
           {
@@ -2482,12 +2476,16 @@ describe("CSA purchase wizard", () => {
       },
     });
     render(<CSAPurchasePage locale="vi" />);
-    await screen.findByRole("heading", { name: "Phương thức thanh toán" });
-    fireEvent.click(await screen.findByRole("button", { name: /3 tháng/ }));
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    await screen.findByRole("heading", { name: "Thanh toán" });
     const plans = screen.getAllByRole("button", {
       name: /Thanh toán một lần|Trả góp 2 lần|Trả góp 3 lần/,
     });
-    expect(plans[0]).toHaveAttribute("aria-pressed", "true");
+    expect(plans[0]).toHaveAttribute("aria-pressed", "false");
     expect(plans[1]).toHaveAttribute("aria-pressed", "false");
     expect(
       within(plans[0]).getByText("Tiết kiệm 100.000 ₫ · 8,33%"),
@@ -2507,17 +2505,6 @@ describe("CSA purchase wizard", () => {
       (plans[1].textContent ?? "").indexOf("Lần 2"),
     );
     expect(plans[1].textContent).not.toMatch(/\b(?:installments?|cycles?)\b/i);
-    fireEvent.click(plans[1]);
-    expect(plans[1]).toHaveAttribute("aria-pressed", "true");
-    expect(plans[0]).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByText("Phương thức")).toBeVisible();
-    expect(screen.getByText("Khoản thanh toán đầu tiên")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
-
-    fireEvent.click(plans[2]);
-    expect(
-      within(plans[0]).getByText("Tiết kiệm 200.000 ₫ · 15,38%"),
-    ).toBeVisible();
   });
 
   it("does not compare payment methods when full and installment totals match", async () => {
@@ -2551,7 +2538,11 @@ describe("CSA purchase wizard", () => {
       },
     });
     render(<CSAPurchasePage locale="vi" />);
-
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
     await screen.findByRole("heading", { name: "Phương thức thanh toán" });
     expect(screen.queryByText(/^Tiết kiệm \d/)).toBeNull();
   });
@@ -2587,7 +2578,11 @@ describe("CSA purchase wizard", () => {
       },
     });
     render(<CSAPurchasePage locale="vi" />);
-
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
     await screen.findByRole("heading", { name: "Phương thức thanh toán" });
     expect(screen.queryByText(/^Tiết kiệm \d/)).toBeNull();
   });
@@ -2622,7 +2617,11 @@ describe("CSA purchase wizard", () => {
       },
     });
     render(<CSAPurchasePage locale="vi" />);
-
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
     await screen.findByRole("heading", { name: "Phương thức thanh toán" });
     expect(screen.queryByText(/^Tiết kiệm \d/)).toBeNull();
   });
@@ -2664,7 +2663,34 @@ describe("CSA purchase wizard", () => {
       },
     });
     render(<CSAPurchasePage locale="en" />);
-
+    await screen.findByRole("heading", {
+      name: "Packages open for registration",
+    });
+    fireEvent.click(await screen.findByRole("button", { name: /3 month/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await screen.findByRole("heading", { name: "Your information" });
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Nguyen Van An" },
+    });
+    fireEvent.change(screen.getByLabelText("Phone number"), {
+      target: { value: "0901234567" },
+    });
+    fireEvent.change(screen.getByLabelText("Province / city"), {
+      target: { value: "66" },
+    });
+    await screen.findByRole("option", { name: "Phường Mỹ Ngãi" });
+    fireEvent.change(screen.getByLabelText("Ward / commune"), {
+      target: { value: "22015" },
+    });
+    fireEvent.change(screen.getByLabelText("Detailed address"), {
+      target: { value: "12 Lane 5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await screen.findByRole("heading", { name: "How the program works" });
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue to payment" }),
+    );
     const full = await screen.findByRole("button", { name: /Pay in full/ });
     const installment = screen.getByRole("button", {
       name: /Pay in 2 installments/,
@@ -2694,16 +2720,39 @@ describe("CSA purchase wizard", () => {
       },
     });
     render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms(/3 tháng/);
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
     expect(
       await screen.findByText(
         "Thời hạn này chưa có phương thức thanh toán hợp lệ.",
       ),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
   });
 
   it("uses one-month price option as full payment when no plan is configured", async () => {
     installApi({
+      create: {
+        data: {
+          ...purchasePayload.data,
+          amount: "400000",
+          initial_payment_amount: "400000",
+          payment_plan: {
+            id: "synthetic-one-month-full",
+            name: "",
+            payment_type: "full",
+            total_amount: "400000",
+            installment_count: 1,
+            installments: [{ sequence: 1, amount: "400000", cycle_count: 1 }],
+          },
+          qr_payload: { ...purchasePayload.data.qr_payload, amount: "400000" },
+        },
+      },
       packages: {
         data: [
           {
@@ -2722,14 +2771,20 @@ describe("CSA purchase wizard", () => {
       },
     });
     render(<CSAPurchasePage locale="vi" />);
-
+    await goToGuestTerms(/1 tháng/);
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
     expect(
       await screen.findByRole("button", { name: /Thanh toán một lần/ }),
     ).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.queryByText("Thời hạn này chưa có phương thức thanh toán hợp lệ."),
     ).toBeNull();
-    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+    expect(
+      await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeVisible();
   });
 
   it("resets the plan to the first valid option when package or duration changes", async () => {
@@ -2785,23 +2840,22 @@ describe("CSA purchase wizard", () => {
       },
     });
     render(<CSAPurchasePage locale="vi" />);
-    const secondButton = await screen.findByRole("button", {
-      name: /Trả góp 2 lần/,
-    });
-    fireEvent.click(secondButton);
-    expect(secondButton).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(screen.getByRole("button", { name: /Gói khác/ }));
-    expect(screen.getByRole("button", { name: /Gói khác/ })).toHaveAttribute(
-      "aria-pressed",
-      "true",
+    const firstPackage = await screen.findByText("Gói Rau");
+    fireEvent.click(
+      within(firstPackage.closest(".csa-package-card")!).getByRole("button", {
+        name: /3 tháng/,
+      }),
     );
+    const otherPackage = screen.getByText("Gói khác");
+    const otherCard = otherPackage.closest(".csa-package-card") as HTMLElement;
+    const sixMonthOption = within(otherCard).getByRole("button", {
+      name: /6 tháng/,
+    });
+    fireEvent.click(sixMonthOption);
+    expect(sixMonthOption).toHaveAttribute("aria-pressed", "true");
     expect(
-      screen.getByRole("button", { name: /Thanh toán một lần/ }),
-    ).toHaveAttribute("data-payment-plan", otherPlan.id);
-    fireEvent.click(screen.getByRole("button", { name: /6 tháng/ }));
-    expect(
-      screen.getByRole("button", { name: /Thanh toán một lần/ }),
-    ).toHaveAttribute("data-payment-plan", longerPlan.id);
+      screen.queryByRole("heading", { name: "Phương thức thanh toán" }),
+    ).toBeNull();
     expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
   });
 

@@ -10,6 +10,11 @@ function declarationBlock(selector: string) {
   return csaCss.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`))?.[1];
 }
 
+function globalDeclarationBlock(selector: string) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return css.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`))?.[1];
+}
+
 describe("CSA demo style contract", () => {
   it("ports the demo typography, palette, shell and panel geometry", () => {
     const root = declarationBlock(".csa-ui");
@@ -79,7 +84,7 @@ describe("CSA demo style contract", () => {
     );
     expect(
       declarationBlock(".csa-purchase-ui .main-panel.package-step-panel"),
-    ).toContain("border: 1px solid var(--line)");
+    ).toContain("border: 0");
     expect(declarationBlock(".csa-ui .wizard-layout")).not.toContain("border:");
     const appCard = declarationBlock(".csa-ui .app-card");
     expect(appCard).toContain("border: 0");
@@ -165,40 +170,23 @@ describe("CSA demo style contract", () => {
     );
   });
 
-  it("ports the demo package choice grid and package cards", () => {
-    expect(declarationBlock(".csa-purchase-ui .package-choice-grid")).toContain(
-      "gap: 18px",
+  it("keeps package cards and price options on the shared CSA surface", () => {
+    const packageList = globalDeclarationBlock(".csa-package-list");
+    expect(packageList).toContain("display: flex");
+    expect(packageList).toContain("gap: 0.9rem");
+    const packageCard = globalDeclarationBlock(".csa-package-card");
+    expect(packageCard).toContain("border");
+    expect(packageCard).toContain("border-radius");
+    const priceOptions = globalDeclarationBlock(".csa-package-price-options");
+    expect(priceOptions).toContain("display: grid");
+    const selectedPriceOption = globalDeclarationBlock(
+      ".csa-package-price-options > ul > li.selected",
     );
-    const packageList = declarationBlock(".csa-purchase-ui .package-list");
-    expect(packageList).toContain("display: grid");
-    expect(packageList).toContain(
-      "grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
-    );
-    expect(packageList).toContain("gap: 12px");
-    const packageOption = declarationBlock(".csa-purchase-ui .package-option");
-    expect(packageOption).toContain("gap: 12px");
-    expect(packageOption).toContain("padding: 16px");
-    expect(packageOption).toContain("border: 1px solid var(--line)");
-    expect(packageOption).toContain("border-radius: 12px");
-    expect(csaCss).not.toMatch(/\.csa-ui \.packages\s*\{/);
-    expect(csaCss).not.toMatch(/\.csa-ui \.package\s*\{/);
-  });
-
-  it("ports the exact duration list, total and action geometry", () => {
-    const durationChoice = declarationBlock(
-      ".csa-purchase-ui .duration-choice",
-    );
-    expect(durationChoice).toContain("min-height: 54px");
-    expect(durationChoice).toContain("gap: 16px");
-    expect(durationChoice).toContain("padding: 11px 12px");
-    const durationList = declarationBlock(".csa-purchase-ui .duration-list");
-    expect(durationList).toContain("border: 1px solid var(--line)");
-    expect(durationList).toContain("border-radius: 10px");
-    const chosenTotal = declarationBlock(".csa-purchase-ui .chosen-total");
-    expect(chosenTotal).toContain("gap: 14px");
-    expect(chosenTotal).toContain("margin-top: 12px");
-    expect(chosenTotal).toContain("padding-top: 12px");
-    expect(chosenTotal).toContain("border-top: 1px solid var(--line)");
+    expect(selectedPriceOption).toContain("border-color: var(--forest)");
+    expect(selectedPriceOption).toContain("box-shadow:");
+    const selectedBadge = globalDeclarationBlock(".csa-selected-badge");
+    expect(selectedBadge).toContain("border:");
+    expect(selectedBadge).toContain("border-radius: 999px");
     expect(declarationBlock(".csa-ui .btn-row")).toContain("margin-top: 14px");
     const button = declarationBlock(".csa-ui .btn");
     expect(button).toContain("min-height: 44px");
@@ -435,14 +423,19 @@ describe("CSA demo style contract", () => {
   });
 
   it("ports demo mobile stacking and reduced motion", () => {
-    expect(csaCss).toMatch(
-      /@media \(min-width: 900px\)[\s\S]*?\.csa-purchase-ui \.package-list\s*\{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/,
+    expect(css).toMatch(
+      /@media \(min-width: 1024px\)[\s\S]*?\.csa-package-list:not\(\.is-scrollable\)[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/,
     );
-    expect(csaCss).toMatch(
-      /@media \(min-width: 600px\) and \(max-width: 899px\)[\s\S]*?\.csa-purchase-ui \.package-list\s*\{[\s\S]*?display: flex[\s\S]*?overflow-x: auto/,
+    expect(css).toContain(".csa-package-list {");
+    expect(css).toContain(".csa-package-card {");
+    expect(css).toMatch(
+      /@media \(max-width: 420px\)[\s\S]*?\.csa-package-card\s*\{[\s\S]*?width: calc\(100vw - 3rem\)/,
     );
-    expect(csaCss).toMatch(
-      /@media \(max-width: 599px\)[\s\S]*?\.csa-purchase-ui \.package-list\s*\{[\s\S]*?grid-template-columns: 1fr/,
+    expect(css).toMatch(
+      /@media \(max-width: 760px\)[\s\S]*?\.csa-purchase-ui \.csa-package-list\s*\{[\s\S]*?display: grid[\s\S]*?overflow-x: visible/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 760px\)[\s\S]*?\.csa-purchase-ui \.csa-package-card\s*\{[\s\S]*?width: 100%[\s\S]*?min-width: 0/,
     );
     expect(csaCss).toMatch(
       /@media \(max-width: 480px\)[\s\S]*?\.csa-ui \.kv\s*\{\s*grid-template-columns: 1fr/,
