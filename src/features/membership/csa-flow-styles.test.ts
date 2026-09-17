@@ -179,6 +179,8 @@ describe("CSA demo style contract", () => {
     expect(packageCard).toContain("border-radius");
     const priceOptions = globalDeclarationBlock(".csa-package-price-options");
     expect(priceOptions).toContain("display: grid");
+    expect(priceOptions).toContain("order: 5");
+    expect(globalDeclarationBlock(".csa-package-policy")).toContain("order: 4");
     const selectedPriceOption = globalDeclarationBlock(
       ".csa-package-price-options > ul > li.selected",
     );

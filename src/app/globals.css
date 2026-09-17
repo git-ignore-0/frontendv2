@@ -3675,7 +3675,7 @@ tbody th {
   line-height: 1.55;
 }
 .csa-package-price-options {
-  order: 4;
+  order: 5;
   display: grid;
   gap: 0.55rem;
   padding: 1rem;
@@ -3839,7 +3839,7 @@ tbody th {
   text-align: right;
 }
 .csa-package-policy {
-  order: 5;
+  order: 4;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0.5rem;
