@@ -278,7 +278,7 @@ const en = {
     membershipQuotaPolicy: "Unused quantity",
     membershipExpire: "Unused quantity does not carry over to the next month",
     membershipRollover:
-      "Unused quantity carries over only within a multi-month membership",
+      "Unused quantity carries over if membership is renewed.",
     membershipScheduledNotice:
       "This membership will begin on {date}. Product quantities are not available yet.",
     membershipQuotaTitle: "Products in your membership",
@@ -511,9 +511,8 @@ const en = {
     buyNow: "Buy now",
     floatingBuyNow: "Buy now",
     expire: "Unused quantity carries over if you renew your membership.",
-    rollover:
-      "Unused quantity carries over only within a multi-month membership",
-    includedProducts: "Quantity you can use each month",
+    rollover: "Unused quantity carries over if membership is renewed.",
+    includedProducts: "Monthly Package Breakdown:",
     cycle: "month",
     zaloTitle: "Need help with your CSA membership?",
     zaloBody:
@@ -1119,7 +1118,7 @@ const vi: SiteContent = {
     membershipQuotaPolicy: "Số lượng chưa dùng",
     membershipExpire: "Số lượng chưa dùng không cộng sang tháng sau",
     membershipRollover:
-      "Số lượng chưa dùng chỉ được cộng sang tháng sau trong gói nhiều tháng",
+      "Số lượng chưa sử dụng sẽ được chuyển tiếp nếu gia hạn gói thành viên.",
     membershipScheduledNotice:
       "Gói này sẽ bắt đầu từ {date}. Số lượng sản phẩm chưa khả dụng.",
     membershipQuotaTitle: "Sản phẩm trong gói",
@@ -1365,8 +1364,8 @@ const vi: SiteContent = {
     expire:
       "Số lượng chưa sử dụng sẽ được chuyển tiếp nếu bạn gia hạn gói thành viên.",
     rollover:
-      "Số lượng chưa dùng chỉ được cộng sang tháng sau trong gói nhiều tháng",
-    includedProducts: "Số lượng bạn có thể dùng mỗi tháng",
+      "Số lượng chưa sử dụng sẽ được chuyển tiếp nếu gia hạn gói thành viên.",
+    includedProducts: "Phân bổ gói theo tháng:",
     cycle: "tháng",
     zaloTitle: "Cần hỗ trợ về gói CSA?",
     zaloBody:

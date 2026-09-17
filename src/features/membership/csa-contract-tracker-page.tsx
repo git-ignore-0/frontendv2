@@ -142,6 +142,9 @@ function TrackerDetails({
   const copy = getCSAContractTrackerCopy(locale);
   const approved = result.status === "approved" && contract;
   const status = statusLabel(result.status, copy);
+  const durationCount = approved
+    ? contract.duration_months_snapshot
+    : result.duration_months;
 
   return (
     <section
@@ -186,14 +189,10 @@ function TrackerDetails({
               <div className="kv">
                 <dt>{copy.duration}</dt>
                 <dd>
-                  {copy.durationValue.replace(
-                    "{count}",
-                    String(
-                      approved
-                        ? contract.duration_months_snapshot
-                        : result.duration_months,
-                    ),
-                  )}
+                  {(durationCount === 1
+                    ? copy.durationMonth
+                    : copy.durationMonths
+                  ).replace("{count}", String(durationCount))}
                 </dd>
               </div>
               <div className="kv">

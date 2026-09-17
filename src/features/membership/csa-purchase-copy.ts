@@ -9,7 +9,7 @@ const copy = {
     steps: ["Choose package", "Information", "Terms", "Payment"],
     packageStepTitle: "Packages open for registration",
     packageStepDescription: "Choose a duration that suits your household.",
-    packageProducts: "Quantity you can use each month",
+    packageProducts: "Monthly Package Breakdown:",
     noPackageProducts: "Product details will be confirmed with this package.",
     durationOptionsTitle: "Available durations",
     selectedOption: "Selected",
@@ -62,7 +62,8 @@ const copy = {
     packagesEmpty: "There are no CSA packages available right now.",
     packagesError: "We could not load CSA packages. Please try again.",
     retry: "Try again",
-    duration: "{count} month(s)",
+    month: "{count} month",
+    months: "{count} months",
     signedInNote:
       "Your name, phone number and address will be taken securely from Auth Account.",
     name: "Full name",
@@ -153,7 +154,7 @@ const copy = {
     packageStepTitle: "Gói đang mở đăng ký",
     packageStepDescription:
       "Chọn gói phù hợp với nhu cầu sử dụng của gia đình.",
-    packageProducts: "Số lượng bạn có thể dùng mỗi tháng",
+    packageProducts: "Phân bổ gói theo tháng:",
     noPackageProducts: "Thông tin sản phẩm sẽ được xác nhận theo gói này.",
     durationOptionsTitle: "Các thời hạn hiện có",
     selectedOption: "Đã chọn",
@@ -205,7 +206,8 @@ const copy = {
     packagesEmpty: "Hiện chưa có gói CSA nào khả dụng.",
     packagesError: "Không thể tải danh sách gói CSA. Vui lòng thử lại.",
     retry: "Thử lại",
-    duration: "{count} tháng",
+    month: "{count} tháng",
+    months: "{count} tháng",
     signedInNote:
       "Họ tên, số điện thoại và địa chỉ được lấy an toàn từ Auth Account.",
     name: "Họ tên",

@@ -122,7 +122,11 @@ export function buildVietQRUrl(request: Pick<CSAPaymentQuote, "qr_payload">) {
   return `https://img.vietqr.io/image/${qr.acqId}-${qr.accountNo}-qr_only.png?${parameters}`;
 }
 
-function durationLabel(option: MembershipPackagePriceOption, template: string) {
+function durationLabel(
+  option: MembershipPackagePriceOption,
+  copy: { month: string; months: string },
+) {
+  const template = option.duration_months === 1 ? copy.month : copy.months;
   return template.replace("{count}", String(option.duration_months));
 }
 
@@ -1932,7 +1936,7 @@ function CSAPurchaseWizard({
                                 >
                                   <span className="csa-price-option-heading">
                                     <strong>
-                                      {durationLabel(option, copy.duration)}
+                                      {durationLabel(option, copy)}
                                     </strong>
                                     <span className="csa-price-option-badges">
                                       {selectedOptionId === option.id ? (
