@@ -142,6 +142,139 @@ const quotePayload = {
   },
 };
 
+const couponFullQuote = {
+  data: {
+    ...quotePayload.data,
+    quote_token: "coupon-quote-token",
+    payment: { ...quotePayload.data.payment, amount: "1100000" },
+    payment_summary: {
+      ...quotePayload.data.payment_summary,
+      initial_payment_amount: "1100000",
+      installments: [{ sequence: 1, amount: "1100000", cycle_count: 3 }],
+      contract_total_before_discount: "1200000",
+      payment_plan_total_before_discount: "1200000",
+      discount_amount: "100000",
+      customer_payable_total: "1100000",
+      initial_payment_before_discount: "1200000",
+    },
+    coupon: {
+      code: "TETTRUNGTHU2026",
+      discount_type: "fixed",
+      discount_value: "100000",
+      discount_amount: "100000",
+    },
+    qr_payload: { ...quotePayload.data.qr_payload, amount: "1100000" },
+  },
+};
+
+const installmentPlan = {
+  id: "77777777-7777-4777-8777-777777777777",
+  name: "Trả góp hai lần",
+  payment_type: "installment",
+  total_amount: "1200000",
+  installment_count: 2,
+  installments: [
+    { sequence: 1, amount: "600000", cycle_count: 1 },
+    { sequence: 2, amount: "600000", cycle_count: 2 },
+  ],
+};
+const installmentQuote = {
+  data: {
+    ...quotePayload.data,
+    payment: { ...quotePayload.data.payment, amount: "600000" },
+    payment_summary: {
+      payment_type: "installment",
+      total_amount: "1200000",
+      initial_payment_amount: "600000",
+      installment_count: 2,
+      installments: installmentPlan.installments,
+    },
+    qr_payload: { ...quotePayload.data.qr_payload, amount: "600000" },
+  },
+};
+const couponInstallmentQuote = {
+  data: {
+    ...installmentQuote.data,
+    payment: { ...installmentQuote.data.payment, amount: "500000" },
+    payment_summary: {
+      ...installmentQuote.data.payment_summary,
+      initial_payment_amount: "500000",
+      installments: [
+        { sequence: 1, amount: "500000", cycle_count: 1 },
+        { sequence: 2, amount: "600000", cycle_count: 2 },
+      ],
+      contract_total_before_discount: "1200000",
+      payment_plan_total_before_discount: "1200000",
+      discount_amount: "100000",
+      customer_payable_total: "1100000",
+      initial_payment_before_discount: "600000",
+    },
+    coupon: couponFullQuote.data.coupon,
+    qr_payload: { ...installmentQuote.data.qr_payload, amount: "500000" },
+  },
+};
+
+const threeInstallmentPlan = {
+  ...installmentPlan,
+  id: "88888888-8888-4888-8888-888888888888",
+  installment_count: 3,
+  installments: [
+    { sequence: 1, amount: "400000", cycle_count: 1 },
+    { sequence: 2, amount: "400000", cycle_count: 1 },
+    { sequence: 3, amount: "400000", cycle_count: 1 },
+  ],
+};
+const threeInstallmentCouponQuote = {
+  data: {
+    ...couponInstallmentQuote.data,
+    payment: { ...couponInstallmentQuote.data.payment, amount: "300000" },
+    payment_summary: {
+      ...couponInstallmentQuote.data.payment_summary,
+      initial_payment_amount: "300000",
+      installment_count: 3,
+      installments: [
+        { sequence: 1, amount: "300000", cycle_count: 1 },
+        { sequence: 2, amount: "400000", cycle_count: 1 },
+        { sequence: 3, amount: "400000", cycle_count: 1 },
+      ],
+      initial_payment_before_discount: "400000",
+    },
+    qr_payload: { ...couponInstallmentQuote.data.qr_payload, amount: "300000" },
+  },
+};
+const threeInstallmentQuote = {
+  data: {
+    ...threeInstallmentCouponQuote.data,
+    coupon: undefined,
+    payment: { ...threeInstallmentCouponQuote.data.payment, amount: "400000" },
+    payment_summary: {
+      ...threeInstallmentCouponQuote.data.payment_summary,
+      initial_payment_amount: "400000",
+      installments: threeInstallmentPlan.installments,
+    },
+    qr_payload: {
+      ...threeInstallmentCouponQuote.data.qr_payload,
+      amount: "400000",
+    },
+  },
+};
+const threePlanPackages = {
+  data: [
+    {
+      ...packagePayload.data[0],
+      price_options: [
+        {
+          ...packagePayload.data[0].price_options[0],
+          payment_plans: [
+            packagePayload.data[0].price_options[0].payment_plans[0],
+            threeInstallmentPlan,
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 let nextAnimationFrameId = 0;
 let animationFrames = new Map<number, FrameRequestCallback>();
 const scrollIntoViewMock = vi.fn();
@@ -192,8 +325,10 @@ function installApi({
   create = quotePayload,
   createStatus = 201,
   pendingCreate,
+  quoteResponse,
   confirm = purchasePayload,
   confirmStatus = 200,
+  confirmResponse,
   packages = packagePayload,
   packageStatus = 200,
   packageResponse,
@@ -204,8 +339,13 @@ function installApi({
   create?: unknown;
   createStatus?: number;
   pendingCreate?: Promise<Response>;
+  quoteResponse?: (
+    call: number,
+    body: Record<string, unknown>,
+  ) => Response | Promise<Response>;
   confirm?: unknown;
   confirmStatus?: number;
+  confirmResponse?: (call: number) => Response | Promise<Response>;
   packages?: unknown;
   packageStatus?: number;
   packageResponse?: (
@@ -221,6 +361,8 @@ function installApi({
 } = {}) {
   const calls: Array<{ url: string; init?: RequestInit }> = [];
   let sessionCall = 0;
+  let quoteCall = 0;
+  let confirmationCall = 0;
   const fetchMock = vi.fn(
     async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input);
@@ -263,11 +405,18 @@ function installApi({
           ? sessionResponse(sessionCall++)
           : json({ data: { user } });
       if (url.endsWith("/confirm-transfer"))
-        return json(confirm, confirmStatus);
+        return confirmResponse
+          ? confirmResponse(confirmationCall++)
+          : json(confirm, confirmStatus);
       if (url.includes("csa-payment-quotes"))
-        return pendingCreate
-          ? pendingCreate
-          : json(asQuote(create), createStatus);
+        return quoteResponse
+          ? quoteResponse(
+              quoteCall++,
+              JSON.parse(String(init?.body)) as Record<string, unknown>,
+            )
+          : pendingCreate
+            ? pendingCreate
+            : json(asQuote(create), createStatus);
       if (url.includes("csa-purchase-requests"))
         return pendingCreate ? pendingCreate : json(create, createStatus);
       throw new Error(`Unexpected request: ${url}`);
@@ -339,6 +488,20 @@ function acceptTerms() {
   );
 }
 
+async function expectAppliedCoupon(
+  inputLabel = "Mã giảm giá",
+  removeLabel = "Bỏ mã",
+) {
+  expect(
+    await screen.findByRole("button", { name: removeLabel }),
+  ).toBeVisible();
+  expect(screen.getByLabelText(inputLabel)).toBeDisabled();
+  expect(
+    screen.queryByRole("button", { name: /^Áp dụng$|^Apply$/ }),
+  ).toBeNull();
+  expect(screen.queryByText(/^(Mã giảm giá|Discount code): /)).toBeNull();
+}
+
 function agreementCheckboxes() {
   return screen
     .getAllByRole("checkbox")
@@ -366,6 +529,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   if (originalScrollIntoView) {
     Object.defineProperty(Element.prototype, "scrollIntoView", {
       configurable: true,
@@ -513,6 +677,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     const qr = await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
     const qrUrl = qr.getAttribute("src");
     rerender(
@@ -559,6 +724,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(
       calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(1);
@@ -569,9 +735,7 @@ describe("CSA purchase wizard", () => {
         <CSAPurchasePage key="en" locale="en" />
       </CSAFlowStateProvider>,
     );
-    expect(
-      await screen.findByText("Preparing secure payment details…"),
-    ).toBeVisible();
+    expect(await screen.findByText("Preparing payment details…")).toBeVisible();
     resolveCreate(json(quotePayload, 201));
 
     expect(
@@ -616,6 +780,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
 
     expect(
       await screen.findByText(
@@ -702,9 +867,12 @@ describe("CSA purchase wizard", () => {
       fireEvent.click(
         screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
       );
+      fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
       await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
       await waitFor(() => expect(memory.current?.quote).toBeDefined());
 
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+      await screen.findByRole("heading", { name: "Phương thức thanh toán" });
       fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
       await screen.findByRole("heading", {
         name: "Chương trình hoạt động thế nào",
@@ -722,6 +890,7 @@ describe("CSA purchase wizard", () => {
       fireEvent.click(
         screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
       );
+      fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
       await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
       expect(
         calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
@@ -729,7 +898,209 @@ describe("CSA purchase wizard", () => {
     },
   );
 
-  it("hides payment and lets the guest reset an already-expired request", async () => {
+  it("returns from QR with the coupon and plan, then creates and confirms only a fresh quote", async () => {
+    const { calls } = installApi({
+      quoteResponse: (call, body) =>
+        json({
+          data: {
+            ...(body.coupon_code ? couponFullQuote.data : quotePayload.data),
+            quote_token: `fresh-quote-${call}`,
+          },
+        }),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    expect(
+      screen.getByRole("heading", { name: "Phương thức thanh toán" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Thanh toán một lần" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("TETTRUNGTHU2026");
+    expect(screen.getByLabelText("Mã giảm giá")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Bỏ mã" })).toBeVisible();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(screen.queryByText("MB Bank")).toBeNull();
+    expect(
+      calls.filter((call) => call.url.includes("csa-purchase-requests")),
+    ).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    expect(
+      calls.filter((call) => call.url.endsWith("csa-payment-quotes")),
+    ).toHaveLength(3);
+    expect(screen.getAllByRole("listitem")).toHaveLength(4);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    );
+    await screen.findByRole("heading", { name: "Yêu cầu đã được gửi" });
+    const confirms = calls.filter((call) =>
+      call.url.endsWith("/confirm-transfer"),
+    );
+    expect(confirms).toHaveLength(1);
+    expect(JSON.parse(String(confirms[0].init?.body)).quote_token).toBe(
+      "fresh-quote-2",
+    );
+  });
+
+  it("keeps a coupon rejected on Continue in the method state without exposing payment data", async () => {
+    const { calls } = installApi({
+      quoteResponse: (call) =>
+        call === 0
+          ? json(couponFullQuote)
+          : json({ errors: [{ code: "coupon_usage_exhausted" }] }, 400),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    expect(
+      await screen.findByText("Mã giảm giá đã hết lượt sử dụng."),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("");
+    expect(screen.getByLabelText("Mã giảm giá")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Áp dụng" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Bỏ mã" })).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Phương thức thanh toán" }),
+    ).toBeVisible();
+    expect(screen.queryByText("MB Bank")).toBeNull();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+    expect(
+      calls.filter((call) => call.url.includes("csa-purchase-requests")),
+    ).toHaveLength(0);
+  });
+
+  it("hides an expired QR and returns to the same method for a fresh quote", async () => {
+    const now = Date.now();
+    const { calls } = installApi({
+      quoteResponse: (call) =>
+        json({
+          data: {
+            ...quotePayload.data,
+            expires_at: new Date(
+              now + (call === 0 ? 1000 : 60000),
+            ).toISOString(),
+          },
+        }),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(
+      screen.getByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeVisible();
+    await act(async () => vi.advanceTimersByTime(1001));
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    expect(
+      screen.getByRole("button", { name: "Thanh toán một lần" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(
+      screen.getByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeVisible();
+    expect(
+      calls.filter((call) => call.url.endsWith("csa-payment-quotes")),
+    ).toHaveLength(2);
+    expect(
+      calls.filter((call) => call.url.includes("csa-purchase-requests")),
+    ).toHaveLength(0);
+  });
+
+  it("requires Apply for a typed coupon and resets an invalid code", async () => {
+    const { calls } = installApi({
+      quoteResponse: () => json({ errors: [{ code: "coupon_invalid" }] }, 400),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "INVALID" },
+    });
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeDisabled();
+    expect(
+      calls.filter((call) => call.url.endsWith("csa-payment-quotes")),
+    ).toHaveLength(0);
+    expect(screen.getByRole("button", { name: "Áp dụng" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Bỏ mã" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    expect(await screen.findByText("Mã giảm giá không hợp lệ.")).toBeVisible();
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("");
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    const quotes = calls.filter((call) =>
+      call.url.endsWith("csa-payment-quotes"),
+    );
+    expect(quotes).toHaveLength(1);
+    expect(JSON.parse(String(quotes[0].init?.body)).coupon_code).toBe(
+      "INVALID",
+    );
+    expect(
+      calls.filter((call) => call.url.includes("csa-purchase-requests")),
+    ).toHaveLength(0);
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+  });
+
+  it("keeps an expired quote response on the payment method state", async () => {
     const { calls } = installApi({
       create: {
         data: { ...purchasePayload.data, expires_at: "2020-01-01T00:00:00Z" },
@@ -741,26 +1112,32 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
-
+    expect(
+      screen.getByRole("heading", { name: "Phương thức thanh toán" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
+    ).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(
       await screen.findByText(/Thông tin thanh toán này đã hết hạn/),
     ).toBeVisible();
+    expect(screen.getByLabelText("Mã giảm giá")).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
     ).toBeNull();
     expect(
       screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
     ).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Tạo yêu cầu mới" }));
-    expect(
-      await screen.findByRole("heading", { name: "Gói đang mở đăng ký" }),
-    ).toBeVisible();
-    continueWizard();
-    expect(await screen.findByLabelText("Họ tên")).toHaveValue("");
-    expect(screen.getByLabelText("Số điện thoại")).toHaveValue("");
     expect(
       calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(1);
+    expect(
+      calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+    ).toHaveLength(0);
   });
 
   it("turns a backend expired confirmation into a terminal payment state", async () => {
@@ -774,21 +1151,30 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     fireEvent.click(
       await screen.findByRole("button", { name: "Tôi đã chuyển khoản" }),
     );
 
-    expect(
-      await screen.findByText(/Thông tin thanh toán này đã hết hạn/),
-    ).toBeVisible();
+    expect(await screen.findByText(/Yêu cầu mua này đã hết hạn/)).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
     ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Áp dụng" })).toBeNull();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Tạo yêu cầu mới" }),
+    ).toBeVisible();
     expect(
       screen.queryByText("Không thể hoàn tất yêu cầu. Vui lòng thử lại sau."),
     ).toBeNull();
     expect(
       calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+    ).toHaveLength(1);
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
     ).toHaveLength(1);
   });
 
@@ -813,6 +1199,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     await screen.findByText("CSA-ABC123");
 
     currentUser = {
@@ -866,6 +1253,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     await screen.findByText("CSA-ABC123");
 
     currentUser = member;
@@ -885,7 +1273,7 @@ describe("CSA purchase wizard", () => {
     expect(screen.queryByLabelText("Full name")).toBeNull();
   });
 
-  it("keeps success and the request code across locale changes until an explicit reset", async () => {
+  it("keeps success across locale changes but clears it on a page reload", async () => {
     const { calls } = installApi();
     const memory: { current: CSAPurchaseFlowMemory | null } = {
       current: null,
@@ -906,6 +1294,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
     await waitFor(() =>
       expect(memory.current?.quote?.quote_token).toBe("quote-token"),
@@ -948,16 +1337,10 @@ describe("CSA purchase wizard", () => {
     expect(window.location.href).not.toContain("guest-secret");
     expect(window.location.href).not.toContain("0901234567");
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Reset purchase memory" }),
-    );
-    expect(memory.current).toBeNull();
-    rerender(
-      <CSAFlowStateProvider>
-        <MemoryProbe />
-        <CSAPurchasePage key="after-reset" locale="en" />
-      </CSAFlowStateProvider>,
-    );
+    const pageShow = new Event("pageshow");
+    Object.defineProperty(pageShow, "persisted", { value: true });
+    act(() => window.dispatchEvent(pageShow));
+    await waitFor(() => expect(memory.current?.confirmed).toBe(false));
     expect(
       screen.queryByRole("heading", { name: "Request submitted" }),
     ).toBeNull();
@@ -1595,7 +1978,9 @@ describe("CSA purchase wizard", () => {
     ).toBeVisible();
     await completeGuest();
     expect(screen.getByLabelText("Số điện thoại")).toHaveValue("0901234567");
-    fireEvent.change(screen.getByLabelText("Tỉnh/thành phố"), {
+    const provinceSelect = screen.getByLabelText("Tỉnh/thành phố");
+    provinceSelect.focus();
+    fireEvent.change(provinceSelect, {
       target: { value: "01" },
     });
     expect(screen.getByLabelText("Phường/xã")).toHaveValue("");
@@ -1614,6 +1999,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
 
     await screen.findByRole("heading", { name: "Thanh toán" });
     const createCall = calls.find(
@@ -1948,6 +2334,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     await screen.findByRole("heading", { name: "Thanh toán" });
     const createCall = calls.find(
       (call) => call.url === "/api/account/csa-payment-quotes",
@@ -1973,6 +2360,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(
       await screen.findByRole("link", { name: "Cập nhật thông tin tài khoản" }),
     ).toHaveAttribute(
@@ -2002,6 +2390,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     const accountLink = await screen.findByRole("link", {
       name: "Cập nhật thông tin tài khoản",
     });
@@ -2050,6 +2439,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     const accountLink = await screen.findByRole("link", {
       name: "Cập nhật thông tin tài khoản",
     });
@@ -2091,6 +2481,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
 
     expect(
       await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA"),
@@ -2145,9 +2536,6 @@ describe("CSA purchase wizard", () => {
       .closest<HTMLElement>(".bank-row")!;
     expect(within(fullAmountRow).getByText(/1\.200\.000/)).toBeVisible();
     expect(
-      within(fullAmountRow).getByText("Thanh toán toàn bộ gói · 3 tháng"),
-    ).toBeVisible();
-    expect(
       Array.from(paymentGrid?.children ?? []).indexOf(paymentQr!),
     ).toBeLessThan(
       Array.from(paymentGrid?.children ?? []).indexOf(paymentInformation!),
@@ -2181,18 +2569,13 @@ describe("CSA purchase wizard", () => {
         !call.url.endsWith("/confirm-payment"),
     ).length;
     fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
-    await screen.findByRole("heading", {
-      name: "Chương trình hoạt động thế nào",
-    });
+    await screen.findByRole("heading", { name: "Phương thức thanh toán" });
     flushAnimationFrames();
-    agreementCheckboxes().forEach((checkbox) => expect(checkbox).toBeChecked());
     expect(
       screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
     ).toBeNull();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(
       await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA"),
     ).toHaveAttribute(
@@ -2302,6 +2685,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Continue to payment" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.click(
       await screen.findByRole("button", { name: "I have transferred" }),
     );
@@ -2323,6 +2707,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     const qr = await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
     fireEvent.error(qr);
     expect(
@@ -2353,9 +2738,9 @@ describe("CSA purchase wizard", () => {
     acceptTerms();
     const submit = screen.getByRole("button", { name: "Tiếp tục thanh toán" });
     fireEvent.click(submit);
-    fireEvent.submit(submit.closest("form")!);
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(
-      await screen.findByText("Đang chuẩn bị thông tin thanh toán an toàn…"),
+      await screen.findByText("Đang tạo thông tin thanh toán…"),
     ).toBeVisible();
     expect(
       calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
@@ -2398,12 +2783,73 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(
       await screen.findByText(
         "Số điện thoại này đang có một yêu cầu mua được xử lý.",
       ),
     ).toBeVisible();
     expect(screen.queryByText(/csa_purchase_request_open_exists/)).toBeNull();
+  });
+
+  it("uses the shared blocking status for catalog and ward loading", async () => {
+    let resolvePackages!: (response: Response) => void;
+    const pendingPackages = new Promise<Response>((resolve) => {
+      resolvePackages = resolve;
+    });
+    installApi({ packageResponse: async () => pendingPackages });
+    const { container } = render(<CSAPurchasePage locale="vi" />);
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("Đang xử lý…"),
+    );
+    expect(container.querySelector("main")).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    const loadingRegion = container.querySelector(
+      'main > div[aria-busy="true"]',
+    ) as (HTMLDivElement & { inert?: boolean }) | null;
+    expect(loadingRegion?.inert).toBe(true);
+    expect(document.activeElement).toBe(screen.getByRole("status"));
+    resolvePackages(
+      json({
+        data: packagePayload.data,
+        meta: { page: 1, page_size: 30, total: 1 },
+      }),
+    );
+    expect(await screen.findByText("Gói Rau")).toBeVisible();
+    expect(screen.queryByText("Đang xử lý…")).toBeNull();
+    cleanup();
+
+    let resolveWards!: (response: Response) => void;
+    const pendingWards = new Promise<Response>((resolve) => {
+      resolveWards = resolve;
+    });
+    installApi({ wardResponse: async () => pendingWards });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestInformation();
+    const provinceSelect = screen.getByLabelText("Tỉnh/thành phố");
+    provinceSelect.focus();
+    fireEvent.change(provinceSelect, {
+      target: { value: "66" },
+    });
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("Đang xử lý…"),
+    );
+    expect(
+      (
+        document.querySelector('main > div[aria-busy="true"]') as
+          (HTMLDivElement & { inert?: boolean }) | null
+      )?.inert,
+    ).toBe(true);
+    expect(document.activeElement).toBe(screen.getByRole("status"));
+    expect(screen.getByLabelText("Phường/xã")).toBeDisabled();
+    resolveWards(json({ data: [{ code: "22015", name: "Phường Mỹ Ngãi" }] }));
+    expect(
+      await screen.findByRole("option", { name: "Phường Mỹ Ngãi" }),
+    ).toBeVisible();
+    expect(document.activeElement).toBe(provinceSelect);
+    expect(screen.queryByText("Đang xử lý…")).toBeNull();
   });
 
   it("renders backend payment plans in order and shows only real savings", async () => {
@@ -2481,7 +2927,8 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
-    await screen.findByRole("heading", { name: "Thanh toán" });
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByRole("heading", { name: "Phương thức thanh toán" });
     const plans = screen.getAllByRole("button", {
       name: /Thanh toán một lần|Trả góp 2 lần|Trả góp 3 lần/,
     });
@@ -2543,6 +2990,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     await screen.findByRole("heading", { name: "Phương thức thanh toán" });
     expect(screen.queryByText(/^Tiết kiệm \d/)).toBeNull();
   });
@@ -2583,6 +3031,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     await screen.findByRole("heading", { name: "Phương thức thanh toán" });
     expect(screen.queryByText(/^Tiết kiệm \d/)).toBeNull();
   });
@@ -2622,6 +3071,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     await screen.findByRole("heading", { name: "Phương thức thanh toán" });
     expect(screen.queryByText(/^Tiết kiệm \d/)).toBeNull();
   });
@@ -2691,6 +3141,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Continue to payment" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     const full = await screen.findByRole("button", { name: /Pay in full/ });
     const installment = screen.getByRole("button", {
       name: /Pay in 2 installments/,
@@ -2725,6 +3176,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(
       await screen.findByText(
         "Thời hạn này chưa có phương thức thanh toán hợp lệ.",
@@ -2776,6 +3228,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(
       await screen.findByRole("button", { name: /Thanh toán một lần/ }),
     ).toHaveAttribute("aria-pressed", "true");
@@ -2893,9 +3346,11 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(
-      await screen.findByRole("heading", { name: "Thanh toán" }),
+      await screen.findByRole("heading", { name: "Phương thức thanh toán" }),
     ).toBeVisible();
+    await screen.findByRole("alert");
     const post = calls.find(
       (call) => call.url === "/api/account/csa-payment-quotes",
     );
@@ -2958,6 +3413,7 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
     expect(await screen.findByText("Lịch thanh toán")).toBeVisible();
     const scheduleRows = document.querySelectorAll(".payment-schedule-row");
     expect(scheduleRows).toHaveLength(2);
@@ -2973,13 +3429,9 @@ describe("CSA purchase wizard", () => {
     expect(
       within(scheduleRows[1] as HTMLElement).getByText("2 tháng cuối"),
     ).toBeVisible();
-    const totalRow = screen
-      .getByText("Tổng giá trị gói")
-      .closest<HTMLElement>(".bank-row")!;
     const initialRow = screen
       .getByText("Khoản thanh toán đầu tiên cần chuyển")
       .closest<HTMLElement>(".bank-row")!;
-    expect(within(totalRow).getByText(/1\.200\.000/)).toBeVisible();
     expect(within(initialRow).getByText(/600\.000/)).toBeVisible();
     expect(screen.getByText("1 tháng đầu")).toBeVisible();
     expect(
@@ -3007,6 +3459,7 @@ describe("CSA purchase wizard", () => {
       fireEvent.click(
         screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
       );
+      fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
       expect(await screen.findByRole("alert")).toHaveTextContent(message);
       expect(
         screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
@@ -3019,4 +3472,1231 @@ describe("CSA purchase wizard", () => {
       ).toHaveLength(0);
     },
   );
+
+  it("applies and removes a coupon on the method state using backend amounts", async () => {
+    const { calls } = installApi({
+      quoteResponse: (_call, body) =>
+        json(body.coupon_code ? couponFullQuote : quotePayload),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    expect(
+      screen.getByRole("group", { name: "Phương thức thanh toán" }),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Mã giảm giá")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Áp dụng" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Bỏ mã" })).toBeNull();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(screen.queryByText("MB Bank")).toBeNull();
+    expect(screen.queryByText(/Chuyển đúng số tiền/)).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+    expect(
+      calls.filter((call) => call.url.endsWith("csa-payment-quotes")),
+    ).toHaveLength(0);
+    const input = screen.getByLabelText("Mã giảm giá") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: " tettrungthu2026 " } });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(screen.queryByText("MB Bank")).toBeNull();
+    expect(screen.getByText(/-100\.000 ₫/)).toBeVisible();
+    expect(screen.getByText("Giá phương thức thanh toán")).toBeVisible();
+    const applied = JSON.parse(
+      String(
+        calls.find((call) => call.url.endsWith("csa-payment-quotes"))?.init
+          ?.body,
+      ),
+    );
+    expect(applied).toEqual({
+      package_id: packageId,
+      price_option_id: optionId,
+      payment_plan_id: planId,
+      terms_accepted: true,
+      terms_locale: "vi",
+      coupon_code: "TETTRUNGTHU2026",
+      guest_identity: {
+        name: "Nguyễn Văn An",
+        phone: "+84901234567",
+        province_code: "66",
+        ward_code: "22015",
+        address: "Số 12, ngõ 5",
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    await screen.findByRole("group", { name: "Phương thức thanh toán" });
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("TETTRUNGTHU2026");
+    expect(screen.getByLabelText("Mã giảm giá")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Bỏ mã" })).toBeVisible();
+    expect(screen.getByText("Giá phương thức thanh toán")).toBeVisible();
+    expect(screen.getByText(/-100\.000 ₫/)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Bỏ mã" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled(),
+    );
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("");
+    expect(screen.getByLabelText("Mã giảm giá")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Áp dụng" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Bỏ mã" })).toBeNull();
+    expect(screen.queryByText("Mã giảm giá: TETTRUNGTHU2026")).toBeNull();
+    expect(document.querySelector(".csa-coupon-summary")).toBeNull();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    expect(
+      await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toHaveAttribute("src", expect.stringContaining("amount=1200000"));
+    expect(screen.getByText("MB Bank")).toBeVisible();
+    expect(screen.queryByLabelText("Mã giảm giá")).toBeNull();
+    expect(
+      screen.queryByRole("group", { name: "Phương thức thanh toán" }),
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: "Áp dụng" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Bỏ mã" })).toBeNull();
+    expect(document.querySelector(".payment-method-state")).toBeNull();
+    expect(document.querySelector(".payment-qr-state")).not.toBeNull();
+    expect(
+      calls.filter((call) => call.url.endsWith("csa-payment-quotes")),
+    ).toHaveLength(4);
+    expect(
+      calls.filter((call) => call.url.includes("csa-purchase-requests")),
+    ).toHaveLength(0);
+  });
+
+  it("hides old QR and confirmation when applying a coupon fails", async () => {
+    const { calls } = installApi({
+      quoteResponse: (call) =>
+        call === 1
+          ? json({ errors: [{ code: "coupon_expired" }] }, 400)
+          : json(quotePayload),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "tettrungthu2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    expect(await screen.findByText("Mã giảm giá đã hết hạn.")).toBeVisible();
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+    expect(
+      calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+    ).toHaveLength(0);
+  });
+
+  it("keeps the applied coupon and quote on locale remount", async () => {
+    const { calls } = installApi({
+      quoteResponse: (call) => json(call >= 1 ? couponFullQuote : quotePayload),
+    });
+    const { rerender } = render(
+      <CSAFlowStateProvider>
+        <CSAPurchasePage key="vi" locale="vi" />
+      </CSAFlowStateProvider>,
+    );
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    rerender(
+      <CSAFlowStateProvider>
+        <CSAPurchasePage key="en" locale="en" />
+      </CSAFlowStateProvider>,
+    );
+    await expectAppliedCoupon("Discount code", "Remove code");
+    expect(screen.getByText("Payment plan price")).toBeVisible();
+    expect(screen.getByLabelText("Discount code")).toHaveValue(
+      "TETTRUNGTHU2026",
+    );
+    expect(
+      screen.queryByAltText("VietQR code for CSA bank transfer"),
+    ).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Payment method" }),
+    ).toBeVisible();
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
+    ).toHaveLength(2);
+    expect(window.localStorage.length).toBe(0);
+    expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it.each(["package", "option", "plan"] as const)(
+    "clears coupon when a locale catalog replaces the selected %s",
+    async (changedSelection) => {
+      const changedCatalog = structuredClone(packagePayload);
+      const changedPackage = changedCatalog.data[0];
+      const changedOption = changedPackage.price_options[0];
+      const changedPlan = changedOption.payment_plans[0];
+      const replacementId = "99999999-9999-4999-8999-999999999999";
+      if (changedSelection === "package") changedPackage.id = replacementId;
+      if (changedSelection === "option") changedOption.id = replacementId;
+      if (changedSelection === "plan") changedPlan.id = replacementId;
+      const { calls } = installApi({
+        packageResponse: async (_page, locale) =>
+          json({
+            data: locale === "en" ? changedCatalog.data : packagePayload.data,
+            meta: { page: 1, page_size: 30, total: 1 },
+          }),
+        quoteResponse: (_call, body) =>
+          json(body.coupon_code ? couponFullQuote : quotePayload),
+      });
+      const { rerender } = render(
+        <CSAFlowStateProvider>
+          <CSAPurchasePage key="vi" locale="vi" />
+        </CSAFlowStateProvider>,
+      );
+      await goToGuestTerms();
+      acceptTerms();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+      await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+      if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+        fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+      fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+        target: { value: "TETTRUNGTHU2026" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+      await expectAppliedCoupon();
+      rerender(
+        <CSAFlowStateProvider>
+          <CSAPurchasePage key="en" locale="en" />
+        </CSAFlowStateProvider>,
+      );
+      await waitFor(() =>
+        expect(screen.getByLabelText("Discount code")).toHaveValue(""),
+      );
+      expect(screen.queryByText("Discount code: TETTRUNGTHU2026")).toBeNull();
+      expect(screen.getByLabelText("Discount code")).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Apply" })).toBeVisible();
+      expect(screen.queryByRole("button", { name: "Remove code" })).toBeNull();
+      expect(
+        screen.queryByAltText("VietQR code for CSA bank transfer"),
+      ).toBeNull();
+      expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
+      fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+      await waitFor(() =>
+        expect(
+          calls.filter(
+            (call) => call.url === "/api/account/csa-payment-quotes",
+          ),
+        ).toHaveLength(3),
+      );
+      const newQuoteBody = JSON.parse(
+        String(
+          calls.filter(
+            (call) => call.url === "/api/account/csa-payment-quotes",
+          )[2].init?.body,
+        ),
+      );
+      expect(newQuoteBody).not.toHaveProperty("coupon_code");
+      expect(newQuoteBody.guest_identity).toMatchObject({
+        name: "Nguyễn Văn An",
+        phone: "+84901234567",
+      });
+      expect(newQuoteBody.terms_accepted).toBe(true);
+      expect(
+        newQuoteBody[
+          `${changedSelection === "plan" ? "payment_plan" : changedSelection === "option" ? "price_option" : "package"}_id`
+        ],
+      ).toBe(replacementId);
+    },
+  );
+
+  it("confirms only the latest coupon quote token", async () => {
+    const { calls } = installApi({
+      quoteResponse: (call) => json(call >= 1 ? couponFullQuote : quotePayload),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    );
+    await screen.findByRole("heading", { name: "Yêu cầu đã được gửi" });
+    const confirmations = calls.filter((call) =>
+      call.url.endsWith("/confirm-transfer"),
+    );
+    expect(confirmations).toHaveLength(1);
+    expect(JSON.parse(String(confirmations[0].init?.body)).quote_token).toBe(
+      "coupon-quote-token",
+    );
+  });
+
+  it("uses the discounted first installment and unchanged later payment in the QR state", async () => {
+    installApi({
+      packages: {
+        data: [
+          {
+            ...packagePayload.data[0],
+            price_options: [
+              {
+                ...packagePayload.data[0].price_options[0],
+                payment_plans: [
+                  packagePayload.data[0].price_options[0].payment_plans[0],
+                  installmentPlan,
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      quoteResponse: (_call, body) =>
+        json(body.coupon_code ? couponInstallmentQuote : installmentQuote),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Trả góp 2 lần" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    expect(
+      await screen.findByText(
+        "Mã giảm giá chỉ áp dụng cho khoản thanh toán đầu tiên.",
+      ),
+    ).toBeVisible();
+    expect(
+      within(
+        document.querySelector(".csa-coupon-summary") as HTMLElement,
+      ).getByText(/500\.000 ₫/),
+    ).toBeVisible();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    expect(
+      await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toHaveAttribute("src", expect.stringContaining("amount=500000"));
+    expect(screen.queryByLabelText("Mã giảm giá")).toBeNull();
+    expect(document.querySelector(".csa-coupon-summary")).toBeNull();
+    const rows = document.querySelectorAll(".payment-schedule-row");
+    expect(
+      within(rows[0] as HTMLElement).getByText(/500\.000 ₫/),
+    ).toBeVisible();
+    expect(
+      within(rows[1] as HTMLElement).getByText(/600\.000 ₫/),
+    ).toBeVisible();
+  });
+
+  it("rejects an inconsistent coupon quote and never exposes its QR", async () => {
+    const malformed = {
+      data: {
+        ...couponFullQuote.data,
+        qr_payload: { ...couponFullQuote.data.qr_payload, amount: "1200000" },
+      },
+    };
+    installApi({
+      quoteResponse: (call) => json(call === 1 ? malformed : quotePayload),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    expect(
+      await screen.findByText(
+        "Thông tin thanh toán không khả dụng. Vui lòng tạo lại trước khi chuyển khoản.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+  });
+
+  it("disables coupon actions while applying and ignores an invalidated response", async () => {
+    let resolveCoupon!: (response: Response) => void;
+    const pendingCoupon = new Promise<Response>((resolve) => {
+      resolveCoupon = resolve;
+    });
+    const { calls } = installApi({
+      quoteResponse: (call) =>
+        call === 1 ? pendingCoupon : json(quotePayload),
+    });
+    let invalidateQuote: () => void = () => undefined;
+    function QuoteProbe() {
+      invalidateQuote = useCSAFlowState().invalidateQuote;
+      return null;
+    }
+    render(
+      <CSAFlowStateProvider>
+        <QuoteProbe />
+        <CSAPurchasePage locale="vi" />
+      </CSAFlowStateProvider>,
+    );
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    expect(screen.getByLabelText("Mã giảm giá")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Áp dụng" })).toBeDisabled();
+    expect(screen.getByText("Đang áp dụng mã giảm giá…")).toBeVisible();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    act(() => invalidateQuote());
+    await act(async () => resolveCoupon(json(couponFullQuote)));
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
+    ).toHaveLength(2);
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+  });
+
+  it("rejects an expired coupon quote and resets the failed code", async () => {
+    installApi({
+      quoteResponse: (call) =>
+        json(
+          call === 1
+            ? {
+                data: {
+                  ...couponFullQuote.data,
+                  expires_at: "2000-01-01T00:00:00Z",
+                },
+              }
+            : quotePayload,
+        ),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    expect(
+      await screen.findByText(
+        "Báo giá thanh toán đã hết hạn. Vui lòng áp dụng lại mã.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+  });
+
+  it("treats a later ordinary quote error as a payment error after a coupon quote times out", async () => {
+    const now = Date.now();
+    const { calls } = installApi({
+      quoteResponse: (call) =>
+        call === 2
+          ? json({ errors: [{ code: "csa_payment_quote_unavailable" }] }, 503)
+          : json(
+              call === 1
+                ? {
+                    data: {
+                      ...couponFullQuote.data,
+                      expires_at: new Date(now + 1_000).toISOString(),
+                    },
+                  }
+                : quotePayload,
+            ),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByLabelText("Mã giảm giá")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Bỏ mã" })).toBeVisible();
+    await act(async () => vi.advanceTimersByTime(1_001));
+    expect(
+      screen.getByText(
+        "Báo giá thanh toán đã hết hạn. Vui lòng áp dụng lại mã.",
+      ),
+    ).toBeVisible();
+    vi.useRealTimers();
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    expect(
+      await screen.findByText(
+        "Thông tin thanh toán không khả dụng. Vui lòng tạo lại trước khi chuyển khoản.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(
+        "Báo giá thanh toán đã hết hạn. Vui lòng áp dụng lại mã.",
+      ),
+    ).toBeNull();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Phương thức thanh toán" }),
+    ).toBeVisible();
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
+    ).toHaveLength(3);
+  });
+
+  it("omits guest identity for an authenticated coupon quote", async () => {
+    const { calls } = installApi({
+      user: member,
+      quoteResponse: (call) => json(call >= 1 ? couponFullQuote : quotePayload),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToAuthenticatedTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    const body = JSON.parse(
+      String(
+        calls.filter(
+          (call) => call.url === "/api/account/csa-payment-quotes",
+        )[1].init?.body,
+      ),
+    );
+    expect(body.coupon_code).toBe("TETTRUNGTHU2026");
+    expect(body).not.toHaveProperty("guest_identity");
+  });
+
+  it("automatically clears a coupon when the payment plan changes", async () => {
+    const { calls } = installApi({
+      packages: threePlanPackages,
+      quoteResponse: (_call, body) =>
+        json(
+          body.payment_plan_id === threeInstallmentPlan.id
+            ? body.coupon_code
+              ? threeInstallmentCouponQuote
+              : threeInstallmentQuote
+            : body.coupon_code
+              ? couponFullQuote
+              : quotePayload,
+        ),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Thanh toán một lần" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    fireEvent.click(screen.getByRole("button", { name: "Trả góp 3 lần" }));
+    expect(document.querySelector(".csa-coupon-summary")).toBeNull();
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("");
+    expect(screen.getByLabelText("Mã giảm giá")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Áp dụng" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Bỏ mã" })).toBeNull();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      calls.filter((call) => call.url.endsWith("csa-payment-quotes")),
+    ).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("");
+    expect(screen.getByLabelText("Mã giảm giá")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Áp dụng" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Bỏ mã" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    expect(
+      calls.filter((call) => call.url.endsWith("csa-payment-quotes")),
+    ).toHaveLength(3);
+    const last = calls
+      .filter((call) => call.url.endsWith("csa-payment-quotes"))
+      .at(-1);
+    expect(JSON.parse(String(last?.init?.body))).toMatchObject({
+      payment_plan_id: threeInstallmentPlan.id,
+    });
+    expect(JSON.parse(String(last?.init?.body))).not.toHaveProperty(
+      "coupon_code",
+    );
+    expect(
+      calls.filter((call) => call.url.includes("csa-purchase-requests")),
+    ).toHaveLength(0);
+  });
+
+  it("locks an applied coupon and exposes Remove as the only edit path", async () => {
+    const { calls } = installApi({
+      quoteResponse: (_call, body) =>
+        json(body.coupon_code ? couponFullQuote : quotePayload),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("TETTRUNGTHU2026");
+    expect(screen.queryByText("Mã giảm giá: TETTRUNGTHU2026")).toBeNull();
+    await waitFor(() =>
+      expect(document.querySelector(".csa-coupon-summary")).not.toBeNull(),
+    );
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+    expect(
+      calls.filter((call) => call.url.endsWith("csa-payment-quotes")),
+    ).toHaveLength(1);
+  });
+
+  it("resets coupon state when applying on a changed plan fails", async () => {
+    const { calls } = installApi({
+      packages: threePlanPackages,
+      quoteResponse: (_call, body) =>
+        body.payment_plan_id === threeInstallmentPlan.id
+          ? json({ errors: [{ code: "coupon_not_applicable" }] }, 400)
+          : json(couponFullQuote),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Thanh toán một lần" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    fireEvent.click(screen.getByRole("button", { name: "Trả góp 3 lần" }));
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("");
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    expect(
+      await screen.findByText(
+        "Mã giảm giá không áp dụng cho phương thức thanh toán này.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+    expect(document.querySelector(".csa-coupon-summary")).toBeNull();
+    expect(
+      calls.filter((call) => call.url.endsWith("csa-payment-quotes")),
+    ).toHaveLength(2);
+  });
+
+  it("accepts a valid three-installment coupon and uses only the quote schedule", async () => {
+    installApi({
+      packages: threePlanPackages,
+      quoteResponse: (_call, body) =>
+        json(
+          body.coupon_code
+            ? threeInstallmentCouponQuote
+            : threeInstallmentQuote,
+        ),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Trả góp 3 lần" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    expect(
+      await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toHaveAttribute("src", expect.stringContaining("amount=300000"));
+    const schedule = document.querySelector(".payment-schedule") as HTMLElement;
+    expect(within(schedule).getByText("Lần 2")).toBeVisible();
+    expect(within(schedule).getByText("Lần 3")).toBeVisible();
+    expect(within(schedule).getAllByText(/400\.000 ₫/)).toHaveLength(2);
+    expect(document.querySelector(".csa-coupon-summary")).toBeNull();
+  });
+
+  it.each([
+    [
+      "duplicate sequence",
+      (quote: typeof threeInstallmentCouponQuote) => {
+        quote.data.payment_summary.installments[2].sequence = 2;
+      },
+    ],
+    [
+      "missing first sequence",
+      (quote: typeof threeInstallmentCouponQuote) => {
+        quote.data.payment_summary.installments[0].sequence = 4;
+      },
+    ],
+    [
+      "wrong total",
+      (quote: typeof threeInstallmentCouponQuote) => {
+        quote.data.payment_summary.installments[2].amount = "400001";
+      },
+    ],
+    [
+      "wrong initial",
+      (quote: typeof threeInstallmentCouponQuote) => {
+        quote.data.payment_summary.initial_payment_amount = "300001";
+        quote.data.payment.amount = "300001";
+        quote.data.qr_payload.amount = "300001";
+      },
+    ],
+    [
+      "redistributed later payments",
+      (quote: typeof threeInstallmentCouponQuote) => {
+        quote.data.payment_summary.installments[1].amount = "450000";
+        quote.data.payment_summary.installments[2].amount = "350000";
+      },
+    ],
+    [
+      "negative amount",
+      (quote: typeof threeInstallmentCouponQuote) => {
+        quote.data.payment_summary.installments[1].amount = "-1";
+      },
+    ],
+    [
+      "malformed amount",
+      (quote: typeof threeInstallmentCouponQuote) => {
+        quote.data.payment_summary.installments[1].amount = "4e5";
+      },
+    ],
+    [
+      "changed cycle count",
+      (quote: typeof threeInstallmentCouponQuote) => {
+        quote.data.payment_summary.installments[1].cycle_count = 2;
+      },
+    ],
+  ])("rejects a coupon schedule with %s", async (_name, mutate) => {
+    const malformed = structuredClone(threeInstallmentCouponQuote);
+    mutate(malformed);
+    installApi({
+      packages: threePlanPackages,
+      quoteResponse: (call) =>
+        json(call === 0 ? threeInstallmentQuote : malformed),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Trả góp 3 lần" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    expect(
+      await screen.findByText(/Thông tin thanh toán không khả dụng/),
+    ).toBeVisible();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+  });
+
+  it.each([
+    ["coupon_invalid", "Mã giảm giá không hợp lệ."],
+    ["coupon_usage_exhausted", "Mã giảm giá đã hết lượt sử dụng."],
+    ["coupon_already_used", "Số điện thoại này đã sử dụng mã giảm giá."],
+    [
+      "coupon_not_applicable",
+      "Mã giảm giá không áp dụng cho phương thức thanh toán này.",
+    ],
+    ["coupon_expired", "Mã giảm giá đã hết hạn."],
+  ])("shows localized %s and hides the old QR", async (code, message) => {
+    installApi({
+      quoteResponse: (call) =>
+        call === 0 ? json(quotePayload) : json({ errors: [{ code }] }, 400),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    expect(await screen.findByText(message)).toBeVisible();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+  });
+
+  it("keeps a pending confirmation when the quote timer expires and accepts a replayed request", async () => {
+    let resolveConfirmation!: (response: Response) => void;
+    const pendingConfirmation = new Promise<Response>((resolve) => {
+      resolveConfirmation = resolve;
+    });
+    const now = Date.now();
+    const { calls } = installApi({
+      quoteResponse: () =>
+        json({
+          data: {
+            ...quotePayload.data,
+            expires_at: new Date(now + 1_000).toISOString(),
+          },
+        }),
+      confirmResponse: (call) =>
+        call === 0 ? pendingConfirmation : json(purchasePayload),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(
+      screen.getByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeDisabled();
+    await act(async () => vi.advanceTimersByTime(1_001));
+    expect(screen.getByText("Đang xác nhận chuyển khoản…")).toBeVisible();
+    await act(async () =>
+      resolveConfirmation(
+        json({
+          data: { ...purchasePayload.data, request_code: "CSA-EXISTING" },
+        }),
+      ),
+    );
+    expect(screen.getByText("CSA-EXISTING")).toBeVisible();
+    expect(
+      calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+    ).toHaveLength(1);
+  });
+
+  it("keeps a pending confirmation across a locale remount", async () => {
+    let resolveConfirmation!: (response: Response) => void;
+    const pendingConfirmation = new Promise<Response>((resolve) => {
+      resolveConfirmation = resolve;
+    });
+    const { calls } = installApi({
+      confirmResponse: () => pendingConfirmation,
+    });
+    const { rerender } = render(
+      <CSAFlowStateProvider>
+        <CSAPurchasePage key="vi" locale="vi" />
+      </CSAFlowStateProvider>,
+    );
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    );
+    rerender(
+      <CSAFlowStateProvider>
+        <CSAPurchasePage key="en" locale="en" />
+      </CSAFlowStateProvider>,
+    );
+    await act(async () => resolveConfirmation(json(purchasePayload)));
+    expect(
+      await screen.findByRole("heading", { name: "Request submitted" }),
+    ).toBeVisible();
+    expect(screen.getByText("CSA-ABC123")).toBeVisible();
+    expect(
+      calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+    ).toHaveLength(1);
+  });
+
+  it("retries an uncertain expired confirmation with the same quote token", async () => {
+    let resolveConfirmation!: (response: Response) => void;
+    const pendingConfirmation = new Promise<Response>((resolve) => {
+      resolveConfirmation = resolve;
+    });
+    const now = Date.now();
+    const { calls } = installApi({
+      quoteResponse: () =>
+        json({
+          data: {
+            ...quotePayload.data,
+            expires_at: new Date(now + 1_000).toISOString(),
+          },
+        }),
+      confirmResponse: (call) =>
+        call === 0 ? pendingConfirmation : json(purchasePayload),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    );
+    await act(async () => vi.advanceTimersByTime(1_001));
+    await act(async () =>
+      resolveConfirmation(json({ error: "upstream_timeout" }, 504)),
+    );
+    expect(
+      screen.getByRole("button", { name: "Kiểm tra lại xác nhận" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Kiểm tra lại xác nhận" }),
+    );
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByText("CSA-ABC123")).toBeVisible();
+    const confirmations = calls.filter((call) =>
+      call.url.endsWith("/confirm-transfer"),
+    );
+    expect(confirmations).toHaveLength(2);
+    expect(
+      confirmations.map(
+        (call) => JSON.parse(String(call.init?.body)).quote_token,
+      ),
+    ).toEqual(["quote-token", "quote-token"]);
+  });
+
+  it("keeps a coupon request expiry terminal without offering quote retry", async () => {
+    const { calls } = installApi({
+      quoteResponse: (call) =>
+        json(call === 0 ? quotePayload : couponFullQuote),
+      confirmResponse: () =>
+        json({ errors: [{ code: "csa_purchase_request_expired" }] }, 409),
+    });
+    const memory: { current: CSAPurchaseFlowMemory | null } = {
+      current: null,
+    };
+    function MemoryProbe() {
+      memory.current = useCSAFlowState().purchase;
+      return null;
+    }
+    render(
+      <CSAFlowStateProvider>
+        <MemoryProbe />
+        <CSAPurchasePage locale="vi" />
+      </CSAFlowStateProvider>,
+    );
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    );
+    expect(await screen.findByText(/Yêu cầu mua này đã hết hạn/)).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Thanh toán" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Tạo yêu cầu mới" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Áp dụng" })).toBeNull();
+    expect(screen.queryByLabelText("Mã giảm giá")).toBeNull();
+    expect(screen.queryByText("Mã giảm giá: TETTRUNGTHU2026")).toBeNull();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+    await waitFor(() => {
+      expect(memory.current?.couponInput).toBe("");
+      expect(memory.current?.couponErrorCode).toBeNull();
+      expect(memory.current?.quote).toBeNull();
+      expect(memory.current?.expired).toBe(true);
+    });
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
+    ).toHaveLength(3);
+    expect(
+      calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+    ).toHaveLength(1);
+  });
+
+  it("keeps coupon retry on Payment after confirm reports an expired quote", async () => {
+    const { calls } = installApi({
+      quoteResponse: (call) =>
+        json(call === 0 ? quotePayload : couponFullQuote),
+      confirmResponse: () =>
+        json({ errors: [{ code: "csa_payment_quote_expired" }] }, 409),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    if (screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"))
+      fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    fireEvent.change(screen.getByLabelText("Mã giảm giá"), {
+      target: { value: "TETTRUNGTHU2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    );
+    expect(
+      await screen.findByText(
+        "Báo giá thanh toán đã hết hạn. Vui lòng áp dụng lại mã.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Thanh toán" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    expect(
+      screen.getByRole("heading", { name: "Phương thức thanh toán" }),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Mã giảm giá")).toHaveValue("TETTRUNGTHU2026");
+    expect(screen.queryByText("Giá phương thức thanh toán")).toBeNull();
+    expect(screen.queryByText("Mã giảm giá: TETTRUNGTHU2026")).toBeNull();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tôi đã chuyển khoản" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Tạo yêu cầu mới" }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
+    await expectAppliedCoupon();
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(
+      calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+    ).toHaveLength(1);
+    expect(
+      calls.filter((call) => call.url === "/api/account/csa-payment-quotes"),
+    ).toHaveLength(4);
+  });
+
+  it("clears an expired confirmation and allows a fresh quote", async () => {
+    let resolveConfirmation!: (response: Response) => void;
+    const pendingConfirmation = new Promise<Response>((resolve) => {
+      resolveConfirmation = resolve;
+    });
+    const now = Date.now();
+    const { calls } = installApi({
+      quoteResponse: (call) =>
+        json({
+          data: {
+            ...quotePayload.data,
+            expires_at: new Date(
+              now + (call === 0 ? 1_000 : 60_000),
+            ).toISOString(),
+          },
+        }),
+      confirmResponse: (call) =>
+        call === 0 ? pendingConfirmation : json(purchasePayload),
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    );
+    await act(async () => vi.advanceTimersByTime(1_001));
+    await act(async () =>
+      resolveConfirmation(
+        json({ errors: [{ code: "csa_payment_quote_expired" }] }, 409),
+      ),
+    );
+    expect(
+      screen.queryByAltText("Mã VietQR để chuyển khoản mua CSA"),
+    ).toBeNull();
+    expect(screen.getByRole("button", { name: "Quay lại" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+    expect(
+      screen.getByRole("heading", { name: "Phương thức thanh toán" }),
+    ).toBeVisible();
+    vi.useRealTimers();
+    fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+    await screen.findByAltText("Mã VietQR để chuyển khoản mua CSA");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tôi đã chuyển khoản" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Yêu cầu đã được gửi" }),
+    ).toBeVisible();
+    expect(screen.getByText("CSA-ABC123")).toBeVisible();
+    expect(
+      calls.filter((call) => call.url.endsWith("/confirm-transfer")),
+    ).toHaveLength(2);
+  });
 });

@@ -19,6 +19,26 @@ const copy = {
     paymentPlanSaving: "Save {amount} · {percent}%",
     selectionSummary: "Your selection",
     paymentPlanTitle: "Payment method",
+    couponLabel: "Discount code",
+    couponPlaceholder: "Enter discount code",
+    couponApply: "Apply",
+    couponRemove: "Remove code",
+    couponRequired: "Enter a discount code.",
+    couponInvalid: "This discount code is invalid.",
+    couponNotStarted: "This discount code is not active yet.",
+    couponExpired: "This discount code has expired.",
+    couponInactive: "This discount code is inactive.",
+    couponExhausted: "This discount code has no uses left.",
+    couponNotApplicable: "This code does not apply to this payment method.",
+    couponMinimum: "This payment does not meet the minimum for this code.",
+    couponAlreadyUsed: "This code has already been used for this phone number.",
+    couponQuoteExpired: "The payment quote expired. Apply the code again.",
+    couponFirstOnly: "The discount applies only to the first installment.",
+    couponPlanPrice: "Payment plan price",
+    couponDiscount: "Discount",
+    couponFirstBefore: "First installment before discount",
+    couponFirstAfter: "First installment to transfer",
+    couponPayable: "Amount to transfer",
     paymentDurationTotal: "Total for this duration",
     paymentPlanMissing:
       "No valid payment method is available for this duration.",
@@ -52,13 +72,15 @@ const copy = {
     informationStepTitle: "Your information",
     informationStepDescription:
       "Provide the details needed to process your request.",
-    loadingAccount: "Loading account information…",
+    processing: "Processing…",
+    applyingDiscountCode: "Applying discount code…",
+    preparingPaymentDetails: "Preparing payment details…",
+    confirmingTransfer: "Confirming transfer…",
     termsStepTitle: "How the program works",
     termsStepDescription:
       "By checking each box, I confirm that I have read, fully understood, and agree to each item below.",
     previous: "Back",
     next: "Continue",
-    packagesLoading: "Loading available packages…",
     packagesEmpty: "There are no CSA packages available right now.",
     packagesError: "We could not load CSA packages. Please try again.",
     retry: "Try again",
@@ -78,7 +100,6 @@ const copy = {
       "Include house number, street/hamlet and any delivery details.",
     selectProvince: "Select a province or city",
     selectWard: "Select a ward or commune",
-    wardsLoading: "Loading wards…",
     required: "Please complete this field.",
     invalidPhone: "Enter a valid Vietnamese phone number.",
     terms: {
@@ -99,11 +120,14 @@ const copy = {
     termsCheckAll: "Check all",
     termsRequired: "Please tick every agreement checkbox before continuing.",
     continue: "Continue to payment",
-    creating: "Creating request…",
-    creatingQuote: "Preparing secure payment details…",
     recreateQuote: "Refresh payment details",
     quoteExpired:
-      "These payment details have expired. Please create a new request before transferring money.",
+      "These payment details have expired. Return to the payment method and continue for new details.",
+    requestExpired:
+      "This purchase request has expired. Please create a new request before transferring money.",
+    confirmationUncertain:
+      "We could not confirm the result. Check again with the same payment quote before starting a new request.",
+    retryConfirmation: "Check transfer confirmation",
     quoteUnavailable:
       "Payment details are unavailable. Please refresh them before transferring money.",
     quoteIdentityMismatch:
@@ -164,6 +188,28 @@ const copy = {
     paymentPlanSaving: "Tiết kiệm {amount} · {percent}%",
     selectionSummary: "Gói bạn đã chọn",
     paymentPlanTitle: "Phương thức thanh toán",
+    couponLabel: "Mã giảm giá",
+    couponPlaceholder: "Nhập mã giảm giá",
+    couponApply: "Áp dụng",
+    couponRemove: "Bỏ mã",
+    couponRequired: "Vui lòng nhập mã giảm giá.",
+    couponInvalid: "Mã giảm giá không hợp lệ.",
+    couponNotStarted: "Mã giảm giá chưa bắt đầu hiệu lực.",
+    couponExpired: "Mã giảm giá đã hết hạn.",
+    couponInactive: "Mã giảm giá đã tắt.",
+    couponExhausted: "Mã giảm giá đã hết lượt sử dụng.",
+    couponNotApplicable:
+      "Mã giảm giá không áp dụng cho phương thức thanh toán này.",
+    couponMinimum: "Giá trị thanh toán chưa đạt mức tối thiểu của mã.",
+    couponAlreadyUsed: "Số điện thoại này đã sử dụng mã giảm giá.",
+    couponQuoteExpired:
+      "Báo giá thanh toán đã hết hạn. Vui lòng áp dụng lại mã.",
+    couponFirstOnly: "Mã giảm giá chỉ áp dụng cho khoản thanh toán đầu tiên.",
+    couponPlanPrice: "Giá phương thức thanh toán",
+    couponDiscount: "Mã giảm giá",
+    couponFirstBefore: "Khoản thanh toán đầu tiên",
+    couponFirstAfter: "Khoản đầu tiên cần chuyển",
+    couponPayable: "Số tiền cần chuyển",
     paymentDurationTotal: "Tổng giá trị thời hạn",
     paymentPlanMissing: "Thời hạn này chưa có phương thức thanh toán hợp lệ.",
     paymentPlanRequired:
@@ -196,13 +242,15 @@ const copy = {
     informationStepTitle: "Thông tin của bạn",
     informationStepDescription:
       "Cung cấp thông tin cần thiết để xử lý yêu cầu.",
-    loadingAccount: "Đang tải thông tin tài khoản…",
+    processing: "Đang xử lý…",
+    applyingDiscountCode: "Đang áp dụng mã giảm giá…",
+    preparingPaymentDetails: "Đang tạo thông tin thanh toán…",
+    confirmingTransfer: "Đang xác nhận chuyển khoản…",
     termsStepTitle: "Chương trình hoạt động thế nào",
     termsStepDescription:
       "Bằng việc tích vào từng ô, tôi xác nhận đã đọc, hiểu rõ và đồng ý với từng nội dung dưới đây.",
     previous: "Quay lại",
     next: "Tiếp tục",
-    packagesLoading: "Đang tải các gói hiện có…",
     packagesEmpty: "Hiện chưa có gói CSA nào khả dụng.",
     packagesError: "Không thể tải danh sách gói CSA. Vui lòng thử lại.",
     retry: "Thử lại",
@@ -222,7 +270,6 @@ const copy = {
       "Nhập số nhà, tên đường/thôn/ấp và thông tin cần thiết để giao hàng.",
     selectProvince: "Chọn tỉnh/thành phố",
     selectWard: "Chọn phường/xã",
-    wardsLoading: "Đang tải phường/xã…",
     required: "Vui lòng nhập thông tin này.",
     invalidPhone: "Vui lòng nhập số điện thoại Việt Nam hợp lệ.",
     terms: {
@@ -244,11 +291,14 @@ const copy = {
     termsRequired:
       "Vui lòng đánh dấu tất cả các ô xác nhận trước khi tiếp tục.",
     continue: "Tiếp tục thanh toán",
-    creating: "Đang tạo yêu cầu…",
-    creatingQuote: "Đang chuẩn bị thông tin thanh toán an toàn…",
     recreateQuote: "Tạo lại thông tin thanh toán",
     quoteExpired:
-      "Thông tin thanh toán này đã hết hạn. Vui lòng tạo yêu cầu mới trước khi chuyển khoản.",
+      "Thông tin thanh toán này đã hết hạn. Quay lại phương thức thanh toán và tiếp tục để lấy thông tin mới.",
+    requestExpired:
+      "Yêu cầu mua này đã hết hạn. Vui lòng tạo yêu cầu mới trước khi chuyển khoản.",
+    confirmationUncertain:
+      "Chưa xác định được kết quả xác nhận. Hãy kiểm tra lại bằng cùng báo giá trước khi tạo yêu cầu mới.",
+    retryConfirmation: "Kiểm tra lại xác nhận",
     quoteUnavailable:
       "Thông tin thanh toán không khả dụng. Vui lòng tạo lại trước khi chuyển khoản.",
     quoteIdentityMismatch:

@@ -5958,6 +5958,45 @@ tbody th {
 .csa-purchase-ui .payment-plan-section {
   margin-top: 14px;
 }
+.csa-purchase-ui .csa-coupon-control {
+  min-width: 0;
+  margin-top: 16px;
+}
+.csa-purchase-ui .csa-coupon-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.csa-purchase-ui .csa-coupon-entry input {
+  flex: 1 1 240px;
+  min-width: 0;
+  text-transform: uppercase;
+}
+.csa-purchase-ui .csa-coupon-entry .btn {
+  flex: 0 0 auto;
+}
+.csa-purchase-ui .csa-coupon-control .notice {
+  margin-top: 8px;
+}
+.csa-purchase-ui .csa-coupon-summary {
+  min-width: 0;
+  margin-top: 16px;
+}
+.csa-purchase-ui .csa-coupon-summary .bank-row {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 599px) {
+  .csa-purchase-ui .csa-coupon-entry {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .csa-purchase-ui .csa-coupon-entry input,
+  .csa-purchase-ui .csa-coupon-entry .btn {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+}
 .csa-purchase-ui .payment-amount-preview {
   display: flex;
   align-items: baseline;
@@ -6363,6 +6402,57 @@ tbody th {
   display: grid;
   align-items: start;
   gap: 16px;
+}
+.csa-purchase-ui .payment-method-state,
+.csa-purchase-ui .payment-qr-state {
+  min-width: 0;
+}
+.csa-purchase-ui .payment-method-state > *,
+.csa-purchase-ui .payment-qr-state > * {
+  min-width: 0;
+}
+.csa-loading-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(20 31 24 / 48%);
+  cursor: wait;
+}
+.csa-loading-status {
+  width: min(22rem, 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: 0 16px 48px rgb(16 33 22 / 24%);
+  color: var(--ink);
+  text-align: center;
+}
+.csa-loading-status p {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.csa-loading-spinner {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border: 3px solid color-mix(in srgb, var(--forest) 22%, transparent);
+  border-top-color: var(--forest);
+  border-radius: 50%;
+  animation: csa-loading-spin 0.8s linear infinite;
+}
+@keyframes csa-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .csa-purchase-ui .payment-information,
 .csa-purchase-ui .payment-qr {
@@ -7084,6 +7174,9 @@ tbody th {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .csa-loading-spinner {
+    animation: none;
+  }
   .csa-purchase-ui .step {
     animation: none;
   }

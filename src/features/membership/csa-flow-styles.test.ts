@@ -448,5 +448,8 @@ describe("CSA demo style contract", () => {
     expect(csaCss).toMatch(
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.csa-purchase-ui \.step\s*\{\s*animation: none;/,
     );
+    expect(csaCss).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.csa-loading-spinner\s*\{\s*animation: none;/,
+    );
   });
 });

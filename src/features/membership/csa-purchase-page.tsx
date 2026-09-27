@@ -8,6 +8,7 @@ import { accountApi, AccountApiError } from "@/features/account/api";
 import type {
   AdministrativeUnit,
   CSAPaymentQuote,
+  CSAPaymentQuoteSummary,
   CSAPurchaseRequestCreated,
   CSAPaymentPlan,
   MembershipPackage,
@@ -35,6 +36,12 @@ import { localizedPath, type Locale } from "@/lib/i18n";
 type PurchaseCopy = ReturnType<typeof getCSAPurchaseCopy>;
 
 const termsErrorId = "csa-purchase-terms-error";
+const couponErrorId = "csa-coupon-error";
+const couponHintId = "csa-coupon-hint";
+const paymentMethodView = "method";
+const paymentQRView = "qr";
+const couponQuoteExpiredCode = "coupon_quote_expired";
+const paymentQuoteExpiredCode = "csa_payment_quote_expired";
 const SINGLE_MONTH_FULL_PAYMENT_ID = "__single_month_full__";
 const CSA_AGREEMENT_TERM_IDS = Array.from(
   { length: 11 },
@@ -134,13 +141,21 @@ function positiveInteger(value: string) {
   return /^[1-9]\d*(?:\.0+)?$/.test(value) ? BigInt(value.split(".")[0]) : null;
 }
 
-function isPaymentQuote(value: unknown): value is CSAPaymentQuote {
+function quoteAmount(value: unknown) {
+  return typeof value === "string" ? positiveInteger(value) : null;
+}
+
+function isPaymentQuote(
+  value: unknown,
+  selectedPlan?: CSAPaymentPlan,
+): value is CSAPaymentQuote {
   if (!value || typeof value !== "object") return false;
   const quote = value as Record<string, unknown>;
   const payment = quote.payment as Record<string, unknown> | undefined;
   const summary = quote.payment_summary as Record<string, unknown> | undefined;
   const terms = quote.terms as Record<string, unknown> | undefined;
   const qr = quote.qr_payload as Record<string, unknown> | undefined;
+  const coupon = quote.coupon as Record<string, unknown> | undefined;
   const installments = summary?.installments;
   if (
     typeof quote.quote_token !== "string" ||
@@ -155,9 +170,9 @@ function isPaymentQuote(value: unknown): value is CSAPaymentQuote {
     !terms ||
     !qr ||
     !["full", "installment"].includes(String(summary.payment_type)) ||
-    !positiveInteger(String(payment.amount)) ||
-    !positiveInteger(String(summary.total_amount)) ||
-    !positiveInteger(String(summary.initial_payment_amount)) ||
+    !quoteAmount(payment.amount) ||
+    !quoteAmount(summary.total_amount) ||
+    !quoteAmount(summary.initial_payment_amount) ||
     !Number.isSafeInteger(summary.installment_count) ||
     !Array.isArray(installments) ||
     installments.length !== summary.installment_count ||
@@ -182,9 +197,6 @@ function isPaymentQuote(value: unknown): value is CSAPaymentQuote {
     )
   )
     return false;
-  const sequences = installments.map(
-    (item) => (item as Record<string, unknown>).sequence,
-  );
   if (
     installments.some(
       (item) =>
@@ -192,40 +204,101 @@ function isPaymentQuote(value: unknown): value is CSAPaymentQuote {
         typeof item !== "object" ||
         !Number.isSafeInteger((item as Record<string, unknown>).sequence) ||
         Number((item as Record<string, unknown>).sequence) < 1 ||
-        !positiveInteger(String((item as Record<string, unknown>).amount)) ||
+        !quoteAmount((item as Record<string, unknown>).amount) ||
         !Number.isSafeInteger((item as Record<string, unknown>).cycle_count) ||
         Number((item as Record<string, unknown>).cycle_count) < 1,
     ) ||
-    new Set(sequences).size !== sequences.length ||
-    !sequences.includes(1) ||
     (summary.payment_type === "full" && installments.length !== 1) ||
     (summary.payment_type === "installment" && installments.length < 2)
   )
     return false;
-  const installmentAmounts = installments.map((item) =>
-    positiveInteger(String((item as Record<string, unknown>).amount)),
+  const sequences = installments.map(
+    (item) => (item as Record<string, unknown>).sequence,
   );
-  const totalAmount = positiveInteger(String(summary.total_amount));
-  const initialAmount = positiveInteger(String(summary.initial_payment_amount));
-  const qrAmount = positiveInteger(String(qr.amount));
+  if (
+    new Set(sequences).size !== sequences.length ||
+    !sequences.includes(1) ||
+    [...sequences]
+      .sort((a, b) => Number(a) - Number(b))
+      .some((sequence, index) => sequence !== index + 1)
+  )
+    return false;
+  const installmentAmounts = installments.map((item) =>
+    quoteAmount((item as Record<string, unknown>).amount),
+  );
+  const totalAmount = quoteAmount(summary.total_amount);
+  const initialAmount = quoteAmount(summary.initial_payment_amount);
+  const qrAmount = quoteAmount(qr.amount);
   if (
     installmentAmounts.some((amount) => amount === null) ||
     totalAmount === null ||
     initialAmount === null ||
     qrAmount === null ||
-    qrAmount !== initialAmount
+    qrAmount !== initialAmount ||
+    quoteAmount(payment.amount) !== initialAmount ||
+    qr.acqId !== payment.bank_code ||
+    qr.accountNo !== payment.account_number ||
+    qr.accountName !== payment.account_name ||
+    qr.addInfo !== payment.transfer_content
   )
     return false;
   const validInstallmentAmounts = installmentAmounts as bigint[];
   const firstInstallmentIndex = sequences.findIndex(
     (sequence) => Number(sequence) === 1,
   );
-  return (
-    validInstallmentAmounts.reduce(
-      (total, amount) => total + amount,
-      BigInt(0),
-    ) === totalAmount &&
-    validInstallmentAmounts[firstInstallmentIndex] === initialAmount
+  const installmentTotal = validInstallmentAmounts.reduce(
+    (total, amount) => total + amount,
+    BigInt(0),
+  );
+  if (validInstallmentAmounts[firstInstallmentIndex] !== initialAmount)
+    return false;
+  if (selectedPlan) {
+    const originalInstallments = selectedPlan.installments;
+    if (
+      summary.payment_type !== selectedPlan.payment_type ||
+      installments.length !== originalInstallments.length ||
+      selectedPlan.installment_count !== installments.length ||
+      quoteAmount(selectedPlan.total_amount) !== totalAmount ||
+      installments.some((item) => {
+        const row = item as Record<string, unknown>;
+        const original = originalInstallments.find(
+          (candidate) => candidate.sequence === row.sequence,
+        );
+        return (
+          !original ||
+          original.cycle_count !== row.cycle_count ||
+          (row.sequence !== 1 &&
+            quoteAmount(original.amount) !== quoteAmount(row.amount))
+        );
+      })
+    )
+      return false;
+  }
+  if (!coupon) return installmentTotal === totalAmount;
+  const discount = quoteAmount(coupon.discount_amount);
+  const before = quoteAmount(summary.initial_payment_before_discount);
+  const payable = quoteAmount(summary.customer_payable_total);
+  const planTotal = quoteAmount(summary.payment_plan_total_before_discount);
+  const contractTotal = quoteAmount(summary.contract_total_before_discount);
+  return Boolean(
+    typeof coupon.code === "string" &&
+    /^[A-Z0-9][A-Z0-9_-]{0,63}$/.test(coupon.code) &&
+    (coupon.discount_type === "percent" || coupon.discount_type === "fixed") &&
+    typeof coupon.discount_value === "string" &&
+    /^\d+(?:\.\d{1,2})?$/.test(coupon.discount_value) &&
+    discount !== null &&
+    quoteAmount(summary.discount_amount) === discount &&
+    before !== null &&
+    payable !== null &&
+    planTotal === totalAmount &&
+    contractTotal !== null &&
+    (!selectedPlan ||
+      quoteAmount(
+        selectedPlan.installments.find((item) => item.sequence === 1)?.amount,
+      ) === before) &&
+    before - discount === initialAmount &&
+    totalAmount - discount === payable &&
+    installmentTotal === payable,
   );
 }
 
@@ -407,24 +480,114 @@ function progressClass(number: number, current: number) {
   return "progress-item";
 }
 
+function isReloadNavigation() {
+  if (typeof performance === "undefined" || !performance.getEntriesByType)
+    return false;
+  return performance.getEntriesByType("navigation").some((entry) => {
+    return "type" in entry && entry.type === "reload";
+  });
+}
+
+// Navigation timing describes the whole document lifetime. Read it once so a
+// route or locale remount cannot be mistaken for another browser reload.
+const documentWasReloaded = isReloadNavigation();
+
+function PurchaseLoadingOverlay({
+  message,
+  statusRef,
+}: {
+  message: string;
+  statusRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <div className="csa-loading-backdrop">
+      <div
+        className="csa-loading-status"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-busy="true"
+        tabIndex={-1}
+        ref={statusRef}
+      >
+        <span className="csa-loading-spinner" aria-hidden="true" />
+        <p>{message}</p>
+      </div>
+    </div>
+  );
+}
+
+function PurchaseLoadingSurface({
+  children,
+  loadingMessage,
+}: {
+  children: React.ReactNode;
+  loadingMessage: string | null;
+}) {
+  const regionRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const loadingRef = useRef(false);
+
+  useEffect(() => {
+    const region = regionRef.current;
+    if (region) {
+      (region as HTMLDivElement & { inert?: boolean }).inert =
+        Boolean(loadingMessage);
+    }
+    if (loadingMessage && !loadingRef.current) {
+      const active = document.activeElement;
+      previousFocusRef.current =
+        active instanceof HTMLElement && active !== document.body
+          ? active
+          : null;
+      statusRef.current?.focus({ preventScroll: true });
+    } else if (!loadingMessage && loadingRef.current) {
+      const previous = previousFocusRef.current;
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+      previousFocusRef.current = null;
+    }
+    loadingRef.current = Boolean(loadingMessage);
+  }, [loadingMessage]);
+
+  return (
+    <>
+      <div ref={regionRef} aria-busy={Boolean(loadingMessage)}>
+        {children}
+      </div>
+      {loadingMessage ? (
+        <PurchaseLoadingOverlay
+          message={loadingMessage}
+          statusRef={statusRef}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function PurchaseChrome({
   children,
   restored = false,
+  loadingMessage = null,
 }: {
   children: React.ReactNode;
   restored?: boolean;
+  loadingMessage?: string | null;
 }) {
   return (
     <main
       className={["csa-ui", "csa-purchase-ui", restored && "csa-flow-restored"]
         .filter(Boolean)
         .join(" ")}
+      aria-busy={Boolean(loadingMessage)}
     >
-      <div className="shell">
-        <div className="app-card">
-          <div className="content">{children}</div>
+      <PurchaseLoadingSurface loadingMessage={loadingMessage}>
+        <div className="shell">
+          <div className="app-card">
+            <div className="content">{children}</div>
+          </div>
         </div>
-      </div>
+      </PurchaseLoadingSurface>
     </main>
   );
 }
@@ -460,7 +623,6 @@ function PaymentPlanSection({
   locale,
   copy,
   disabled,
-  showInstallmentDetails = true,
   onSelect,
 }: {
   selectedOption: MembershipPackagePriceOption | undefined;
@@ -469,12 +631,10 @@ function PaymentPlanSection({
   locale: Locale;
   copy: PurchaseCopy;
   disabled: boolean;
-  showInstallmentDetails?: boolean;
   onSelect: (planId: string) => void;
 }) {
   return (
     <div className="payment-plan-section">
-      <h3>{copy.paymentPlanTitle}</h3>
       {selectedOption &&
       selectedOption.duration_months > 1 &&
       plans.length === 0 ? (
@@ -536,7 +696,7 @@ function PaymentPlanSection({
                   </span>
                 ) : null}
               </span>
-              {showInstallmentDetails && plan.payment_type === "installment" ? (
+              {plan.payment_type === "installment" ? (
                 <span className="payment-plan-detail">
                   {installments.map((row, index) => (
                     <span
@@ -568,6 +728,170 @@ function PaymentPlanSection({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function couponErrorCopy(code: string | null, copy: PurchaseCopy) {
+  if (!code) return "";
+  const messages: Record<string, string> = {
+    coupon_invalid: copy.couponInvalid,
+    coupon_not_started: copy.couponNotStarted,
+    coupon_expired: copy.couponExpired,
+    coupon_inactive: copy.couponInactive,
+    coupon_usage_exhausted: copy.couponExhausted,
+    coupon_not_applicable: copy.couponNotApplicable,
+    coupon_minimum_amount_not_met: copy.couponMinimum,
+    coupon_already_used: copy.couponAlreadyUsed,
+    coupon_quote_expired: copy.couponQuoteExpired,
+    csa_payment_quote_expired: copy.couponQuoteExpired,
+    csa_payment_quote_unavailable: copy.quoteUnavailable,
+    coupon_required: copy.couponRequired,
+  };
+  return messages[code] ?? copy.quoteUnavailable;
+}
+
+function CouponControl({
+  copy,
+  code,
+  appliedCode,
+  error,
+  busy,
+  onChange,
+  onApply,
+  onRemove,
+}: {
+  copy: PurchaseCopy;
+  code: string;
+  appliedCode: string | null;
+  error: string;
+  busy: boolean;
+  onChange: (value: string) => void;
+  onApply: () => void;
+  onRemove: () => void;
+}) {
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (error) errorRef.current?.focus({ preventScroll: true });
+  }, [error]);
+  return (
+    <div className="csa-coupon-control" aria-busy={busy}>
+      <form
+        className="field"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!appliedCode) onApply();
+        }}
+      >
+        <label htmlFor="csa-coupon-code">{copy.couponLabel}</label>
+        <div className="csa-coupon-entry">
+          <input
+            id="csa-coupon-code"
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            placeholder={copy.couponPlaceholder}
+            value={code}
+            disabled={busy || Boolean(appliedCode)}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? couponErrorId : couponHintId}
+            onChange={(event) => onChange(event.target.value.toUpperCase())}
+          />
+          {appliedCode ? (
+            <button
+              className="btn btn-secondary"
+              type="button"
+              disabled={busy}
+              onClick={onRemove}
+            >
+              {copy.couponRemove}
+            </button>
+          ) : (
+            <button
+              className="btn btn-secondary"
+              type="submit"
+              disabled={busy || !code.trim()}
+            >
+              {copy.couponApply}
+            </button>
+          )}
+        </div>
+      </form>
+      <span className="sr-only" id={couponHintId}>
+        {copy.couponPlaceholder}
+      </span>
+      {error ? (
+        <p
+          className="notice error"
+          id={couponErrorId}
+          role="alert"
+          ref={errorRef}
+          tabIndex={-1}
+        >
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function CouponQuoteSummary({
+  summary,
+  locale,
+  copy,
+}: {
+  summary: CSAPaymentQuoteSummary;
+  locale: Locale;
+  copy: PurchaseCopy;
+}) {
+  const { coupon, payment_summary: paymentSummary } = summary;
+  const full = paymentSummary.payment_type === "full";
+  return (
+    <div className="csa-coupon-summary" role="status">
+      <dl className="bank-list">
+        <div className="bank-row">
+          <dt className="k">{copy.packageValue}</dt>
+          <dd className="v">
+            {formatMembershipMoney(
+              paymentSummary.contract_total_before_discount!,
+              locale,
+            )}
+          </dd>
+        </div>
+        <div className="bank-row">
+          <dt className="k">
+            {full ? copy.couponPlanPrice : copy.couponFirstBefore}
+          </dt>
+          <dd className="v">
+            {formatMembershipMoney(
+              full
+                ? paymentSummary.payment_plan_total_before_discount!
+                : paymentSummary.initial_payment_before_discount!,
+              locale,
+            )}
+          </dd>
+        </div>
+        <div className="bank-row">
+          <dt className="k">{copy.couponDiscount}</dt>
+          <dd className="v">
+            -{formatMembershipMoney(coupon.discount_amount, locale)}
+          </dd>
+        </div>
+        <div className="bank-row">
+          <dt className="k">
+            {full ? copy.couponPayable : copy.couponFirstAfter}
+          </dt>
+          <dd className="v">
+            <strong>
+              {formatMembershipMoney(
+                paymentSummary.initial_payment_amount,
+                locale,
+              )}
+            </strong>
+          </dd>
+        </div>
+      </dl>
+      {!full ? <p className="notice">{copy.couponFirstOnly}</p> : null}
     </div>
   );
 }
@@ -627,6 +951,7 @@ function CSAPurchaseWizard({
     setPurchase: savePurchase,
     quoteCreation,
     createQuote: startQuoteCreation,
+    invalidateQuote,
     confirmation,
     confirmTransfer: startConfirmation,
   } = useCSAFlowState();
@@ -665,6 +990,7 @@ function CSAPurchaseWizard({
     initialMemory?.wardsResourceKey ?? "",
   );
   const [wardsLoading, setWardsLoading] = useState(false);
+  const [provincesLoading, setProvincesLoading] = useState(false);
   const wardRequest = useRef<{
     sequence: number;
     resourceKey: string;
@@ -712,6 +1038,8 @@ function CSAPurchaseWizard({
     initialMemory?.termsSubmitted ?? false,
   );
   const creating = quoteCreation.status === "pending";
+  const quoteCreationStatusRef = useRef(quoteCreation.status);
+  quoteCreationStatusRef.current = quoteCreation.status;
   const confirming = confirmation.status === "pending";
   const [profileIncomplete, setProfileIncomplete] = useState(
     initialMemory?.profileIncomplete ?? false,
@@ -727,6 +1055,35 @@ function CSAPurchaseWizard({
   const [quote, setQuote] = useState<CSAPaymentQuote | null>(
     initialMemory?.quote ?? null,
   );
+  const [paymentView, setPaymentView] = useState<"method" | "qr">(
+    initialMemory?.paymentView ??
+      (initialMemory?.quote ? paymentQRView : paymentMethodView),
+  );
+  const [quoteTarget, setQuoteTarget] = useState<"method" | "qr">(
+    initialMemory?.quoteTarget ?? "qr",
+  );
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(
+    initialMemory?.appliedCouponCode ??
+      initialMemory?.quote?.coupon?.code ??
+      null,
+  );
+  const [couponInput, setCouponInput] = useState(
+    initialMemory?.couponInput ?? "",
+  );
+  const [couponErrorCode, setCouponErrorCode] = useState<string | null>(
+    initialMemory?.couponErrorCode ?? null,
+  );
+  const [couponSummary, setCouponSummary] =
+    useState<CSAPaymentQuoteSummary | null>(
+      initialMemory?.couponSummary ?? null,
+    );
+  const [couponAction, setCouponAction] = useState<"apply" | "remove" | null>(
+    null,
+  );
+  const couponActionRef = useRef<"apply" | "remove" | null>(null);
+  const handledQuoteErrorRef = useRef<typeof quoteCreation | null>(null);
+  const handledConfirmationErrorRef = useRef<typeof confirmation | null>(null);
+  const restoreCouponFocus = useRef(false);
   const [confirmed, setConfirmed] = useState(initialMemory?.confirmed ?? false);
   const [qrFailed, setQrFailed] = useState(initialMemory?.qrFailed ?? false);
   const [expired, setExpired] = useState(initialMemory?.expired ?? false);
@@ -743,7 +1100,73 @@ function CSAPurchaseWizard({
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
   const stepScrollFrameRef = useRef<number | null>(null);
   const activeWizardStep = confirmed ? 5 : step;
-  const previousWizardStepRef = useRef<number>(activeWizardStep);
+  const previousNavigationRef = useRef({
+    step: activeWizardStep,
+    paymentView,
+  });
+
+  const normalizedCouponInput = couponInput.trim().toUpperCase();
+  const couponApplied = Boolean(
+    appliedCouponCode && normalizedCouponInput === appliedCouponCode,
+  );
+  const couponBlocksContinue = Boolean(normalizedCouponInput) && !couponApplied;
+  const loadingMessage = confirming
+    ? copy.confirmingTransfer
+    : creating
+      ? couponAction === "apply"
+        ? copy.applyingDiscountCode
+        : couponAction === "remove"
+          ? copy.processing
+          : copy.preparingPaymentDetails
+      : packagesState === "loading" || provincesLoading || wardsLoading
+        ? copy.processing
+        : null;
+
+  const resetQuoteAndCoupon = useCallback(() => {
+    invalidateQuote();
+    quoteCreationStatusRef.current = "idle";
+    setQuote(null);
+    setPaymentView("method");
+    setQrFailed(false);
+    setExpired(false);
+    setCouponErrorCode(null);
+    setCouponSummary(null);
+    setCouponInput("");
+    setAppliedCouponCode(null);
+    setCouponAction(null);
+    couponActionRef.current = null;
+  }, [invalidateQuote]);
+
+  const clearQuoteForPayment = useCallback(() => {
+    invalidateQuote();
+    quoteCreationStatusRef.current = "idle";
+    setQuote(null);
+    setQrFailed(false);
+    setExpired(false);
+    setCouponAction(null);
+    couponActionRef.current = null;
+  }, [invalidateQuote]);
+
+  const expireQuote = useCallback(
+    (hadCoupon: boolean) => {
+      invalidateQuote();
+      quoteCreationStatusRef.current = "idle";
+      setQuote(null);
+      setQrFailed(false);
+      setCouponAction(null);
+      couponActionRef.current = null;
+      if (hadCoupon) {
+        setAppliedCouponCode(null);
+        setCouponErrorCode(couponQuoteExpiredCode);
+        setCouponSummary(null);
+        setExpired(false);
+      } else {
+        setExpired(paymentView === "qr");
+        if (paymentView === "method") setErrorKey("quoteExpired");
+      }
+    },
+    [invalidateQuote, paymentView],
+  );
 
   useEffect(() => {
     if (previousProfileRefreshVersion.current === profileRefreshVersion) return;
@@ -767,6 +1190,9 @@ function CSAPurchaseWizard({
       selectedPackageId,
       selectedOptionId,
       selectedPlanId,
+      paymentView,
+      quoteTarget,
+      appliedCouponCode,
       guest,
       termsAccepted,
       acceptedTermIds,
@@ -776,13 +1202,26 @@ function CSAPurchaseWizard({
       errorKey,
       confirmed: confirmed || current?.confirmed || false,
       qrFailed,
-      expired: expired || current?.expired || false,
-      quote: quote ?? current?.quote ?? null,
+      expired,
+      quote:
+        quote ??
+        (quoteCreationStatusRef.current === "success"
+          ? (current?.quote ?? null)
+          : null),
+      couponInput,
+      couponErrorCode,
+      couponSummary,
       // A creation response can arrive at the provider while a locale route is remounting.
       purchase: purchase ?? current?.purchase ?? null,
     }));
   }, [
     confirmed,
+    paymentView,
+    quoteTarget,
+    appliedCouponCode,
+    couponInput,
+    couponErrorCode,
+    couponSummary,
     errorKey,
     expired,
     guest,
@@ -818,11 +1257,43 @@ function CSAPurchaseWizard({
   }, [purchase, purchaseMemory?.purchase]);
 
   useEffect(() => {
-    if (!quote && purchaseMemory?.quote) {
+    if (!quote && quoteCreation.status === "success" && purchaseMemory?.quote) {
+      if (couponActionRef.current === "remove") {
+        invalidateQuote();
+        setQuote(null);
+        setPaymentView("method");
+        return;
+      }
       setQuote(purchaseMemory.quote);
+      setPaymentView(quoteTarget);
+      setAppliedCouponCode(purchaseMemory.quote.coupon?.code ?? null);
       setStep(4);
     }
-  }, [purchaseMemory?.quote, quote]);
+  }, [
+    invalidateQuote,
+    purchaseMemory?.quote,
+    quote,
+    quoteCreation.status,
+    quoteTarget,
+  ]);
+
+  useEffect(() => {
+    if (quote?.coupon) {
+      setCouponSummary({
+        payment_summary: quote.payment_summary,
+        coupon: quote.coupon,
+      });
+    }
+  }, [quote]);
+
+  useEffect(() => {
+    if (!quote && restoreCouponFocus.current) {
+      restoreCouponFocus.current = false;
+      document
+        .getElementById("csa-coupon-code")
+        ?.focus({ preventScroll: true });
+    }
+  }, [quote]);
 
   useEffect(() => {
     if (purchaseMemory?.confirmed && !confirmed) setConfirmed(true);
@@ -830,7 +1301,32 @@ function CSAPurchaseWizard({
   }, [confirmed, expired, purchaseMemory?.confirmed, purchaseMemory?.expired]);
 
   useEffect(() => {
-    if (quoteCreation.status !== "error") return;
+    if (
+      quoteCreation.status !== "error" ||
+      handledQuoteErrorRef.current === quoteCreation
+    )
+      return;
+    handledQuoteErrorRef.current = quoteCreation;
+    setPaymentView("method");
+    const failedCouponAction = couponActionRef.current;
+    if (
+      failedCouponAction ||
+      (quoteTarget === "method" &&
+        couponInput &&
+        (quoteCreation.error.code.startsWith("coupon_") ||
+          [paymentQuoteExpiredCode, "csa_payment_quote_unavailable"].includes(
+            quoteCreation.error.code,
+          )))
+    ) {
+      couponActionRef.current = null;
+      setCouponErrorCode(quoteCreation.error.code);
+      setCouponAction(null);
+      setAppliedCouponCode(null);
+      setCouponSummary(null);
+      if (failedCouponAction === "apply") setCouponInput("");
+      invalidateQuote();
+      return;
+    }
     const creationError = new AccountApiError(
       quoteCreation.error.code,
       quoteCreation.error.status,
@@ -838,30 +1334,56 @@ function CSAPurchaseWizard({
     if (creationError.code === "csa_purchase_auth_account_incomplete") {
       setProfileIncomplete(true);
       setStep(2);
+    } else if (
+      creationError.code.startsWith("coupon_") ||
+      (appliedCouponCode && creationError.code === "csa_payment_quote_expired")
+    ) {
+      setCouponErrorCode(creationError.code);
+      setAppliedCouponCode(null);
+      setCouponSummary(null);
+      if (creationError.code.startsWith("coupon_")) setCouponInput("");
     } else {
       setErrorKey(purchaseErrorKey(creationError));
     }
-  }, [quoteCreation]);
+  }, [
+    appliedCouponCode,
+    couponInput,
+    invalidateQuote,
+    quoteCreation,
+    quoteTarget,
+  ]);
 
   useEffect(() => {
-    if (confirmation.status !== "error") return;
-    const confirmationError = new AccountApiError(
-      confirmation.error.code,
-      confirmation.error.status,
-    );
-    const key = purchaseErrorKey(confirmationError);
-    if (key === "expired" || key === "quoteExpired") {
-      setQuote(null);
+    if (quoteCreation.status === "success" && couponAction) {
+      couponActionRef.current = null;
+      setCouponErrorCode(null);
+      setCouponAction(null);
+    }
+  }, [quoteCreation.status, couponAction]);
+
+  useEffect(() => {
+    if (
+      confirmation.status !== "error" ||
+      handledConfirmationErrorRef.current === confirmation
+    )
+      return;
+    handledConfirmationErrorRef.current = confirmation;
+    if (confirmation.error.code === "csa_purchase_request_expired") {
+      resetQuoteAndCoupon();
+      setPaymentView("qr");
       setExpired(true);
-      savePurchase((current) =>
-        current
-          ? { ...current, quote: null, qrFailed: false, expired: true }
-          : current,
-      );
       return;
     }
-    setErrorKey(key);
-  }, [confirmation, savePurchase]);
+    if (confirmation.error.code === "csa_payment_quote_expired") {
+      if (quote) expireQuote(Boolean(quote.coupon));
+      return;
+    }
+    setErrorKey(
+      purchaseErrorKey(
+        new AccountApiError(confirmation.error.code, confirmation.error.status),
+      ),
+    );
+  }, [confirmation, expireQuote, quote, resetQuoteAndCoupon]);
 
   useEffect(() => {
     if (!quote || confirmed || expired || !quote.expires_at) return;
@@ -871,24 +1393,25 @@ function CSAPurchaseWizard({
     const schedule = () => {
       const remaining = expiresAt - Date.now();
       if (remaining <= 0) {
-        setQuote(null);
-        savePurchase((current) =>
-          current
-            ? { ...current, quote: null, qrFailed: false, expired: true }
-            : current,
-        );
-        setExpired(true);
+        // Confirmation may have reached the server. Keep its token and response
+        // until the result is known, including a safe retry after a timeout.
+        if (confirming || confirmation.status === "error") return;
+        expireQuote(Boolean(quote.coupon));
         return;
       }
       timer = window.setTimeout(schedule, Math.min(remaining, 2_147_483_647));
     };
     schedule();
     return () => window.clearTimeout(timer);
-  }, [confirmed, expired, quote, savePurchase]);
+  }, [confirmed, confirming, confirmation.status, expired, expireQuote, quote]);
 
   useEffect(() => {
-    if (previousWizardStepRef.current !== activeWizardStep) {
-      previousWizardStepRef.current = activeWizardStep;
+    const previous = previousNavigationRef.current;
+    if (
+      previous.step !== activeWizardStep ||
+      previous.paymentView !== paymentView
+    ) {
+      previousNavigationRef.current = { step: activeWizardStep, paymentView };
       const frame = window.requestAnimationFrame(() => {
         stepScrollFrameRef.current = null;
         const heading = stepHeadingRef.current;
@@ -908,7 +1431,7 @@ function CSAPurchaseWizard({
         stepScrollFrameRef.current = null;
       }
     };
-  }, [activeWizardStep]);
+  }, [activeWizardStep, paymentView]);
 
   function focusFirstInvalidField(fallbackSelector?: string) {
     if (stepScrollFrameRef.current !== null) {
@@ -1002,6 +1525,14 @@ function CSAPurchaseWizard({
           (optionForPlans?.duration_months === 1
             ? SINGLE_MONTH_FULL_PAYMENT_ID
             : ""));
+      if (
+        previousSelection.packageId &&
+        (packageId !== previousSelection.packageId ||
+          optionId !== previousSelection.optionId ||
+          planId !== previousSelection.planId)
+      ) {
+        resetQuoteAndCoupon();
+      }
       setPackages(allPackages);
       setPackagesLocale(locale);
       setSelectedPackageId(packageId);
@@ -1016,7 +1547,7 @@ function CSAPurchaseWizard({
     } finally {
       if (isCurrent()) packageRequest.current = null;
     }
-  }, [locale]);
+  }, [locale, resetQuoteAndCoupon]);
 
   useEffect(
     () => () => {
@@ -1083,14 +1614,29 @@ function CSAPurchaseWizard({
     if (confirmed) return;
     const headers = { "Accept-Language": locale };
     if (provincesLocale !== locale) {
+      const controller = new AbortController();
+      let active = true;
+      setProvincesLoading(true);
       void accountApi<AdministrativeUnit[]>("administrative-provinces", {
         headers,
+        signal: controller.signal,
       })
         .then((payload) => {
-          setProvinces(payload.data);
-          setProvincesLocale(locale);
+          if (active) {
+            setProvinces(payload.data);
+            setProvincesLocale(locale);
+          }
         })
-        .catch(() => setProvinces([]));
+        .catch(() => {
+          if (active) setProvinces([]);
+        })
+        .finally(() => {
+          if (active) setProvincesLoading(false);
+        });
+      return () => {
+        active = false;
+        controller.abort();
+      };
     }
   }, [confirmed, locale, provincesLocale]);
 
@@ -1150,25 +1696,13 @@ function CSAPurchaseWizard({
     packageComplete && informationComplete && termsAccepted && !creating,
   );
 
-  function clearQuoteForSelection() {
-    if (!quote) return;
-    setQuote(null);
-    setQrFailed(false);
-    setExpired(false);
-    savePurchase((current) =>
-      current
-        ? { ...current, quote: null, qrFailed: false, expired: false }
-        : current,
-    );
-  }
-
   function updateGuest(update: (current: CSAGuestDetails) => CSAGuestDetails) {
-    clearQuoteForSelection();
+    resetQuoteAndCoupon();
     setGuest(update);
   }
 
   async function selectProvince(provinceCode: string) {
-    clearQuoteForSelection();
+    resetQuoteAndCoupon();
     currentWardSelection.current = { locale, provinceCode };
     wardRequest.current?.controller.abort();
     wardRequest.current = null;
@@ -1184,7 +1718,21 @@ function CSAPurchaseWizard({
     if (provinceCode) await loadWards(provinceCode);
   }
 
-  function createQuote(planOverride?: CSAPaymentPlan) {
+  function createQuote(
+    planOverride?: CSAPaymentPlan,
+    couponCode?: string | null,
+    action: "apply" | "remove" | null = null,
+  ) {
+    if (creating || confirming || (!action && couponBlocksContinue)) return;
+    const expectedCouponCode =
+      couponCode === undefined
+        ? couponInput.trim().toUpperCase() || appliedCouponCode
+        : couponCode;
+    if (quote) clearQuoteForPayment();
+    couponActionRef.current = action;
+    setCouponAction(action);
+    setQuoteTarget(action ? paymentMethodView : paymentQRView);
+    if (!action) setCouponErrorCode(null);
     setTermsSubmitted(true);
     setErrorKey(null);
     setProfileIncomplete(false);
@@ -1193,7 +1741,6 @@ function CSAPurchaseWizard({
       !packageComplete ||
       !informationComplete ||
       !termsAccepted ||
-      creating ||
       !selectedPackage ||
       !selectedOption ||
       !plan
@@ -1209,25 +1756,76 @@ function CSAPurchaseWizard({
           address: guest.address.trim(),
         };
     setStep(4);
-    startQuoteCreation(user?.sub ?? null, () =>
-      accountApi<CSAPaymentQuote>("csa-payment-quotes", {
-        method: "POST",
-        body: JSON.stringify({
-          package_id: selectedPackage.id,
-          price_option_id: selectedOption.id,
-          ...(plan.id !== SINGLE_MONTH_FULL_PAYMENT_ID
-            ? { payment_plan_id: plan.id }
-            : {}),
-          terms_accepted: true,
-          terms_locale: locale,
-          ...(guestIdentity ? { guest_identity: guestIdentity } : {}),
+    startQuoteCreation(
+      user?.sub ?? null,
+      () =>
+        accountApi<CSAPaymentQuote>("csa-payment-quotes", {
+          method: "POST",
+          body: JSON.stringify({
+            package_id: selectedPackage.id,
+            price_option_id: selectedOption.id,
+            ...(plan.id !== SINGLE_MONTH_FULL_PAYMENT_ID
+              ? { payment_plan_id: plan.id }
+              : {}),
+            terms_accepted: true,
+            terms_locale: locale,
+            ...(expectedCouponCode ? { coupon_code: expectedCouponCode } : {}),
+            ...(guestIdentity ? { guest_identity: guestIdentity } : {}),
+          }),
+        }).then((payload) => {
+          if (
+            !isPaymentQuote(payload.data, plan) ||
+            !buildVietQRUrl(payload.data) ||
+            (payload.data.coupon &&
+              positiveInteger(
+                payload.data.payment_summary.contract_total_before_discount ??
+                  "",
+              ) !== positiveInteger(selectedOption.total_price_vnd)) ||
+            (expectedCouponCode
+              ? payload.data.coupon?.code !== expectedCouponCode
+              : Boolean(payload.data.coupon))
+          )
+            throw new AccountApiError("csa_payment_quote_unavailable", 502);
+          if (Date.parse(payload.data.expires_at) <= Date.now())
+            throw new AccountApiError(
+              expectedCouponCode
+                ? couponQuoteExpiredCode
+                : paymentQuoteExpiredCode,
+              409,
+            );
+          return payload.data;
         }),
-      }).then((payload) => {
-        if (!isPaymentQuote(payload.data))
-          throw new AccountApiError("csa_payment_quote_unavailable", 502);
-        return payload.data;
-      }),
     );
+  }
+
+  function applyCoupon() {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponErrorCode("coupon_required");
+      return;
+    }
+    if (!selectedPlan || creating) return;
+    clearQuoteForPayment();
+    setCouponInput(code);
+    createQuote(selectedPlan, code, "apply");
+  }
+
+  function removeCoupon() {
+    if (!selectedPlan || creating) return;
+    clearQuoteForPayment();
+    setCouponInput("");
+    setAppliedCouponCode(null);
+    setCouponSummary(null);
+    createQuote(selectedPlan, null, "remove");
+  }
+
+  function changeCouponInput(value: string) {
+    if (quote) restoreCouponFocus.current = true;
+    if (quote || creating) clearQuoteForPayment();
+    setCouponInput(value);
+    setAppliedCouponCode(null);
+    setCouponSummary(null);
+    setCouponErrorCode(null);
   }
 
   function setTermAccepted(termId: string, accepted: boolean) {
@@ -1272,24 +1870,23 @@ function CSAPurchaseWizard({
       focusFirstInvalidField('input[name="csa_program_term"]:not(:checked)');
       return;
     }
-    if (quote || purchase) {
-      setStep(4);
-      return;
-    }
     setStep(4);
-    if (displayPlans.length === 1 && selectedPlan) createQuote();
+    setPaymentView("method");
   }
 
   function confirmPayment() {
-    if (!quote || confirming || confirmed || paymentExpired) return;
-    if (quote.expires_at && Date.parse(quote.expires_at) <= Date.now()) {
-      setQuote(null);
-      savePurchase((current) =>
-        current
-          ? { ...current, quote: null, qrFailed: false, expired: true }
-          : current,
+    if (!quote || confirming || confirmed) return;
+    const retryingUncertainConfirmation =
+      confirmation.status === "error" &&
+      !["csa_payment_quote_expired", "csa_purchase_request_expired"].includes(
+        confirmation.error.code,
       );
-      setExpired(true);
+    if (
+      !retryingUncertainConfirmation &&
+      quote.expires_at &&
+      Date.parse(quote.expires_at) <= Date.now()
+    ) {
+      expireQuote(Boolean(quote.coupon));
       return;
     }
     setErrorKey(null);
@@ -1328,7 +1925,10 @@ function CSAPurchaseWizard({
 
   if (confirmed)
     return (
-      <PurchaseChrome restored={restoredFromMemory}>
+      <PurchaseChrome
+        restored={restoredFromMemory}
+        loadingMessage={loadingMessage}
+      >
         <div className="wizard-layout">
           <WizardProgress
             current={5}
@@ -1371,9 +1971,12 @@ function CSAPurchaseWizard({
       </PurchaseChrome>
     );
 
-  if (step === 4 && paymentExpired)
+  if (step === 4 && paymentView === "qr" && (paymentExpired || !quote))
     return (
-      <PurchaseChrome restored={restoredFromMemory}>
+      <PurchaseChrome
+        restored={restoredFromMemory}
+        loadingMessage={loadingMessage}
+      >
         <div className="wizard-layout">
           <WizardProgress
             current={4}
@@ -1384,7 +1987,7 @@ function CSAPurchaseWizard({
             className="main-panel"
             aria-labelledby="payment-expired-title"
           >
-            <div className="step">
+            <div className="step payment-qr-state">
               <h2
                 className="step-title step-heading"
                 id="payment-expired-title"
@@ -1393,27 +1996,69 @@ function CSAPurchaseWizard({
               >
                 {copy.steps[3]}
               </h2>
-              <p className="notice error" role="alert">
-                {copy.quoteExpired}
-              </p>
-              <div className="btn-row">
-                <button
-                  className="btn btn-primary"
-                  type="button"
-                  onClick={onReset}
-                >
-                  {copy.newRequest}
-                </button>
-              </div>
+              {confirmation.status === "error" && quote ? (
+                <>
+                  <p className="notice error" role="alert">
+                    {copy.confirmationUncertain}
+                  </p>
+                  <div className="btn-row">
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      onClick={confirmPayment}
+                    >
+                      {copy.retryConfirmation}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="notice error" role="alert">
+                    {confirmation.status === "error" &&
+                    confirmation.error.code === "csa_purchase_request_expired"
+                      ? copy.requestExpired
+                      : couponErrorCode
+                        ? couponErrorCopy(couponErrorCode, copy)
+                        : copy.quoteExpired}
+                  </p>
+                  <div className="btn-row">
+                    {confirmation.status === "error" &&
+                    confirmation.error.code ===
+                      "csa_purchase_request_expired" ? (
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        onClick={onReset}
+                      >
+                        {copy.newRequest}
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        onClick={() => {
+                          clearQuoteForPayment();
+                          setPaymentView("method");
+                        }}
+                      >
+                        {copy.previous}
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </section>
         </div>
       </PurchaseChrome>
     );
 
-  if (step === 4 && !isPaymentQuote(quote)) {
+  if (step === 4 && paymentView === "method") {
     return (
-      <PurchaseChrome restored={restoredFromMemory}>
+      <PurchaseChrome
+        restored={restoredFromMemory}
+        loadingMessage={loadingMessage}
+      >
         <div className="wizard-layout">
           <WizardProgress
             current={4}
@@ -1425,72 +2070,95 @@ function CSAPurchaseWizard({
             aria-labelledby="payment-title"
             aria-busy={creating}
           >
-            <div className="step">
+            <div className="step payment-method-state">
               <h2
                 className="step-title step-heading"
                 id="payment-title"
                 ref={stepHeadingRef}
                 tabIndex={-1}
               >
-                {copy.steps[3]}
+                {copy.paymentPlanTitle}
               </h2>
-              {creating ? (
-                <p className="notice" role="status" aria-live="polite">
-                  {copy.creatingQuote}
+              <div className="payment-amount-preview">
+                <span>
+                  {selectedPlan
+                    ? copy.paymentAmountDue
+                    : copy.paymentDurationTotal}
+                </span>
+                <strong>
+                  {selectedPlan?.initial_payment_amount
+                    ? formatMembershipMoney(
+                        selectedPlan.initial_payment_amount,
+                        locale,
+                      )
+                    : selectedOption
+                      ? formatMembershipMoney(
+                          selectedOption.total_price_vnd,
+                          locale,
+                        )
+                      : "—"}
+                </strong>
+              </div>
+              <PaymentPlanSection
+                selectedOption={selectedOption}
+                plans={displayPlans}
+                selectedPlanId={selectedPlanId}
+                locale={locale}
+                copy={copy}
+                disabled={Boolean(purchase) || creating}
+                onSelect={(planId) => {
+                  if (planId === selectedPlanId) return;
+                  resetQuoteAndCoupon();
+                  setErrorKey(null);
+                  setSelectedPlanId(planId);
+                }}
+              />
+              {selectedPlanId ? (
+                <CouponControl
+                  copy={copy}
+                  code={couponInput}
+                  appliedCode={appliedCouponCode}
+                  error={couponErrorCopy(couponErrorCode, copy)}
+                  busy={creating}
+                  onChange={changeCouponInput}
+                  onApply={applyCoupon}
+                  onRemove={removeCoupon}
+                />
+              ) : null}
+              {couponSummary && !paymentExpired ? (
+                <CouponQuoteSummary
+                  summary={couponSummary}
+                  locale={locale}
+                  copy={copy}
+                />
+              ) : null}
+              {selectedPlanId && error && !creating ? (
+                <p className="notice error" role="alert">
+                  {error}
                 </p>
-              ) : (
-                <>
-                  <div className="payment-amount-preview">
-                    <span>{copy.paymentDurationTotal}</span>
-                    <strong>
-                      {selectedOption
-                        ? formatMembershipMoney(
-                            selectedOption.total_price_vnd,
-                            locale,
-                          )
-                        : "—"}
-                    </strong>
-                  </div>
-                  <PaymentPlanSection
-                    selectedOption={selectedOption}
-                    plans={displayPlans}
-                    selectedPlanId={selectedPlanId}
-                    locale={locale}
-                    copy={copy}
-                    disabled={Boolean(purchase)}
-                    onSelect={(planId) => {
-                      clearQuoteForSelection();
-                      setSelectedPlanId(planId);
-                      const plan = displayPlans.find(
-                        (item) => item.id === planId,
-                      );
-                      if (plan) createQuote(plan);
-                    }}
-                  />
-                  {selectedPlanId ? (
-                    <p className="notice error" role="alert">
-                      {error || copy.quoteUnavailable}
-                    </p>
-                  ) : null}
-                  <div className="btn-row payment-actions">
-                    <button
-                      className="btn btn-secondary"
-                      type="button"
-                      onClick={() => setStep(3)}
-                    >
-                      {copy.previous}
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      disabled={!canCreate}
-                      onClick={() => createQuote()}
-                    >
-                      {copy.recreateQuote}
-                    </button>
-                  </div>
-                </>
-              )}
+              ) : null}
+              <div className="btn-row payment-actions">
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  onClick={() => setStep(3)}
+                >
+                  {copy.previous}
+                </button>
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  disabled={
+                    !canCreate ||
+                    !selectedPlan ||
+                    Boolean(loadingMessage) ||
+                    couponBlocksContinue
+                  }
+                  onClick={() => createQuote()}
+                >
+                  {copy.next}
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -1498,7 +2166,7 @@ function CSAPurchaseWizard({
     );
   }
 
-  if (isPaymentQuote(quote) && step === 4) {
+  if (paymentView === "qr" && isPaymentQuote(quote) && step === 4) {
     const paymentPlan: CSAPaymentPlan = {
       id: "quote",
       name: "",
@@ -1515,13 +2183,22 @@ function CSAPurchaseWizard({
     );
     const paymentSnapshotComplete = Boolean(
       paymentPlan &&
-      validPaymentPlan(paymentPlan, selectedOption?.duration_months ?? 0) &&
+      (quote.coupon ||
+        validPaymentPlan(paymentPlan, selectedOption?.duration_months ?? 0)) &&
+      (!quote.coupon ||
+        (selectedOption &&
+          schedule.reduce((total, row) => total + row.cycle_count, 0) ===
+            selectedOption.duration_months &&
+          positiveInteger(
+            quote.payment_summary.contract_total_before_discount ?? "",
+          ) === positiveInteger(selectedOption.total_price_vnd))) &&
       positiveInteger(paymentPlan.total_amount) ===
         positiveInteger(quote.payment_summary.total_amount) &&
       firstPayment &&
       initialAmount !== null &&
       initialAmount === positiveInteger(firstPayment.amount) &&
-      (paymentPlan.payment_type !== "full" ||
+      (quote.coupon ||
+        paymentPlan.payment_type !== "full" ||
         initialAmount ===
           positiveInteger(quote.payment_summary.total_amount)) &&
       positiveInteger(firstPayment.amount) ===
@@ -1539,7 +2216,10 @@ function CSAPurchaseWizard({
     );
     const paymentComplete = Boolean(bankDataComplete && qrUrl && !qrFailed);
     return (
-      <PurchaseChrome restored={restoredFromMemory}>
+      <PurchaseChrome
+        restored={restoredFromMemory}
+        loadingMessage={loadingMessage}
+      >
         <div className="wizard-layout">
           <WizardProgress
             current={4}
@@ -1551,7 +2231,7 @@ function CSAPurchaseWizard({
             aria-labelledby="payment-title"
             aria-busy={confirming}
           >
-            <div className="step">
+            <div className="step payment-qr-state">
               <h2
                 className="step-title step-heading"
                 id="payment-title"
@@ -1609,33 +2289,12 @@ function CSAPurchaseWizard({
                           <dd className="v">
                             <strong>
                               {formatMembershipMoney(
-                                quote.payment_summary.initial_payment_amount,
+                                quote.qr_payload.amount,
                                 locale,
                               )}
                             </strong>
-                            {paymentPlan?.payment_type === "full" ? (
-                              <small>
-                                {copy.entirePackage.replace(
-                                  "{count}",
-                                  String(selectedOption?.duration_months ?? 0),
-                                )}
-                              </small>
-                            ) : null}
                           </dd>
                         </div>
-                        {paymentPlan?.payment_type === "installment" ? (
-                          <>
-                            <div className="bank-row">
-                              <dt className="k">{copy.packageValue}</dt>
-                              <dd className="v">
-                                {formatMembershipMoney(
-                                  quote.payment_summary.total_amount,
-                                  locale,
-                                )}
-                              </dd>
-                            </div>
-                          </>
-                        ) : null}
                         <div className="bank-row">
                           <dt className="k">{copy.bank}</dt>
                           <dd className="v">
@@ -1755,8 +2414,8 @@ function CSAPurchaseWizard({
                   type="button"
                   disabled={confirming}
                   onClick={() => {
-                    clearQuoteForSelection();
-                    setStep(3);
+                    clearQuoteForPayment();
+                    setPaymentView("method");
                   }}
                 >
                   {copy.previous}
@@ -1768,7 +2427,7 @@ function CSAPurchaseWizard({
                     disabled={confirming}
                     onClick={() => void confirmPayment()}
                   >
-                    {confirming ? copy.confirming : copy.confirm}
+                    {copy.confirm}
                   </button>
                 ) : null}
               </div>
@@ -1780,7 +2439,10 @@ function CSAPurchaseWizard({
   }
 
   return (
-    <PurchaseChrome restored={restoredFromMemory}>
+    <PurchaseChrome
+      restored={restoredFromMemory}
+      loadingMessage={loadingMessage}
+    >
       <WizardProgress
         current={step}
         locale={locale}
@@ -1812,11 +2474,6 @@ function CSAPurchaseWizard({
                 </h2>
                 <p>{copy.packageStepDescription}</p>
               </div>
-              {packagesState === "loading" ? (
-                <p className="notice" role="status" aria-live="polite">
-                  {copy.packagesLoading}
-                </p>
-              ) : null}
               {packagesState === "error" ? (
                 <div className="notice error" role="alert">
                   <p>{copy.packagesError}</p>
@@ -1921,7 +2578,12 @@ function CSAPurchaseWizard({
                                   aria-pressed={selectedOptionId === option.id}
                                   disabled={Boolean(purchase)}
                                   onClick={() => {
-                                    clearQuoteForSelection();
+                                    if (
+                                      item.id === selectedPackageId &&
+                                      option.id === selectedOptionId
+                                    )
+                                      return;
+                                    resetQuoteAndCoupon();
                                     setSelectedPackageId(item.id);
                                     setSelectedOptionId(option.id);
                                     const plans = validPaymentPlans(option);
@@ -2015,11 +2677,7 @@ function CSAPurchaseWizard({
                 </h2>
                 <p className="step-desc">{copy.informationStepDescription}</p>
               </header>
-              {!sessionReady ? (
-                <p className="notice" role="status" aria-live="polite">
-                  {copy.loadingAccount}
-                </p>
-              ) : user ? (
+              {user ? (
                 <div className="profile-box">
                   <div className="status-line">
                     <span className="badge ok">✓ {copy.signedInNote}</span>
@@ -2146,9 +2804,7 @@ function CSAPurchaseWizard({
                       )}
                       required
                     >
-                      <option value="">
-                        {wardsLoading ? copy.wardsLoading : copy.selectWard}
-                      </option>
+                      <option value="">{copy.selectWard}</option>
                       {(wardsResourceKey === `${locale}:${guest.province_code}`
                         ? orderedWards
                         : []
@@ -2319,7 +2975,7 @@ function CSAPurchaseWizard({
                   type="submit"
                   disabled={!canCreate}
                 >
-                  {creating ? copy.creating : copy.continue}
+                  {copy.continue}
                 </button>
               </div>
             </section>
@@ -2345,12 +3001,18 @@ function CSAPurchasePageContent({ locale }: { locale: Locale }) {
   >({ status: "checking", user: null });
   const [flowVersion, setFlowVersion] = useState(0);
   const [profileRefreshVersion, setProfileRefreshVersion] = useState(0);
+  const [profileRefreshing, setProfileRefreshing] = useState(false);
   const profileRefreshPendingRef = useRef(profileRefreshPending);
   const profileRefreshInFlight = useRef(false);
   const currentSessionUser = useRef<CoreUser | null>(null);
+  const purchaseRef = useRef(purchase);
   const mounted = useRef(true);
+  const resetCompletedFlowOnEntry = useRef(
+    documentWasReloaded && Boolean(purchase?.confirmed),
+  );
   profileRefreshPendingRef.current = profileRefreshPending;
   currentSessionUser.current = session.user;
+  purchaseRef.current = purchase;
 
   const readCurrentSession = useCallback(async () => {
     const response = await fetch("/api/auth/session", { cache: "no-store" });
@@ -2368,6 +3030,18 @@ function CSAPurchasePageContent({ locale }: { locale: Locale }) {
     },
     [],
   );
+
+  const resetCompletedFlow = useCallback(() => {
+    if (!purchaseRef.current?.confirmed) return;
+    clearPurchase();
+    setFlowVersion((current) => current + 1);
+  }, [clearPurchase]);
+
+  useEffect(() => {
+    if (!resetCompletedFlowOnEntry.current) return;
+    resetCompletedFlowOnEntry.current = false;
+    resetCompletedFlow();
+  }, [resetCompletedFlow]);
 
   useEffect(() => {
     let active = true;
@@ -2387,6 +3061,7 @@ function CSAPurchasePageContent({ locale }: { locale: Locale }) {
     if (!profileRefreshPendingRef.current || profileRefreshInFlight.current)
       return;
     profileRefreshInFlight.current = true;
+    setProfileRefreshing(true);
     const expectedIdentity = currentSessionUser.current?.sub ?? null;
     void readCurrentSession()
       .then((user) => {
@@ -2402,6 +3077,7 @@ function CSAPurchasePageContent({ locale }: { locale: Locale }) {
       })
       .finally(() => {
         profileRefreshInFlight.current = false;
+        if (mounted.current) setProfileRefreshing(false);
         profileRefreshPendingRef.current = false;
         if (mounted.current) completeProfileRefresh();
       });
@@ -2413,14 +3089,18 @@ function CSAPurchasePageContent({ locale }: { locale: Locale }) {
         revalidateProfileAfterAuthAccount();
     };
     window.addEventListener("focus", revalidateProfileAfterAuthAccount);
-    window.addEventListener("pageshow", revalidateProfileAfterAuthAccount);
+    const onPageShow = (event: PageTransitionEvent) => {
+      revalidateProfileAfterAuthAccount();
+      if (event.persisted) resetCompletedFlow();
+    };
+    window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       window.removeEventListener("focus", revalidateProfileAfterAuthAccount);
-      window.removeEventListener("pageshow", revalidateProfileAfterAuthAccount);
+      window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [revalidateProfileAfterAuthAccount]);
+  }, [resetCompletedFlow, revalidateProfileAfterAuthAccount]);
 
   const identity = session.user?.sub ?? null;
   const incompatible =
@@ -2433,26 +3113,34 @@ function CSAPurchasePageContent({ locale }: { locale: Locale }) {
 
   if (session.status !== "ready" || incompatible) {
     return (
-      <PurchaseChrome>
-        <p className="notice" role="status">
-          {session.status === "error" ? copy.genericError : copy.loadingAccount}
-        </p>
+      <PurchaseChrome
+        loadingMessage={session.status === "checking" ? copy.processing : null}
+      >
+        {session.status === "error" ? (
+          <p className="notice error" role="alert">
+            {copy.genericError}
+          </p>
+        ) : null}
       </PurchaseChrome>
     );
   }
 
   return (
-    <CSAPurchaseWizard
-      key={`${locale}:${flowVersion}`}
-      locale={locale}
-      currentUser={session.user}
-      profileRefreshVersion={profileRefreshVersion}
-      onAuthAccount={markProfileRefreshPending}
-      onReset={() => {
-        clearPurchase();
-        setFlowVersion((current) => current + 1);
-      }}
-    />
+    <PurchaseLoadingSurface
+      loadingMessage={profileRefreshing ? copy.processing : null}
+    >
+      <CSAPurchaseWizard
+        key={`${locale}:${flowVersion}`}
+        locale={locale}
+        currentUser={session.user}
+        profileRefreshVersion={profileRefreshVersion}
+        onAuthAccount={markProfileRefreshPending}
+        onReset={() => {
+          clearPurchase();
+          setFlowVersion((current) => current + 1);
+        }}
+      />
+    </PurchaseLoadingSurface>
   );
 }
 

@@ -200,7 +200,13 @@ export type CSAPaymentQuote = {
     initial_payment_amount: string;
     installment_count: number;
     installments: CSAPaymentInstallment[];
+    contract_total_before_discount?: string;
+    payment_plan_total_before_discount?: string;
+    discount_amount?: string;
+    customer_payable_total?: string;
+    initial_payment_before_discount?: string;
   };
+  coupon?: CSAPaymentQuoteCoupon;
   terms: { version: string; locale: "vi" | "en"; hash: string };
   qr_payload: {
     acqId: string;
@@ -211,6 +217,18 @@ export type CSAPaymentQuote = {
     format: string;
     template: string;
   };
+};
+
+export type CSAPaymentQuoteCoupon = {
+  code: string;
+  discount_type: "percent" | "fixed";
+  discount_value: string;
+  discount_amount: string;
+};
+
+export type CSAPaymentQuoteSummary = {
+  payment_summary: CSAPaymentQuote["payment_summary"];
+  coupon: CSAPaymentQuoteCoupon;
 };
 
 export type CSATrackerStatus =

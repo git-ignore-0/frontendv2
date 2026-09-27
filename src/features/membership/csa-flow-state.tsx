@@ -14,6 +14,7 @@ import {
 import type {
   AdministrativeUnit,
   CSAPaymentQuote,
+  CSAPaymentQuoteSummary,
   CSAPurchaseRequestCreated,
   CSATrackerContract,
   CSATrackerResult,
@@ -82,6 +83,12 @@ export type CSAPurchaseFlowMemory = {
   errorKey: CSAPurchaseErrorKey | null;
   purchase: CSAPurchaseRequestCreated | null;
   quote?: CSAPaymentQuote | null;
+  paymentView?: "method" | "qr";
+  quoteTarget?: "method" | "qr";
+  appliedCouponCode?: string | null;
+  couponInput?: string;
+  couponErrorCode?: string | null;
+  couponSummary?: CSAPaymentQuoteSummary | null;
   confirmed: boolean;
   qrFailed: boolean;
   expired: boolean;
@@ -109,6 +116,7 @@ type CSAFlowStateValue = {
     identity: string | null,
     submit: () => Promise<CSAPaymentQuote>,
   ) => void;
+  invalidateQuote: () => void;
   confirmation: PurchaseCreationState;
   confirmTransfer: (
     identity: string | null,
@@ -129,6 +137,7 @@ const detachedState: CSAFlowStateValue = {
   clearPurchase: () => undefined,
   quoteCreation: { status: "idle", error: null },
   createQuote: () => undefined,
+  invalidateQuote: () => undefined,
   confirmation: { status: "idle", error: null },
   confirmTransfer: () => undefined,
   clearTracker: () => undefined,
@@ -155,26 +164,42 @@ export function CSAFlowStateProvider({
     status: "idle",
     error: null,
   });
-  const purchaseGeneration = useRef(0);
+  const quoteGeneration = useRef(0);
+  const confirmationGeneration = useRef(0);
   const [tracker, setTracker] = useState<CSATrackerFlowMemory | null>(null);
   const [profileRefreshPending, setProfileRefreshPending] = useState(false);
   const clearPurchase = useCallback(() => {
-    purchaseGeneration.current += 1;
+    quoteGeneration.current += 1;
+    confirmationGeneration.current += 1;
     quoteInFlight.current = false;
     confirmationInFlight.current = false;
     setQuoteCreation({ status: "idle", error: null });
     setConfirmation({ status: "idle", error: null });
     setPurchase(null);
   }, []);
+  const invalidateQuote = useCallback(() => {
+    quoteGeneration.current += 1;
+    quoteInFlight.current = false;
+    setQuoteCreation({ status: "idle", error: null });
+    setPurchase((current) =>
+      current
+        ? { ...current, quote: null, qrFailed: false, expired: false }
+        : current,
+    );
+  }, []);
   const createQuote = useCallback(
-    (identity: string | null, submit: () => Promise<CSAPaymentQuote>) => {
-      if (quoteInFlight.current) return;
+    (
+      identity: string | null,
+      submit: () => Promise<CSAPaymentQuote>,
+    ) => {
+      if (quoteInFlight.current || confirmationInFlight.current) return;
       quoteInFlight.current = true;
-      const generation = purchaseGeneration.current;
+      const generation = quoteGeneration.current;
       setQuoteCreation({ status: "pending", error: null });
+      setConfirmation({ status: "idle", error: null });
       void submit()
         .then((quote) => {
-          if (generation !== purchaseGeneration.current) return;
+          if (generation !== quoteGeneration.current) return;
           setPurchase((current) =>
             current?.identity === identity
               ? {
@@ -190,7 +215,7 @@ export function CSAFlowStateProvider({
           setQuoteCreation({ status: "success", error: null });
         })
         .catch((error: unknown) => {
-          if (generation !== purchaseGeneration.current) return;
+          if (generation !== quoteGeneration.current) return;
           const safeError =
             error instanceof Error && "code" in error && "status" in error
               ? { code: String(error.code), status: Number(error.status) }
@@ -198,7 +223,7 @@ export function CSAFlowStateProvider({
           setQuoteCreation({ status: "error", error: safeError });
         })
         .finally(() => {
-          if (generation === purchaseGeneration.current)
+          if (generation === quoteGeneration.current)
             quoteInFlight.current = false;
         });
     },
@@ -211,11 +236,11 @@ export function CSAFlowStateProvider({
     ) => {
       if (confirmationInFlight.current) return;
       confirmationInFlight.current = true;
-      const generation = purchaseGeneration.current;
+      const generation = confirmationGeneration.current;
       setConfirmation({ status: "pending", error: null });
       void submit()
         .then((created) => {
-          if (generation !== purchaseGeneration.current) return;
+          if (generation !== confirmationGeneration.current) return;
           setPurchase((current) =>
             current?.identity === identity
               ? {
@@ -230,7 +255,7 @@ export function CSAFlowStateProvider({
           setConfirmation({ status: "success", error: null });
         })
         .catch((error: unknown) => {
-          if (generation !== purchaseGeneration.current) return;
+          if (generation !== confirmationGeneration.current) return;
           const safeError =
             error instanceof Error && "code" in error && "status" in error
               ? { code: String(error.code), status: Number(error.status) }
@@ -238,7 +263,7 @@ export function CSAFlowStateProvider({
           setConfirmation({ status: "error", error: safeError });
         })
         .finally(() => {
-          if (generation === purchaseGeneration.current)
+          if (generation === confirmationGeneration.current)
             confirmationInFlight.current = false;
         });
     },
@@ -263,6 +288,7 @@ export function CSAFlowStateProvider({
       clearPurchase,
       quoteCreation,
       createQuote,
+      invalidateQuote,
       confirmation,
       confirmTransfer,
       clearTracker,
@@ -274,6 +300,7 @@ export function CSAFlowStateProvider({
       clearPurchase,
       clearTracker,
       createQuote,
+      invalidateQuote,
       confirmation,
       confirmTransfer,
       purchase,
