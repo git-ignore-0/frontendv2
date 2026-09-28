@@ -10,7 +10,16 @@ export function TrackerStats({
 }) {
   const items = [
     ["farms", stats?.farms, copy.stats.farms],
-    ["signups", stats?.totalSignups, copy.stats.totalSignups],
+    [
+      "one-month-signups",
+      stats?.totalOneMonthSignups,
+      copy.stats.totalOneMonthSignups,
+    ],
+    [
+      "six-month-signups",
+      stats?.totalSixMonthSignups,
+      copy.stats.totalSixMonthSignups,
+    ],
     ["leaders", stats?.leaders, copy.stats.leaders],
   ] as const;
 

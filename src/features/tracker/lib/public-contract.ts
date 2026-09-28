@@ -33,6 +33,12 @@ export const publicTrackerFarmSchema = z
     image: legacyPublicTrackerImageSchema.nullable(),
     images: publicTrackerImageSchema.array().optional(),
     signup_count: z.number().int().nonnegative(),
+    one_month_signup_count: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullish()
+      .transform((value) => value ?? 0),
     sort_order: z.number().int(),
   })
   .transform((farm) => ({

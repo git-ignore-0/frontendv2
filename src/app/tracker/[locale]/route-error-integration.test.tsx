@@ -17,6 +17,7 @@ const recoveredFarm = {
   image: null,
   images: [],
   signup_count: 14,
+  one_month_signup_count: 4,
   sort_order: 0,
 };
 

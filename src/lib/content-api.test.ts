@@ -45,6 +45,7 @@ function trackerFarmPayload(overrides: Record<string, unknown> = {}) {
       alt: "Green Farm in Da Lat",
     },
     signup_count: 14,
+    one_month_signup_count: 4,
     sort_order: 2,
     ...overrides,
   };
@@ -210,11 +211,31 @@ describe("content API", () => {
             },
           ],
           signup_count: 14,
+          one_month_signup_count: 4,
           sort_order: 2,
         },
       ]);
     },
   );
+
+  it.each([
+    ["missing", undefined],
+    ["null", null],
+  ])("falls back to zero when the one-month count is %s", async (_, value) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: [trackerFarmPayload({ one_month_signup_count: value })],
+        }),
+      }),
+    );
+
+    const [result] = await getTrackerFarms("en");
+
+    expect(result.one_month_signup_count).toBe(0);
+  });
 
   it("parses an ordered tracker gallery with responsive variants", async () => {
     const first = {

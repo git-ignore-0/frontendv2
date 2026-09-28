@@ -20,7 +20,8 @@ describe("tracker dictionary", () => {
     expect(copyPaths(en)).toContain("accessibility.farm");
     expect(copyPaths(en)).toContain("accessibility.progress");
     expect(copyPaths(en)).toContain("milestones.communityLeader.description");
-    expect(copyPaths(en)).toContain("stats.totalSignups");
+    expect(copyPaths(en)).toContain("stats.totalOneMonthSignups");
+    expect(copyPaths(en)).toContain("stats.totalSixMonthSignups");
     expect(copyPaths(en)).toContain("liveNoteTitle");
     expect(copyPaths(en)).toContain("liveNoteBody");
   });
@@ -37,9 +38,22 @@ describe("tracker dictionary", () => {
     );
     expect(en.stats).toEqual({
       farms: "FARMERS IN THE GROUP",
-      totalSignups: "TOTAL 6-MONTH SIGNUPS",
+      totalOneMonthSignups: "TOTAL 1-MONTH SIGNUPS",
+      totalSixMonthSignups: "TOTAL 6-MONTH SIGNUPS",
       leaders: "COMMUNITY LEADERS REACHED",
     });
+    expect(en.sixMonthSignupLabel).toBe("6-month signups");
+    expect(en.oneMonthSignupLabel).toBe("one-month signups");
+    expect(vi.stats).toEqual({
+      farms: "NÔNG TRẠI TRONG NHÓM",
+      totalOneMonthSignups: "TỔNG LƯỢT ĐĂNG KÝ GÓI 1 THÁNG",
+      totalSixMonthSignups: "TỔNG LƯỢT ĐĂNG KÝ GÓI 6 THÁNG",
+      leaders: "ĐÃ ĐẠT MỐC DẪN DẮT CỘNG ĐỒNG",
+    });
+    expect(vi.sixMonthSignupLabel).toBe("lượt đăng ký gói 6 tháng");
+    expect(vi.oneMonthSignupLabel).toBe("lượt đăng ký gói 1 tháng");
+    expect(en.nextMilestoneMany).toContain("more 6-month signups gets");
+    expect(vi.nextMilestoneMany).toContain("lượt đăng ký gói 6 tháng sẽ đưa");
   });
 
   it("uses production-safe localized live-data copy", () => {

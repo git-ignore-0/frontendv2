@@ -14,12 +14,14 @@ import {
 
 export type TrackerStatsModel = {
   farms: number;
-  totalSignups: number;
+  totalOneMonthSignups: number;
+  totalSixMonthSignups: number;
   leaders: number;
 };
 
 export type TrackerFarmViewModel = PublicTrackerFarm & {
   count: number;
+  oneMonthSignupCount: number;
   milestoneKey: TrackerMilestoneKey;
   nextMilestoneKey: TrackerMilestoneKey | null;
   remainingSignups: number;
@@ -36,7 +38,11 @@ export function calculateTrackerStats(
   const models = farms.map(createTrackerFarmViewModel);
   return {
     farms: models.length,
-    totalSignups: models.reduce((total, farm) => total + farm.count, 0),
+    totalOneMonthSignups: models.reduce(
+      (total, farm) => total + farm.oneMonthSignupCount,
+      0,
+    ),
+    totalSixMonthSignups: models.reduce((total, farm) => total + farm.count, 0),
     leaders: models.filter((farm) => farm.isLeader).length,
   };
 }
@@ -45,10 +51,14 @@ export function createTrackerFarmViewModel(
   farm: PublicTrackerFarm,
 ): TrackerFarmViewModel {
   const count = normalizeTrackerSignupCount(farm.signup_count);
+  const oneMonthSignupCount = normalizeTrackerSignupCount(
+    farm.one_month_signup_count,
+  );
   const milestoneKey = getTrackerMilestoneKey(count);
   return {
     ...farm,
     count,
+    oneMonthSignupCount,
     milestoneKey,
     nextMilestoneKey: getNextTrackerMilestone(count),
     remainingSignups: getRemainingTrackerSignups(count),

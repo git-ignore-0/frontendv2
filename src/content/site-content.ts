@@ -527,7 +527,7 @@ const en = {
       "Every 6-month CSA signup grows a farmer's story forward. Watch each one move from getting started, to providing for their family, to becoming a leader others can learn from.",
     liveNoteTitle: "Live CSA signup data.",
     liveNoteBody:
-      "This tracker shows the current signup totals recorded for participating farms and updates as new totals are added.",
+      "This tracker shows the current 1-month and 6-month signup totals recorded for participating farms and updates as new totals are added.",
     milestones: {
       seedPlanted: {
         label: "Seed planted",
@@ -551,11 +551,12 @@ const en = {
     },
     stats: {
       farms: "FARMERS IN THE GROUP",
-      totalSignups: "TOTAL 6-MONTH SIGNUPS",
+      totalOneMonthSignups: "TOTAL 1-MONTH SIGNUPS",
+      totalSixMonthSignups: "TOTAL 6-MONTH SIGNUPS",
       leaders: "COMMUNITY LEADERS REACHED",
     },
     legendLabel: "CSA growth milestones",
-    thresholdLabel: "{count} signups",
+    thresholdLabel: "{count} 6-month signups",
     fieldSectionTitle: "Farms growing with their communities",
     fieldSectionSubtitle:
       "Every signup helps a farm build a steadier future, one household at a time.",
@@ -566,20 +567,22 @@ const en = {
     error: "We could not load the farm tracker. Please try again.",
     retry: "Try again",
     farmGridTitle: "Farm growth details",
-    signupGoal: "/ {count} signups",
+    signupGoal: "/ {count}",
+    sixMonthSignupLabel: "6-month signups",
+    oneMonthSignupLabel: "one-month signups",
     nextMilestoneOne:
-      "{remaining} more signup gets {name} to “{milestone}” — {description}",
+      "{remaining} more 6-month signup gets {name} to “{milestone}” — {description}",
     nextMilestoneMany:
-      "{remaining} more signups gets {name} to “{milestone}” — {description}",
-    nextMilestoneCountOne: "{remaining} more signup",
-    nextMilestoneCountMany: "{remaining} more signups",
+      "{remaining} more 6-month signups gets {name} to “{milestone}” — {description}",
+    nextMilestoneCountOne: "{remaining} more 6-month signup",
+    nextMilestoneCountMany: "{remaining} more 6-month signups",
     leaderMessage:
-      "{name} has reached {milestone} — the highest milestone! Every extra signup keeps strengthening their work.",
+      "{name} has reached {milestone} — the highest milestone! Every extra 6-month signup keeps strengthening their work.",
     leaderBadge: "Community Leader reached",
-    viewFarmer: "View farmer",
-    farmerProfile: "Farmer profile",
-    aboutFarmer: "About this farmer",
-    closeFarmerDetails: "Close farmer details",
+    viewFarmer: "View farm details",
+    farmerProfile: "Farm details",
+    aboutFarmer: "About this farm",
+    closeFarmerDetails: "Close farm details",
     farmPhotos: "Farm photos",
     photoCountOne: "{count} photo",
     photoCountMany: "{count} photos",
@@ -593,7 +596,7 @@ const en = {
       field: "CSA farm growth field",
       farm: "Growth details for {name}",
       progress:
-        "{name}: {count} total signups from the beginning until now, {percent}% toward Community Leader",
+        "{name}: {count} total 6-month signups from the beginning until now, {percent}% toward Community Leader",
     },
   },
   home: {
@@ -1380,7 +1383,7 @@ const vi: SiteContent = {
       "Mỗi lượt đăng ký CSA 6 tháng giúp câu chuyện của người nông dân tiến về phía trước. Hãy dõi theo từng nông trại từ những bước khởi đầu, đến khi chăm lo cho gia đình, rồi trở thành người dẫn dắt để cộng đồng học hỏi.",
     liveNoteTitle: "Dữ liệu đăng ký CSA đang được cập nhật.",
     liveNoteBody:
-      "Bảng theo dõi hiển thị tổng lượt đăng ký hiện tại đã được ghi nhận cho các nông trại tham gia và cập nhật khi có số liệu mới.",
+      "Bảng theo dõi hiển thị tổng lượt đăng ký gói 1 tháng và 6 tháng hiện tại đã được ghi nhận cho các nông trại tham gia và cập nhật khi có số liệu mới.",
     milestones: {
       seedPlanted: {
         label: "Hạt giống đã gieo",
@@ -1405,11 +1408,12 @@ const vi: SiteContent = {
     },
     stats: {
       farms: "NÔNG TRẠI TRONG NHÓM",
-      totalSignups: "TỔNG LƯỢT ĐĂNG KÝ CSA 6 THÁNG",
+      totalOneMonthSignups: "TỔNG LƯỢT ĐĂNG KÝ GÓI 1 THÁNG",
+      totalSixMonthSignups: "TỔNG LƯỢT ĐĂNG KÝ GÓI 6 THÁNG",
       leaders: "ĐÃ ĐẠT MỐC DẪN DẮT CỘNG ĐỒNG",
     },
     legendLabel: "Các cột mốc phát triển CSA",
-    thresholdLabel: "{count} lượt đăng ký",
+    thresholdLabel: "{count} lượt đăng ký gói 6 tháng",
     fieldSectionTitle: "Những nông trại lớn lên cùng cộng đồng",
     fieldSectionSubtitle:
       "Mỗi lượt đăng ký giúp nông trại xây dựng một tương lai ổn định hơn, từng gia đình một.",
@@ -1420,19 +1424,21 @@ const vi: SiteContent = {
     error: "Không thể tải hành trình nông trại. Vui lòng thử lại.",
     retry: "Thử lại",
     farmGridTitle: "Chi tiết phát triển của các nông trại",
-    signupGoal: "/ {count} lượt đăng ký",
+    signupGoal: "/ {count}",
+    sixMonthSignupLabel: "lượt đăng ký gói 6 tháng",
+    oneMonthSignupLabel: "lượt đăng ký gói 1 tháng",
     nextMilestoneOne:
-      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}” — {description}",
+      "Thêm {remaining} lượt đăng ký gói 6 tháng sẽ đưa {name} đến cột mốc “{milestone}” — {description}",
     nextMilestoneMany:
-      "Thêm {remaining} lượt đăng ký sẽ đưa {name} đến cột mốc “{milestone}” — {description}",
-    nextMilestoneCountOne: "{remaining} lượt đăng ký",
-    nextMilestoneCountMany: "{remaining} lượt đăng ký",
+      "Thêm {remaining} lượt đăng ký gói 6 tháng sẽ đưa {name} đến cột mốc “{milestone}” — {description}",
+    nextMilestoneCountOne: "{remaining} lượt đăng ký gói 6 tháng",
+    nextMilestoneCountMany: "{remaining} lượt đăng ký gói 6 tháng",
     leaderMessage:
-      "{name} đã đạt cột mốc cao nhất {milestone} — một người dẫn dắt cộng đồng! Mỗi lượt đăng ký tiếp theo tiếp tục củng cố công việc của nông trại.",
+      "{name} đã đạt cột mốc cao nhất {milestone} — một người dẫn dắt cộng đồng! Mỗi lượt đăng ký gói 6 tháng tiếp theo tiếp tục củng cố công việc của nông trại.",
     leaderBadge: "Đã đạt mốc Dẫn dắt cộng đồng",
-    viewFarmer: "Xem người nông dân",
-    farmerProfile: "Hồ sơ nông trại",
-    aboutFarmer: "Giới thiệu về nông trại này",
+    viewFarmer: "Xem chi tiết nông trại",
+    farmerProfile: "Thông tin nông trại",
+    aboutFarmer: "Giới thiệu nông trại",
     closeFarmerDetails: "Đóng thông tin nông trại",
     farmPhotos: "Ảnh nông trại",
     photoCountOne: "{count} ảnh",
@@ -1447,7 +1453,7 @@ const vi: SiteContent = {
       field: "Khu vực theo dõi sự phát triển của các nông trại CSA",
       farm: "Thông tin phát triển của {name}",
       progress:
-        "{name}: {count} tổng lượt đăng ký từ khi bắt đầu đến nay, đạt {percent}% chặng đường đến cột mốc Dẫn dắt cộng đồng",
+        "{name}: {count} tổng lượt đăng ký gói 6 tháng từ khi bắt đầu đến nay, đạt {percent}% chặng đường đến cột mốc Dẫn dắt cộng đồng",
     },
   },
   home: {

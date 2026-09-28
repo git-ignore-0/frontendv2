@@ -61,6 +61,45 @@ describe("tracker responsive style contract", () => {
     );
   });
 
+  it("lays out four signup stats without horizontal overflow", () => {
+    expect(declarationBlock(".tracker-standalone .tracker-stats")).toContain(
+      "grid-template-columns: repeat(4, minmax(0, 1fr))",
+    );
+    expect(declarationBlock(".tracker-standalone .tracker-stat")).toContain(
+      "min-width: 0",
+    );
+    expect(declarationBlock(".tracker-standalone .tracker-stat dt")).toContain(
+      "overflow-wrap: anywhere",
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 900px\)[\s\S]*?\.tracker-standalone \.tracker-stats\s*\{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 680px\)[\s\S]*?\.tracker-standalone \.tracker-stats\s*\{\s*grid-template-columns: 1fr/,
+    );
+  });
+
+  it("keeps both signup counts in a responsive two-column layout", () => {
+    const count = declarationBlock(".tracker-standalone .tracker-count");
+    const label = declarationBlock(".tracker-standalone .tracker-count-label");
+    const labelPart = declarationBlock(
+      ".tracker-standalone .tracker-count-label-part",
+    );
+    expect(count).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
+    expect(count).toContain("gap: 16px");
+    expect(css).toMatch(
+      /\.tracker-standalone \.tracker-count-secondary\s*\{\s*text-align: right;/,
+    );
+    expect(label).toContain("white-space: nowrap");
+    expect(labelPart).toContain("display: inline");
+    expect(css).toMatch(
+      /@container tracker-farm-card \(max-width: 380px\)[\s\S]*?\.tracker-standalone \.tracker-count-label\s*\{[\s\S]*?white-space: normal;[\s\S]*?\.tracker-standalone \.tracker-count-label-part\s*\{[\s\S]*?display: block;/,
+    );
+    expect(css).toMatch(
+      /@media \(max-width: 380px\)[\s\S]*?\.tracker-standalone \.tracker-count-value span,[\s\S]*?\.tracker-standalone \.tracker-count-label\s*\{\s*font-size: 12px/,
+    );
+  });
+
   it("truncates card names to one line while preserving wrapping locations", () => {
     const cardName = declarationBlock(
       ".tracker-standalone .tracker-farm-heading h3",

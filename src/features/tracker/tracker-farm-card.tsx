@@ -14,6 +14,23 @@ function replaceCopy(
   );
 }
 
+function trackerCountLabelParts(label: string): [string, string] {
+  const firstDigit = label.search(/\d/);
+  const splitAt = firstDigit > 0 ? firstDigit : label.indexOf(" ");
+  if (splitAt <= 0) return [label, ""];
+  return [label.slice(0, splitAt).trim(), label.slice(splitAt).trim()];
+}
+
+function TrackerCountLabel({ label }: { label: string }) {
+  const [first, second] = trackerCountLabelParts(label);
+  return (
+    <span className="tracker-count-label">
+      <span className="tracker-count-label-part">{first}</span>{" "}
+      <span className="tracker-count-label-part">{second}</span>
+    </span>
+  );
+}
+
 function nextMilestoneCopy(copy: TrackerCopy, farm: TrackerFarmViewModel) {
   if (!farm.nextMilestoneKey) {
     const message = replaceCopy(copy.leaderMessage, {
@@ -91,12 +108,23 @@ export function TrackerFarmCard({
         <TrackerMilestoneIcon size={16} type={farm.icon} />
         <span>{milestone.label}</span>
       </div>
-      <p className="tracker-count">
-        <strong>{farm.count}</strong>
-        <span>
-          {copy.signupGoal.replace("{count}", String(TRACKER_SIGNUP_GOAL))}
-        </span>
-      </p>
+      <div className="tracker-count">
+        <div className="tracker-count-primary">
+          <p className="tracker-count-value">
+            <strong>{farm.count}</strong>
+            <span>
+              {copy.signupGoal.replace("{count}", String(TRACKER_SIGNUP_GOAL))}
+            </span>
+          </p>
+          <TrackerCountLabel label={copy.sixMonthSignupLabel} />
+        </div>
+        <div className="tracker-count-secondary">
+          <p className="tracker-count-value">
+            <strong>{farm.oneMonthSignupCount}</strong>
+          </p>
+          <TrackerCountLabel label={copy.oneMonthSignupLabel} />
+        </div>
+      </div>
       <div className="tracker-progress-wrap">
         <div
           aria-label={progressLabel}

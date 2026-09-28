@@ -26,6 +26,7 @@ function farm(
     image,
     images: overrides.images ?? (image ? [image] : []),
     signup_count: signupCount,
+    one_month_signup_count: 0,
     sort_order: signupCount,
     ...overrides,
   };
@@ -90,17 +91,25 @@ describe("TrackerPage", () => {
     expect(within(legend).getByText("30")).toBeVisible();
   });
 
-  it("calculates farm, cumulative signup, and leader stats", () => {
+  it("calculates separate one-month and six-month totals plus leader stats", () => {
     render(
       <TrackerPage
         copy={getSiteContent("en").tracker}
-        farms={[farm(9), farm(10), farm(29), farm(30)]}
+        farms={[
+          farm(9, { one_month_signup_count: 1 }),
+          farm(10, { one_month_signup_count: 2 }),
+          farm(29, { one_month_signup_count: 3 }),
+          farm(30, { one_month_signup_count: 4 }),
+        ]}
       />,
     );
 
     expect(
       screen.getByText("FARMERS IN THE GROUP").previousSibling,
     ).toHaveTextContent("4");
+    expect(
+      screen.getByText("TOTAL 1-MONTH SIGNUPS").previousSibling,
+    ).toHaveTextContent("10");
     expect(
       screen.getByText("TOTAL 6-MONTH SIGNUPS").previousSibling,
     ).toHaveTextContent("78");
@@ -190,7 +199,7 @@ describe("TrackerPage", () => {
     );
 
     const progress = screen.getByRole("progressbar", {
-      name: /Farm 14: 14 total signups/i,
+      name: /Farm 14: 14 total 6-month signups/i,
     });
     expect(progress).toHaveAttribute("aria-valuemin", "0");
     expect(progress).toHaveAttribute("aria-valuemax", "100");
@@ -205,9 +214,31 @@ describe("TrackerPage", () => {
     expect(detailTrigger.tagName).toBe("BUTTON");
     expect(detailTrigger).not.toContainElement(progress);
     expect(card).toContainElement(progress);
-    expect(within(card).getByText("/ 30 signups")).toBeVisible();
+    expect(within(card).getByText("/ 30")).toBeVisible();
+    const countLabels = card.querySelectorAll<HTMLElement>(
+      ".tracker-count-label",
+    );
+    expect(countLabels).toHaveLength(2);
+    expect(countLabels[0]).toHaveTextContent("6-month signups");
+    expect(
+      countLabels[0].querySelectorAll(".tracker-count-label-part"),
+    ).toHaveLength(2);
+    expect(
+      card.querySelector(
+        ".tracker-count-secondary .tracker-count-value strong",
+      ),
+    ).toHaveTextContent("0");
+    expect(countLabels[1]).toHaveTextContent("one-month signups");
+    expect(
+      countLabels[1].querySelectorAll(".tracker-count-label-part"),
+    ).toHaveLength(2);
+    expect(
+      within(card).queryByText("0 · one-month signups"),
+    ).not.toBeInTheDocument();
+    const ticks = card.querySelector<HTMLElement>(".tracker-progress-ticks");
+    if (!ticks) throw new Error("Expected tracker progress ticks");
     for (const tick of ["0", "10", "20", "30"]) {
-      expect(within(card).getByText(tick)).toBeInTheDocument();
+      expect(within(ticks).getByText(tick)).toBeInTheDocument();
     }
   });
 
@@ -215,7 +246,7 @@ describe("TrackerPage", () => {
     const { rerender } = render(
       <TrackerPage copy={getSiteContent("en").tracker} farms={[farm(29)]} />,
     );
-    const nextSignup = screen.getByText("1 more signup");
+    const nextSignup = screen.getByText("1 more 6-month signup");
     expect(nextSignup).toBeVisible();
     expect(nextSignup.tagName).toBe("STRONG");
     expect(screen.getByText(/gets Farm 29 to/i)).toBeVisible();
@@ -233,10 +264,66 @@ describe("TrackerPage", () => {
     expect(leaderMessage).toBeVisible();
   });
 
+  it("shows both localized counts without letting the one-month count affect progress or milestones", () => {
+    const copy = getSiteContent("vi").tracker;
+    const { rerender } = render(
+      <TrackerPage
+        copy={copy}
+        farms={[farm(14, { one_month_signup_count: 4 })]}
+      />,
+    );
+
+    const progress = screen.getByRole("progressbar");
+    const card = progress.closest<HTMLElement>(".tracker-farm-card");
+    if (!card) throw new Error("Expected tracker farm card container");
+    expect(progress).toHaveAttribute("aria-valuenow", "47");
+    expect(within(card).getByText("Bắt đầu phát triển")).toBeVisible();
+    expect(
+      card.querySelector(
+        ".tracker-count-secondary .tracker-count-value strong",
+      ),
+    ).toHaveTextContent("4");
+    expect(within(card).getByText("/ 30")).toBeVisible();
+    const localizedLabels = card.querySelectorAll<HTMLElement>(
+      ".tracker-count-label",
+    );
+    expect(localizedLabels[0]).toHaveTextContent("lượt đăng ký gói 6 tháng");
+    expect(localizedLabels[1]).toHaveTextContent("lượt đăng ký gói 1 tháng");
+    expect(
+      within(card).queryByText("0 · one-month signups"),
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <TrackerPage
+        copy={copy}
+        farms={[farm(14, { one_month_signup_count: 999 })]}
+      />,
+    );
+
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "47",
+    );
+    expect(
+      within(
+        screen.getByRole("progressbar").closest(".tracker-farm-card")!,
+      ).getByText("Bắt đầu phát triển"),
+    ).toBeVisible();
+    expect(screen.queryByLabelText("Đã đạt mốc Dẫn dắt cộng đồng")).toBeNull();
+    expect(
+      document.querySelector(
+        ".tracker-count-secondary .tracker-count-value strong",
+      ),
+    ).toHaveTextContent("999");
+    expect(document.querySelector(".tracker-impact-note")).toHaveTextContent(
+      /lượt đăng ký gói 6 tháng sẽ đưa/,
+    );
+  });
+
   it("renders zero stats and no farm grid in the empty state", () => {
     render(<TrackerPage copy={getSiteContent("en").tracker} farms={[]} />);
 
-    expect(screen.getAllByText("0")).toHaveLength(3);
+    expect(screen.getAllByText("0")).toHaveLength(4);
     expect(screen.getByText("No farms to show yet")).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /Growth details for Farm/i }),
@@ -728,10 +815,8 @@ describe("TrackerPage", () => {
         name: "Thông tin phát triển của Nông trại Xanh",
       }),
     ).toBeVisible();
-    expect(within(dialog).getByText("Hồ sơ nông trại")).toBeVisible();
-    expect(
-      within(dialog).getByText("Giới thiệu về nông trại này"),
-    ).toBeVisible();
+    expect(within(dialog).getByText("Thông tin nông trại")).toBeVisible();
+    expect(within(dialog).getByText("Giới thiệu nông trại")).toBeVisible();
     expect(within(dialog).getByText("Mô tả ngắn về nông trại.")).toBeVisible();
   });
 
@@ -911,7 +996,7 @@ describe("TrackerPage", () => {
       ).not.toBeInTheDocument(),
     );
     expect(
-      screen.getByRole("button", { name: "Close farmer details" }),
+      screen.getByRole("button", { name: "Close farm details" }),
     ).toHaveFocus();
     expect(screen.getByRole("dialog", { name: "Farm 14" })).toBeVisible();
   });

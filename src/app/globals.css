@@ -9112,7 +9112,7 @@ tbody th {
 }
 .tracker-standalone .tracker-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(10px, 1.5vw, 16px);
   margin: clamp(22px, 3vw, 32px) 0 8px;
 }
@@ -9147,6 +9147,7 @@ tbody th {
   font-weight: 600;
   line-height: normal;
   letter-spacing: 0.2px;
+  overflow-wrap: anywhere;
 }
 .tracker-standalone .tracker-field-section {
   min-width: 0;
@@ -9269,6 +9270,7 @@ tbody th {
   min-width: 0;
 }
 .tracker-standalone .tracker-farm-card {
+  container: tracker-farm-card / inline-size;
   position: relative;
   display: flex;
   width: 100%;
@@ -9387,25 +9389,64 @@ tbody th {
   white-space: normal;
 }
 .tracker-standalone .tracker-count {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+  margin: 0 0 10px;
+}
+.tracker-standalone .tracker-count-primary,
+.tracker-standalone .tracker-count-secondary {
+  min-width: 0;
+}
+.tracker-standalone .tracker-count-secondary {
+  text-align: right;
+}
+.tracker-standalone .tracker-count-value {
   display: flex;
   min-width: 0;
   align-items: baseline;
   gap: 6px;
-  margin: 0 0 10px;
+  margin: 0;
 }
 .tracker-standalone .tracker-count strong {
   color: var(--tracker-dark);
   font-size: 30px;
   font-weight: 800;
   line-height: normal;
+  white-space: nowrap;
 }
-.tracker-standalone .tracker-count span {
+.tracker-standalone .tracker-count-value span {
   min-width: 0;
   color: var(--tracker-muted);
   font-size: 13px;
   font-weight: 600;
   line-height: normal;
+  white-space: nowrap;
   overflow-wrap: anywhere;
+}
+.tracker-standalone .tracker-count-secondary .tracker-count-value {
+  justify-content: flex-end;
+}
+.tracker-standalone .tracker-count-label {
+  display: block;
+  color: var(--tracker-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.tracker-standalone .tracker-count-label-part {
+  display: inline;
+}
+@container tracker-farm-card (max-width: 380px) {
+  .tracker-standalone .tracker-count-label {
+    white-space: normal;
+  }
+  .tracker-standalone .tracker-count-label-part {
+    display: block;
+    overflow-wrap: anywhere;
+  }
 }
 .tracker-standalone .tracker-progress-wrap {
   position: relative;
@@ -10143,6 +10184,9 @@ body.tracker-dialog-open:has(.tracker-standalone) {
   .tracker-standalone .tracker-shell {
     padding-top: 28px;
   }
+  .tracker-standalone .tracker-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .tracker-standalone .tracker-legend li {
     padding-right: 13px;
   }
@@ -10554,7 +10598,8 @@ body.tracker-dialog-open:has(.tracker-standalone) {
   .tracker-standalone .tracker-farm-card {
     padding: 15px;
   }
-  .tracker-standalone .tracker-count span {
+  .tracker-standalone .tracker-count-value span,
+  .tracker-standalone .tracker-count-label {
     font-size: 12px;
   }
 }
