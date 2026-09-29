@@ -45,7 +45,7 @@ export function TrackerPage({
   };
 
   return (
-    <main className="tracker-page">
+    <div className="tracker-page">
       <div className="tracker-shell">
         <TrackerHeader copy={copy} />
         <MilestoneLegend copy={copy} />
@@ -74,6 +74,6 @@ export function TrackerPage({
         onDismiss={() => setSelectedFarm(null)}
         opener={dialogOpener}
       />
-    </main>
+    </div>
   );
 }

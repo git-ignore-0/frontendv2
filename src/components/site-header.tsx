@@ -323,6 +323,7 @@ export function SiteHeader({
     ["/about", t.nav.about],
     ["/workshops", t.nav.workshops],
     ["/csa", t.nav.csa],
+    ["/tracker", t.nav.tracker],
   ] as const;
   const linkHref = (path: (typeof links)[number][0]) =>
     localizedPath(locale, path);

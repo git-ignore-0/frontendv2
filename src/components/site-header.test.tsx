@@ -137,6 +137,57 @@ describe("site header navigation", () => {
     ).not.toHaveAttribute("aria-current");
   });
 
+  it.each([
+    ["en", "/tracker/en", "Farm Tracker", "/tracker/vi"],
+    ["vi", "/tracker/vi", "Theo dõi nông trại", "/tracker/en"],
+  ] as const)(
+    "keeps Tracker active and preserves its route when switching from %s",
+    (locale, route, label, alternateRoute) => {
+      navigation.pathname = route;
+      const { container } = renderHeader(locale);
+
+      const desktop = screen.getByRole("navigation", {
+        name: getSiteContent(locale).common.primaryNavigation,
+      });
+      expect(
+        within(desktop).getByRole("link", { name: label }),
+      ).toHaveAttribute("aria-current", "page");
+      expect(container.querySelector("a.language")).toHaveAttribute(
+        "href",
+        alternateRoute,
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: getSiteContent(locale).common.menu,
+        }),
+      );
+      const mobile = within(
+        screen.getByRole("dialog", {
+          name: getSiteContent(locale).common.menu,
+        }),
+      ).getByRole("navigation", {
+        name: getSiteContent(locale).common.mobileNavigation,
+      });
+      expect(within(mobile).getByRole("link", { name: label })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+    },
+  );
+
+  it("does not mark Tracker active for unrelated routes", () => {
+    navigation.pathname = "/tracker-other/en";
+    renderHeader();
+
+    const desktop = screen.getByRole("navigation", {
+      name: "Primary navigation",
+    });
+    expect(
+      within(desktop).getByRole("link", { name: "Farm Tracker" }),
+    ).not.toHaveAttribute("aria-current");
+  });
+
   it("omits Plants and Animals from the desktop primary navigation", () => {
     renderHeader();
 
@@ -161,6 +212,9 @@ describe("site header navigation", () => {
     expect(
       primaryNavigation.querySelector('a[href="/workshops/en"]'),
     ).toHaveTextContent("Workshops");
+    expect(
+      primaryNavigation.querySelector('a[href="/tracker/en"]'),
+    ).toHaveTextContent("Farm Tracker");
     expect(
       primaryNavigation.querySelector('a[href="/csa/en"]'),
     ).toHaveTextContent("CSA");
@@ -217,6 +271,9 @@ describe("site header navigation", () => {
       mobileNavigation.querySelector('a[href="/workshops/en"]'),
     ).toHaveTextContent("Workshops");
     expect(
+      mobileNavigation.querySelector('a[href="/tracker/en"]'),
+    ).toHaveTextContent("Farm Tracker");
+    expect(
       mobileNavigation.querySelector('a[href="/csa/en"]'),
     ).toHaveTextContent("CSA");
     expect(
@@ -251,6 +308,9 @@ describe("site header navigation", () => {
     expect(
       primaryNavigation.querySelector('a[href="/store/vi"]'),
     ).toHaveTextContent("Cửa hàng");
+    expect(
+      primaryNavigation.querySelector('a[href="/tracker/vi"]'),
+    ).toHaveTextContent("Theo dõi nông trại");
 
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
     const mobileNavigation = within(
@@ -259,6 +319,9 @@ describe("site header navigation", () => {
     expect(
       mobileNavigation.querySelector('a[href="/store/vi"]'),
     ).toHaveTextContent("Cửa hàng");
+    expect(
+      mobileNavigation.querySelector('a[href="/tracker/vi"]'),
+    ).toHaveTextContent("Theo dõi nông trại");
   });
 });
 

@@ -71,6 +71,33 @@ afterEach(() => {
 });
 
 describe("TrackerPage", () => {
+  it("renders its complete content in a non-main tracker wrapper", () => {
+    const copy = getSiteContent("en").tracker;
+    const { container } = render(
+      <main id="main">
+        <TrackerPage copy={copy} farms={[farm(14)]} />
+      </main>,
+    );
+
+    const trackerPage = container.querySelector(".tracker-page");
+    expect(trackerPage?.tagName).toBe("DIV");
+    expect(container.querySelectorAll("main")).toHaveLength(1);
+    expect(
+      within(trackerPage as HTMLElement).getByRole("heading", {
+        level: 1,
+        name: "From Seed to Harvest — CSA Growth Tracker",
+      }),
+    ).toBeVisible();
+    const farmGrid = trackerPage?.querySelector(".tracker-farm-grid");
+    expect(farmGrid).not.toBeNull();
+    expect(
+      within(farmGrid as HTMLElement).getByRole("heading", {
+        level: 3,
+        name: "Farm 14",
+      }),
+    ).toBeVisible();
+  });
+
   it("renders the reference header hierarchy and milestone legend", () => {
     const copy = getSiteContent("en").tracker;
     render(<TrackerPage copy={copy} farms={[farm(14)]} />);

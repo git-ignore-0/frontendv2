@@ -27,11 +27,18 @@ describe("tracker responsive style contract", () => {
     expect(declarationBlock("table")).toContain("min-width: 42rem");
   });
 
-  it("uses a standalone route boundary without the website shell", () => {
+  it("uses the shared website shell without a standalone page background", () => {
     expect(layout).toContain('className="tracker-standalone"');
-    expect(layout).not.toContain("LocaleShell");
-    expect(layout).not.toContain("site-header");
-    expect(layout).not.toContain("footer");
+    expect(layout).toContain("LocaleShell");
+    expect(declarationBlock(".tracker-standalone")).not.toContain(
+      "min-height: 100vh",
+    );
+    expect(declarationBlock(".tracker-standalone")).not.toContain(
+      "background:",
+    );
+    expect(
+      declarationBlock(".tracker-standalone .tracker-page"),
+    ).toBeUndefined();
   });
 
   it("contains horizontal overflow inside the field strip", () => {
