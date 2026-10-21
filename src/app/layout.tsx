@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import localFont from "next/font/local";
+import "@fontsource-variable/inter/wght.css";
 import { siteConfig } from "@/config/site";
 import { CSAFlowStateProvider } from "@/features/membership/csa-flow-state";
 import { defaultLocale, isLocale } from "@/lib/i18n";

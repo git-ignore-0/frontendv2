@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Arrow } from "@/components/icons";
+import { Icon } from "@/components/ui/icon";
 import { siteConfig } from "@/config/site";
 import type { CommonDictionary } from "@/content/site-content";
 import { useHeaderAccountBalance } from "@/features/account/use-header-account-balance";
@@ -210,10 +211,17 @@ function HeaderAccountMenu({
   return (
     <div className="desktop-account-menu" ref={container}>
       <button
+        aria-label={t.nav.account}
         aria-controls={menuId}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="header-account-trigger"
+        className={[
+          "icon-btn",
+          "account-button",
+          pathname.startsWith("/account/") && "is-active",
+        ]
+          .filter(Boolean)
+          .join(" ")}
         onClick={toggle}
         onKeyDown={(event) => {
           if (event.key !== "Enter" && event.key !== " ") return;
@@ -223,10 +231,10 @@ function HeaderAccountMenu({
           void loadMembershipDestination();
         }}
         ref={trigger}
+        title={t.nav.account}
         type="button"
       >
-        {t.nav.account}
-        <AccountMenuChevron />
+        <Icon name="user" size={18} />
       </button>
 
       {open ? (
@@ -437,6 +445,20 @@ export function SiteHeader({
           )}
         </nav>
         <div className="header-tools">
+          {alternateLocales.map((targetLocale) => (
+            <Link
+              key={targetLocale}
+              href={`${replacePathLocale(pathname, targetLocale)}${localeSearch}`}
+              className="header-text-btn locale-button"
+              hrefLang={targetLocale}
+              lang={targetLocale}
+              aria-label={`${t.language}: ${localeConfig[targetLocale].label}`}
+              scroll={!preserveCSAScroll}
+            >
+              {localeConfig[locale].shortLabel} /{` `}
+              {localeConfig[targetLocale].shortLabel}
+            </Link>
+          ))}
           <HeaderAccountMenu
             balanceLabel={balanceLabel}
             hasCurrentMembership={hasCurrentMembership}
@@ -449,25 +471,6 @@ export function SiteHeader({
             t={t}
             user={user}
           />
-          {alternateLocales.map((targetLocale) => (
-            <Link
-              key={targetLocale}
-              href={`${replacePathLocale(pathname, targetLocale)}${localeSearch}`}
-              className="language"
-              hrefLang={targetLocale}
-              lang={targetLocale}
-              aria-label={`${t.language}: ${localeConfig[targetLocale].label}`}
-              scroll={!preserveCSAScroll}
-            >
-              <span aria-hidden="true" className="language-icon">
-                {localeConfig[targetLocale].icon}
-              </span>
-              <span aria-hidden="true" className="language-flag">
-                {localeConfig[targetLocale].flag}
-              </span>
-              {localeConfig[targetLocale].shortLabel}
-            </Link>
-          ))}
           <button
             ref={mobileMenuTrigger}
             aria-label={t.menu}

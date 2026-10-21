@@ -152,7 +152,7 @@ describe("site header navigation", () => {
       expect(
         within(desktop).getByRole("link", { name: label }),
       ).toHaveAttribute("aria-current", "page");
-      expect(container.querySelector("a.language")).toHaveAttribute(
+      expect(container.querySelector("a.locale-button")).toHaveAttribute(
         "href",
         alternateRoute,
       );
@@ -244,7 +244,8 @@ describe("site header navigation", () => {
     expect(language).toHaveAttribute("href", "/vi");
     expect(language).toHaveAttribute("hreflang", "vi");
     expect(language).toHaveAttribute("lang", "vi");
-    expect(language).toHaveTextContent("🇻🇳VI");
+    expect(language).toHaveClass("header-text-btn", "locale-button");
+    expect(language).toHaveTextContent("EN / VI");
 
     fireEvent.click(menuTrigger);
     const mobileNavigation = within(
@@ -331,6 +332,9 @@ describe("site header session projection", () => {
     renderHeader();
 
     const trigger = screen.getByRole("button", { name: "Account" });
+    expect(trigger).toHaveClass("icon-btn", "account-button");
+    expect(trigger.querySelector("svg.ico")).toBeInTheDocument();
+    expect(trigger).not.toHaveTextContent("Account");
     expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(

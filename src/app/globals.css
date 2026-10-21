@@ -183,7 +183,8 @@ a:hover .arrow {
   border-bottom: 1px solid var(--line);
 }
 .header-inner {
-  min-height: 76px;
+  height: 58px;
+  min-height: 58px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -254,40 +255,41 @@ a:hover .arrow {
   position: relative;
   display: none;
 }
-.header-account-trigger {
-  height: 40px;
-  min-height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding-inline: 0.85rem;
-  border: 1px solid var(--forest);
-  border-radius: 999px;
-  background: var(--forest);
-  color: white;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 800;
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background-color 0.18s var(--ease),
-    border-color 0.18s var(--ease),
-    color 0.18s var(--ease);
-}
-.header-account-trigger svg {
-  width: 1rem;
-  height: 1rem;
+.ico {
+  display: inline-block;
+  flex: none;
   fill: none;
   stroke: currentcolor;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 2;
+  stroke-width: 1.8;
+  vertical-align: middle;
 }
-.header-account-trigger:hover {
-  border-color: color-mix(in srgb, var(--forest) 82%, white);
-  background: color-mix(in srgb, var(--forest) 88%, white);
+.icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border: 1px solid #e0e6dc;
+  border-radius: 4px;
+  background: transparent;
+  color: #25332b;
+  cursor: pointer;
+}
+.icon-btn:hover {
+  background: #f3f6f1;
+}
+.account-button.is-active {
+  border-color: #9cbba0;
+  background: #eaf1e5;
+  color: #28543a;
+}
+.account-button.is-active:hover {
+  background: #e2eddf;
 }
 .header-account-popover {
   position: absolute;
@@ -382,45 +384,47 @@ a:hover .arrow {
   text-align: center;
   white-space: nowrap;
 }
-.language,
+.header-text-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 1px;
+  border: 0;
+  background: transparent;
+  margin-right: 8px;
+  color: #526059;
+  font-family:
+    "Inter Variable", "Inter", "Noto Sans Variable", "Noto Sans", Arial,
+    sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
 .menu-button {
   height: 40px;
   min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: transparent;
   color: var(--forest);
-  font-weight: 800;
+  cursor: pointer;
   transition:
     background 0.2s var(--ease),
     color 0.2s var(--ease),
     transform 0.2s var(--ease),
     border-color 0.2s var(--ease);
 }
-.language {
-  gap: 0.35rem;
-  padding: 0 0.75rem;
-}
-.language span {
-  font-size: 1.05rem;
-  line-height: 1;
-}
-.language-flag {
-  display: none;
-}
-.language:hover,
 .menu-button:hover {
   border-color: color-mix(in srgb, var(--terra) 60%, var(--line));
   background: color-mix(in srgb, var(--straw) 20%, transparent);
-}
-.menu-button {
-  width: 40px;
-  min-width: 40px;
-  padding: 0;
-  cursor: pointer;
 }
 .menu-button svg {
   width: 1.25rem;
@@ -430,12 +434,38 @@ a:hover .arrow {
   stroke-linecap: round;
   stroke-width: 1.8;
 }
-@media (max-width: 959px) {
-  .language-icon {
-    display: none;
+@media (max-width: 800px) {
+  .header-inner {
+    height: 56px;
+    min-height: 56px;
   }
-  .language-flag {
-    display: inline;
+  .header-tools .header-text-btn {
+    margin-right: 4px;
+    font-size: 10px;
+  }
+}
+@media (max-width: 600px) {
+  .locale-button {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+  }
+  .header-tools .header-text-btn {
+    min-height: 42px;
+  }
+}
+@media (max-width: 560px) {
+  .header-inner {
+    height: 53px;
+    min-height: 53px;
+  }
+  .locale-button {
+    margin-right: 0;
+  }
+}
+@media (max-width: 340px) {
+  .header-tools .header-text-btn {
+    font-size: 9px;
   }
 }
 
@@ -8422,14 +8452,6 @@ tbody th {
   }
   .desktop-account-menu {
     display: block;
-  }
-  .header-tools > .language {
-    height: 40px;
-    min-height: 40px;
-    border-radius: 999px;
-  }
-  .header-tools > .language:hover {
-    transform: none;
   }
   .knowledge-layout {
     grid-template-columns: 13rem minmax(0, 1fr);
