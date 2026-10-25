@@ -55,11 +55,9 @@ export async function generateMetadata({
 function Detail({
   workshop,
   locale,
-  preview = false,
 }: {
   workshop: PublicWorkshop;
   locale: "vi" | "en";
-  preview?: boolean;
 }) {
   const t = workshopCopy[locale];
   const registrationUrl = workshop.registration_url?.trim() || "";
@@ -90,7 +88,6 @@ function Detail({
   };
   return (
     <>
-      {preview && <div className="preview-banner">{t.preview}</div>}
       <article className="workshop-detail-page">
         <div className="workshop-list-background" aria-hidden="true">
           <span className="workshop-background-grain" />
@@ -156,14 +153,12 @@ function Detail({
           </aside>
         </div>
       </article>
-      {!preview && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: serializeJsonLd(jsonLd),
-          }}
-        />
-      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(jsonLd),
+        }}
+      />
     </>
   );
 }

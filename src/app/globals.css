@@ -8363,16 +8363,6 @@ tbody th {
   box-shadow: 0 8px 25px color-mix(in srgb, var(--terra) 45%, transparent);
   color: white;
 }
-.preview-banner {
-  position: sticky;
-  top: 76px;
-  z-index: 45;
-  padding: 0.7rem 1rem;
-  color: white;
-  background: var(--terra);
-  text-align: center;
-  font-weight: 800;
-}
 @media (min-width: 800px) {
   .shell {
     width: min(100% - 4rem, 78rem);

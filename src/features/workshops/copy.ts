@@ -21,7 +21,6 @@ const vi = {
   homeEyebrow: "Workshop · Học cùng nhau",
   homeTitle: "Từ quan sát đến thực hành.",
   homeCta: "Xem tất cả workshop",
-  preview: "Bản xem trước — nội dung này chưa được xuất bản",
 };
 
 type WorkshopCopy = typeof vi;
@@ -49,7 +48,6 @@ const en: WorkshopCopy = {
   homeEyebrow: "Workshops · Learn together",
   homeTitle: "From observation to practice.",
   homeCta: "View all workshops",
-  preview: "Draft preview — this content is not published",
 };
 
 export const workshopCopy = { vi, en };

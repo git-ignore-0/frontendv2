@@ -240,22 +240,6 @@ export async function getWorkshop(slug: string, locale: Locale) {
   }
 }
 
-export async function getWorkshopPreview(token: string, locale: Locale) {
-  try {
-    // Dynamic route params can contain the already encoded token. Normalize it
-    // before encoding once for the backend request to avoid turning %3A into %253A.
-    const decodedToken = decodeURIComponent(token);
-    return await contentFetch<PublicWorkshop>(
-      `/api/v1/public/workshops/preview/${encodeURIComponent(decodedToken)}?locale=${locale}`,
-      [],
-      0,
-    );
-  } catch (error) {
-    rethrowConfigurationError(error);
-    return null;
-  }
-}
-
 export function linkFromSettings(
   settings: PublicSiteSettings,
   kind: PublicExternalLinkKind,

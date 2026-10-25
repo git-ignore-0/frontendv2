@@ -27,7 +27,7 @@ function workshop(registrationUrl: string | null): PublicWorkshop {
 describe("workshop registration action", () => {
   it("does not show a registration action when no URL was configured", () => {
     const { container } = render(
-      <WorkshopDetail workshop={workshop(null)} locale="vi" preview />,
+      <WorkshopDetail workshop={workshop(null)} locale="vi" />,
     );
 
     expect(
@@ -40,7 +40,6 @@ describe("workshop registration action", () => {
       <WorkshopDetail
         workshop={workshop("https://forms.example.com/register")}
         locale="vi"
-        preview
       />,
     );
 
@@ -62,7 +61,6 @@ describe("workshop registration action", () => {
           status: "completed",
         }}
         locale="vi"
-        preview
       />,
     );
 
@@ -80,7 +78,6 @@ describe("workshop registration action", () => {
           status: "ongoing",
         }}
         locale="vi"
-        preview
       />,
     );
 

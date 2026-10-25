@@ -8,7 +8,6 @@ import {
   getTestimonial,
   getTrackerFarms,
   getTrackerFarmsResult,
-  getWorkshopPreview,
   getWorkshops,
   linkFromSettings,
   type PublicSiteSettings,
@@ -521,22 +520,6 @@ describe("content API", () => {
       }),
     );
     await expect(getTrackerFarms("en")).resolves.toEqual([]);
-  });
-
-  it("encodes a preview token exactly once", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ data: { id: "preview" } }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    await getWorkshopPreview("revision%3Atimestamp%3Asignature", "vi");
-
-    const requestedUrl = String(fetchMock.mock.calls[0][0]);
-    expect(requestedUrl).toContain(
-      "revision%3Atimestamp%3Asignature?locale=vi",
-    );
-    expect(requestedUrl).not.toContain("%253A");
   });
 
   it("fails closed instead of restoring hidden contact details when the API is unavailable", async () => {
