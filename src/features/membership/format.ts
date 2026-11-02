@@ -87,13 +87,22 @@ export function formatMembershipUnits(
   locale: Locale,
 ) {
   const decimal = normalizedDecimal(unitSize);
-  if (!decimal || !Number.isSafeInteger(units)) return `${units} × ${unitSize}`;
-  const scale = decimal.fraction.length;
+  if (
+    !decimal ||
+    typeof units !== "number" ||
+    !Number.isFinite(units) ||
+    units < 0 ||
+    !/^\d+(?:\.\d{1,2})?$/.test(String(units)) ||
+    !Number.isSafeInteger(Math.round(units * 100))
+  )
+    return `${units} × ${unitSize}`;
+  const scale = decimal.fraction.length + 2;
   const scaled =
-    BigInt(`${decimal.integer}${decimal.fraction}`) * BigInt(units);
+    BigInt(`${decimal.integer}${decimal.fraction}`) *
+    BigInt(Math.round(units * 100));
   const padded = scaled.toString().padStart(scale + 1, "0");
-  const integer = scale ? padded.slice(0, -scale) : padded;
-  const fraction = scale ? padded.slice(-scale).replace(/0+$/, "") : "";
+  const integer = padded.slice(0, -scale);
+  const fraction = padded.slice(-scale).replace(/0+$/, "");
   const groupSeparator = locale === "vi" ? "." : ",";
   const decimalSeparator = locale === "vi" ? "," : ".";
   return `${groupInteger(integer, groupSeparator)}${fraction ? `${decimalSeparator}${fraction}` : ""}`;

@@ -98,6 +98,10 @@ const copy = {
     address: "Detailed address",
     addressHint:
       "Include house number, street/hamlet and any delivery details.",
+    shippingAreasError: "Delivery areas could not be loaded.",
+    noShippingAreas: "The store has no delivery areas available yet.",
+    unsupportedShippingArea:
+      "Choose a delivery area currently served by the store.",
     selectProvince: "Select a province or city",
     selectWard: "Select a ward or commune",
     required: "Please complete this field.",
@@ -268,6 +272,9 @@ const copy = {
     address: "Địa chỉ chi tiết",
     addressHint:
       "Nhập số nhà, tên đường/thôn/ấp và thông tin cần thiết để giao hàng.",
+    shippingAreasError: "Không tải được khu vực giao hàng.",
+    noShippingAreas: "Cửa hàng chưa có khu vực giao hàng khả dụng.",
+    unsupportedShippingArea: "Vui lòng chọn khu vực cửa hàng đang giao hàng.",
     selectProvince: "Chọn tỉnh/thành phố",
     selectWard: "Chọn phường/xã",
     required: "Vui lòng nhập thông tin này.",

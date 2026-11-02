@@ -118,6 +118,15 @@ describe("account BFF allowlist", () => {
     ).toBeNull();
   });
 
+  it("allowlists supported shipping areas as a public read-only endpoint", () => {
+    expect(accountUpstreamTarget(["shipping-areas"], "GET")).toEqual({
+      path: "/api/v1/public/shipping-areas",
+      session: "none",
+      query: "shipping-areas",
+    });
+    expect(accountUpstreamTarget(["shipping-areas"], "POST")).toBeNull();
+  });
+
   it("allowlists only the public CSA purchase and administrative-unit contracts", () => {
     expect(accountUpstreamTarget(["administrative-provinces"], "GET")).toEqual({
       path: "/api/v1/administrative-units/provinces",

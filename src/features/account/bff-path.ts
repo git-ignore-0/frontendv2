@@ -3,7 +3,11 @@ export type AccountUpstreamTarget = {
   session: "none" | "optional" | "required";
   trackerCookie?: boolean;
   query?:
-    "none" | "contract-reference" | "membership-contract" | "contract-pdf";
+    | "none"
+    | "contract-reference"
+    | "membership-contract"
+    | "contract-pdf"
+    | "shipping-areas";
 };
 
 export const uuidPattern =
@@ -29,6 +33,12 @@ export function accountUpstreamTarget(
         path: "/api/v1/public/csa-payment-quotes",
         session: "optional",
         query: "none",
+      };
+    if (path[0] === "shipping-areas" && method === "GET")
+      return {
+        path: "/api/v1/public/shipping-areas",
+        session: "none",
+        query: "shipping-areas",
       };
     if (path[0] === "administrative-provinces" && method === "GET")
       return {

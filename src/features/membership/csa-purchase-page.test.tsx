@@ -320,6 +320,33 @@ function asQuote(payload: unknown) {
   };
 }
 
+const shippingAreasPayload = {
+  data: [
+    {
+      province_code: "66",
+      province_name: "Đồng Tháp",
+      wards: [
+        {
+          ward_code: "22015",
+          ward_name: "Phường Mỹ Ngãi",
+          shipping_fee_vnd: "30000",
+        },
+      ],
+    },
+    {
+      province_code: "01",
+      province_name: "Hà Nội",
+      wards: [
+        {
+          ward_code: "00001",
+          ward_name: "Phường Hà Nội",
+          shipping_fee_vnd: "40000",
+        },
+      ],
+    },
+  ],
+};
+
 function installApi({
   user = null,
   create = quotePayload,
@@ -332,7 +359,7 @@ function installApi({
   packages = packagePayload,
   packageStatus = 200,
   packageResponse,
-  wardResponse,
+  shippingResponse,
   sessionResponse,
 }: {
   user?: Record<string, unknown> | null;
@@ -353,10 +380,7 @@ function installApi({
     locale: string,
     init?: RequestInit,
   ) => Promise<Response>;
-  wardResponse?: (
-    provinceCode: string,
-    init?: RequestInit,
-  ) => Promise<Response>;
+  shippingResponse?: (locale: string, init?: RequestInit) => Promise<Response>;
   sessionResponse?: (call: number) => Response;
 } = {}) {
   const calls: Array<{ url: string; init?: RequestInit }> = [];
@@ -386,20 +410,13 @@ function installApi({
           packageStatus,
         );
       }
-      if (url.includes("administrative-provinces"))
-        return json({
-          data: [
-            { code: "66", name: "Đồng Tháp" },
-            { code: "01", name: "Hà Nội" },
-          ],
-        });
-      if (url.includes("administrative-wards") && wardResponse)
-        return wardResponse(
-          new URL(url, "http://localhost").searchParams.get("province") ?? "",
-          init,
-        );
-      if (url.includes("administrative-wards"))
-        return json({ data: [{ code: "22015", name: "Phường Mỹ Ngãi" }] });
+      if (url.includes("shipping-areas"))
+        return shippingResponse
+          ? shippingResponse(
+              new URL(url, "http://localhost").searchParams.get("locale") ?? "",
+              init,
+            )
+          : json(shippingAreasPayload);
       if (url === "/api/auth/session")
         return sessionResponse
           ? sessionResponse(sessionCall++)
@@ -822,9 +839,9 @@ describe("CSA purchase wizard", () => {
         fireEvent.change(screen.getByLabelText("Tỉnh/thành phố"), {
           target: { value: "01" },
         });
-        await screen.findByRole("option", { name: "Phường Mỹ Ngãi" });
+        await screen.findByRole("option", { name: "Phường Hà Nội" });
         fireEvent.change(screen.getByLabelText("Phường/xã"), {
-          target: { value: "22015" },
+          target: { value: "00001" },
         });
       },
     ],
@@ -1957,7 +1974,7 @@ describe("CSA purchase wizard", () => {
     expect(container.querySelectorAll(".csa-package-card")).toHaveLength(2);
   });
 
-  it("validates guest fields inline, normalizes phone, loads wards lazily and posts unchanged data", async () => {
+  it("validates guest fields, loads supported areas once and posts normalized identity", async () => {
     const { calls } = installApi();
     render(<CSAPurchasePage locale="vi" />);
     await goToGuestInformation();
@@ -1985,8 +2002,8 @@ describe("CSA purchase wizard", () => {
     });
     expect(screen.getByLabelText("Phường/xã")).toHaveValue("");
     expect(
-      calls.filter((call) => call.url.includes("administrative-wards")),
-    ).toHaveLength(2);
+      calls.filter((call) => call.url.includes("shipping-areas")),
+    ).toHaveLength(1);
     fireEvent.change(screen.getByLabelText("Tỉnh/thành phố"), {
       target: { value: "66" },
     });
@@ -2023,11 +2040,22 @@ describe("CSA purchase wizard", () => {
 
   it("sorts province and ward choices alphabetically by their localized names", async () => {
     const { calls } = installApi({
-      wardResponse: async () =>
+      shippingResponse: async () =>
         json({
           data: [
-            { code: "2", name: "Xã Zeta" },
-            { code: "1", name: "Xã Alpha" },
+            {
+              province_code: "66",
+              province_name: "Đồng Tháp",
+              wards: [
+                { ward_code: "2", ward_name: "Xã Zeta", shipping_fee_vnd: "0" },
+                {
+                  ward_code: "1",
+                  ward_name: "Xã Alpha",
+                  shipping_fee_vnd: "0",
+                },
+              ],
+            },
+            shippingAreasPayload.data[1],
           ],
         }),
     });
@@ -2057,7 +2085,7 @@ describe("CSA purchase wizard", () => {
     ]);
     expect(
       calls.some((call) => call.url.includes("administrative-wards")),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("shows guest input hints and validates an invalid phone number immediately", async () => {
@@ -2086,96 +2114,149 @@ describe("CSA purchase wizard", () => {
     );
   });
 
-  it("ignores an older province response and keeps the ward selector tied to the latest province", async () => {
-    let resolveA!: (response: Response) => void;
-    let resolveB!: (response: Response) => void;
-    const responseA = new Promise<Response>((resolve) => {
-      resolveA = resolve;
-    });
-    const responseB = new Promise<Response>((resolve) => {
-      resolveB = resolve;
-    });
-    const { calls } = installApi({
-      wardResponse: (provinceCode) =>
-        provinceCode === "66" ? responseA : responseB,
-    });
+  it("switches supported province wards locally without requesting all administrative units", async () => {
+    const { calls } = installApi();
     render(<CSAPurchasePage locale="vi" />);
     await goToGuestInformation();
-
-    fireEvent.change(screen.getByLabelText("Tỉnh/thành phố"), {
-      target: { value: "66" },
-    });
-    expect(screen.getByLabelText("Phường/xã")).toBeDisabled();
+    await completeGuest();
     fireEvent.change(screen.getByLabelText("Tỉnh/thành phố"), {
       target: { value: "01" },
     });
     expect(screen.getByLabelText("Phường/xã")).toHaveValue("");
-    expect(screen.getByLabelText("Phường/xã")).toBeDisabled();
-    expect(
-      calls.filter((call) => call.url.includes("administrative-wards")),
-    ).toHaveLength(2);
-
-    await act(async () => {
-      resolveB(json({ data: [{ code: "00001", name: "Phường Hà Nội" }] }));
-      await responseB;
-    });
-    expect(
-      await screen.findByRole("option", { name: "Phường Hà Nội" }),
-    ).toBeVisible();
-    expect(screen.getByLabelText("Phường/xã")).toBeEnabled();
-
-    await act(async () => {
-      resolveA(json({ data: [{ code: "22015", name: "Phường Mỹ Ngãi" }] }));
-      await responseA;
-    });
     expect(screen.getByRole("option", { name: "Phường Hà Nội" })).toBeVisible();
     expect(screen.queryByRole("option", { name: "Phường Mỹ Ngãi" })).toBeNull();
-    expect(screen.getByLabelText("Phường/xã")).toBeEnabled();
-    expect(screen.getByLabelText("Phường/xã")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeDisabled();
+    expect(
+      calls.filter((call) => call.url.includes("shipping-areas")),
+    ).toHaveLength(1);
+    expect(calls.some((call) => call.url.includes("administrative-"))).toBe(
+      false,
+    );
   });
 
-  it("keeps the ward selector disabled when a stale province request finishes before the latest one", async () => {
-    let resolveA!: (response: Response) => void;
-    let resolveB!: (response: Response) => void;
-    const responseA = new Promise<Response>((resolve) => {
-      resolveA = resolve;
+  it("ignores a stale supported-area response after switching locale", async () => {
+    let resolveVi!: (response: Response) => void;
+    let resolveEn!: (response: Response) => void;
+    const viResponse = new Promise<Response>((resolve) => {
+      resolveVi = resolve;
     });
-    const responseB = new Promise<Response>((resolve) => {
-      resolveB = resolve;
+    const enResponse = new Promise<Response>((resolve) => {
+      resolveEn = resolve;
     });
     const { calls } = installApi({
-      wardResponse: (provinceCode) =>
-        provinceCode === "66" ? responseA : responseB,
+      shippingResponse: (locale) => (locale === "vi" ? viResponse : enResponse),
+    });
+    const { rerender } = render(<CSAPurchasePage locale="vi" />);
+    await waitFor(() =>
+      expect(
+        calls.some((call) => call.url.endsWith("shipping-areas?locale=vi")),
+      ).toBe(true),
+    );
+    rerender(<CSAPurchasePage locale="en" />);
+    await waitFor(() =>
+      expect(
+        calls.some((call) => call.url.endsWith("shipping-areas?locale=en")),
+      ).toBe(true),
+    );
+    expect(
+      calls.find((call) => call.url.endsWith("shipping-areas?locale=vi"))?.init
+        ?.signal?.aborted,
+    ).toBe(true);
+    await act(async () => {
+      resolveEn(
+        json({
+          data: [
+            { ...shippingAreasPayload.data[0], province_name: "Dong Thap" },
+          ],
+        }),
+      );
+      await enResponse;
+    });
+    await screen.findByRole("button", { name: /3 months/ });
+    fireEvent.click(screen.getByRole("button", { name: /3 months/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(
+      await screen.findByRole("option", { name: "Dong Thap" }),
+    ).toBeVisible();
+    await act(async () => {
+      resolveVi(json(shippingAreasPayload));
+      await viResponse;
+    });
+    expect(screen.getByRole("option", { name: "Dong Thap" })).toBeVisible();
+    expect(screen.queryByRole("option", { name: "Đồng Tháp" })).toBeNull();
+  });
+
+  it("retries a failed supported-area request and blocks guest continuation until recovery", async () => {
+    let request = 0;
+    installApi({
+      shippingResponse: async () =>
+        ++request === 1
+          ? json({ error: "unavailable" }, 503)
+          : json(shippingAreasPayload),
     });
     render(<CSAPurchasePage locale="vi" />);
     await goToGuestInformation();
-    fireEvent.change(screen.getByLabelText("Tỉnh/thành phố"), {
-      target: { value: "66" },
-    });
-    fireEvent.change(screen.getByLabelText("Tỉnh/thành phố"), {
-      target: { value: "01" },
-    });
     expect(
-      calls.filter((call) => call.url.includes("administrative-wards")),
-    ).toHaveLength(2);
+      await screen.findByText("Không tải được khu vực giao hàng."),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Tỉnh/thành phố")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại" }));
+    await screen.findByRole("option", { name: "Đồng Tháp" });
+    expect(screen.getByLabelText("Tỉnh/thành phố")).toBeEnabled();
+    await completeGuest();
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+    expect(request).toBe(2);
+  });
+
+  it("blocks a retained guest address when its delivery region is no longer supported", async () => {
+    installApi({
+      shippingResponse: async (locale) =>
+        json({
+          data:
+            locale === "vi"
+              ? shippingAreasPayload.data
+              : [shippingAreasPayload.data[1]],
+        }),
+    });
+    const { rerender } = render(<CSAPurchasePage locale="vi" />);
+    await goToGuestInformation();
+    await completeGuest();
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeEnabled();
+    rerender(<CSAPurchasePage locale="en" />);
+    await screen.findByRole("option", { name: "Hà Nội" });
+    expect(screen.queryByRole("option", { name: "Đồng Tháp" })).toBeNull();
     expect(
-      calls.find((call) => call.url.includes("province=66"))?.init?.signal
-        ?.aborted,
-    ).toBe(true);
+      screen.getByText("Choose a delivery area currently served by the store."),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  });
 
-    await act(async () => {
-      resolveA(json({ data: [{ code: "22015", name: "Phường Mỹ Ngãi" }] }));
-      await responseA;
+  it("does not fetch guest delivery choices for an authenticated buyer", async () => {
+    const { calls } = installApi({
+      user: {
+        sub: "core-user",
+        email: "member@example.test",
+        name: "Member",
+        phone_number: "+84901234567",
+        profile: { address: "12", province_code: "66", ward_code: "22015" },
+      },
     });
-    expect(screen.getByLabelText("Phường/xã")).toBeDisabled();
-    expect(screen.queryByRole("option", { name: "Phường Mỹ Ngãi" })).toBeNull();
+    render(<CSAPurchasePage locale="vi" />);
+    await choosePackage();
+    expect(calls.some((call) => call.url.includes("shipping-areas"))).toBe(
+      false,
+    );
+  });
 
-    await act(async () => {
-      resolveB(json({ data: [{ code: "00001", name: "Phường Hà Nội" }] }));
-      await responseB;
-    });
-    expect(screen.getByLabelText("Phường/xã")).toBeEnabled();
-    expect(screen.getByRole("option", { name: "Phường Hà Nội" })).toBeVisible();
+  it("shows an empty delivery-area state without enabling guest continuation", async () => {
+    installApi({ shippingResponse: async () => json({ data: [] }) });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestInformation();
+    expect(
+      screen.getByText("Cửa hàng chưa có khu vực giao hàng khả dụng."),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeDisabled();
   });
 
   it("renders the 11 individual agreement checkboxes from the Vietnamese document", async () => {
@@ -2237,6 +2318,43 @@ describe("CSA purchase wizard", () => {
     fireEvent.click(checkboxes[4]);
     expect(allTerms).not.toBeChecked();
     expect(continueButton).toBeDisabled();
+  });
+
+  it("maps an unsupported delivery area to localized copy", () => {
+    const error = new AccountApiError("csa_shipping_area_unsupported", 400);
+    expect(purchaseErrorMessage(error, "vi")).toBe(
+      "Vui lòng chọn khu vực cửa hàng đang giao hàng.",
+    );
+    expect(purchaseErrorMessage(error, "en")).toBe(
+      "Choose a delivery area currently served by the store.",
+    );
+  });
+
+  it("refreshes supported areas when a guest quote is rejected after a region closes", async () => {
+    let areaRequests = 0;
+    installApi({
+      shippingResponse: async () =>
+        json({
+          data:
+            ++areaRequests === 1
+              ? shippingAreasPayload.data
+              : [shippingAreasPayload.data[1]],
+        }),
+      create: { error: "csa_shipping_area_unsupported" },
+      createStatus: 400,
+    });
+    render(<CSAPurchasePage locale="vi" />);
+    await goToGuestTerms();
+    acceptTerms();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục thanh toán" }),
+    );
+    continueWizard();
+    await screen.findByRole("heading", { name: "Thông tin của bạn" });
+    await waitFor(() => expect(areaRequests).toBe(2));
+    expect(await screen.findByRole("option", { name: "Hà Nội" })).toBeVisible();
+    expect(screen.queryByRole("option", { name: "Đồng Tháp" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Tiếp tục" })).toBeDisabled();
   });
 
   it("maps the backend terms-required error to localized copy", () => {
@@ -2792,7 +2910,7 @@ describe("CSA purchase wizard", () => {
     expect(screen.queryByText(/csa_purchase_request_open_exists/)).toBeNull();
   });
 
-  it("uses the shared blocking status for catalog and ward loading", async () => {
+  it("uses the shared blocking status for catalog and supported-area loading", async () => {
     let resolvePackages!: (response: Response) => void;
     const pendingPackages = new Promise<Response>((resolve) => {
       resolvePackages = resolve;
@@ -2821,18 +2939,12 @@ describe("CSA purchase wizard", () => {
     expect(screen.queryByText("Đang xử lý…")).toBeNull();
     cleanup();
 
-    let resolveWards!: (response: Response) => void;
-    const pendingWards = new Promise<Response>((resolve) => {
-      resolveWards = resolve;
+    let resolveAreas!: (response: Response) => void;
+    const pendingAreas = new Promise<Response>((resolve) => {
+      resolveAreas = resolve;
     });
-    installApi({ wardResponse: async () => pendingWards });
+    installApi({ shippingResponse: async () => pendingAreas });
     render(<CSAPurchasePage locale="vi" />);
-    await goToGuestInformation();
-    const provinceSelect = screen.getByLabelText("Tỉnh/thành phố");
-    provinceSelect.focus();
-    fireEvent.change(provinceSelect, {
-      target: { value: "66" },
-    });
     await waitFor(() =>
       expect(screen.getByRole("status")).toHaveTextContent("Đang xử lý…"),
     );
@@ -2842,13 +2954,9 @@ describe("CSA purchase wizard", () => {
           (HTMLDivElement & { inert?: boolean }) | null
       )?.inert,
     ).toBe(true);
-    expect(document.activeElement).toBe(screen.getByRole("status"));
-    expect(screen.getByLabelText("Phường/xã")).toBeDisabled();
-    resolveWards(json({ data: [{ code: "22015", name: "Phường Mỹ Ngãi" }] }));
-    expect(
-      await screen.findByRole("option", { name: "Phường Mỹ Ngãi" }),
-    ).toBeVisible();
-    expect(document.activeElement).toBe(provinceSelect);
+    resolveAreas(json(shippingAreasPayload));
+    await goToGuestInformation();
+    expect(screen.getByLabelText("Tỉnh/thành phố")).toBeEnabled();
     expect(screen.queryByText("Đang xử lý…")).toBeNull();
   });
 

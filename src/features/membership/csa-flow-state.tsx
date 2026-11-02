@@ -12,7 +12,6 @@ import {
 } from "react";
 
 import type {
-  AdministrativeUnit,
   CSAPaymentQuote,
   CSAPaymentQuoteSummary,
   CSAPurchaseRequestCreated,
@@ -20,6 +19,7 @@ import type {
   CSATrackerResult,
   MembershipPackage,
 } from "@/features/account/types";
+import type { SupportedShippingProvince } from "@/features/account/shipping-areas";
 import type { CoreUser } from "@/lib/auth/schemas";
 import type { Locale } from "@/lib/i18n";
 
@@ -34,6 +34,7 @@ export type CSAPurchaseErrorKey =
   | "termsRequired"
   | "duplicate"
   | "invalidDetails"
+  | "unsupportedShippingArea"
   | "notPending"
   | "expired"
   | "quoteExpired"
@@ -67,10 +68,8 @@ export type CSAPurchaseFlowMemory = {
   packagesState: "loading" | "ready" | "error";
   user: CoreUser | null;
   sessionReady: boolean;
-  provinces: AdministrativeUnit[];
-  provincesLocale: Locale | null;
-  wards: AdministrativeUnit[];
-  wardsResourceKey: string;
+  shippingAreas: SupportedShippingProvince[];
+  shippingAreasLocale: Locale | null;
   selectedPackageId: string;
   selectedOptionId: string;
   selectedPlanId: string;
@@ -188,10 +187,7 @@ export function CSAFlowStateProvider({
     );
   }, []);
   const createQuote = useCallback(
-    (
-      identity: string | null,
-      submit: () => Promise<CSAPaymentQuote>,
-    ) => {
+    (identity: string | null, submit: () => Promise<CSAPaymentQuote>) => {
       if (quoteInFlight.current || confirmationInFlight.current) return;
       quoteInFlight.current = true;
       const generation = quoteGeneration.current;

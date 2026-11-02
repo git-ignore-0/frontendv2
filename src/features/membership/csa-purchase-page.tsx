@@ -15,6 +15,10 @@ import type {
   MembershipPackagePriceOption,
   PaginationMeta,
 } from "@/features/account/types";
+import {
+  getSupportedShippingAreas,
+  type SupportedShippingProvince,
+} from "@/features/account/shipping-areas";
 import { getCSAPurchaseCopy } from "@/features/membership/csa-purchase-copy";
 import {
   type CSAGuestDetails,
@@ -85,6 +89,8 @@ function purchaseErrorKey(error: unknown): CSAPurchaseErrorKey {
   if (error.code === "csa_purchase_payment_plan_unavailable")
     return "paymentPlanUnavailable";
   if (error.code === "csa_purchase_terms_required") return "termsRequired";
+  if (error.code === "csa_shipping_area_unsupported")
+    return "unsupportedShippingArea";
   if (error.code === "csa_purchase_request_open_exists") return "duplicate";
   if (error.code === "csa_purchase_request_expired") return "expired";
   if (error.code === "csa_payment_quote_expired") return "quoteExpired";
@@ -977,26 +983,19 @@ function CSAPurchaseWizard({
   currentLocale.current = locale;
   const user = currentUser;
   const sessionReady = true;
-  const [provinces, setProvinces] = useState<AdministrativeUnit[]>(
-    initialMemory?.provinces ?? [],
+  const [shippingAreas, setShippingAreas] = useState<
+    SupportedShippingProvince[]
+  >(initialMemory?.shippingAreas ?? []);
+  const [shippingAreasLocale, setShippingAreasLocale] = useState<Locale | null>(
+    initialMemory?.shippingAreasLocale ?? null,
   );
-  const [provincesLocale, setProvincesLocale] = useState<Locale | null>(
-    initialMemory?.provincesLocale ?? null,
-  );
-  const [wards, setWards] = useState<AdministrativeUnit[]>(
-    initialMemory?.wards ?? [],
-  );
-  const [wardsResourceKey, setWardsResourceKey] = useState(
-    initialMemory?.wardsResourceKey ?? "",
-  );
-  const [wardsLoading, setWardsLoading] = useState(false);
-  const [provincesLoading, setProvincesLoading] = useState(false);
-  const wardRequest = useRef<{
-    sequence: number;
-    resourceKey: string;
-    controller: AbortController;
-  } | null>(null);
-  const wardSequence = useRef(0);
+  const [shippingAreasState, setShippingAreasState] = useState<
+    "loading" | "ready" | "error"
+  >(() => {
+    if (initialMemory?.shippingAreasLocale === locale) return "ready";
+    return "loading";
+  });
+  const [shippingAreasRetry, setShippingAreasRetry] = useState(0);
   const [selectedPackageId, setSelectedPackageId] = useState(
     initialMemory?.selectedPackageId ?? "",
   );
@@ -1017,11 +1016,6 @@ function CSAPurchaseWizard({
     planId: selectedPlanId,
   };
   const [guest, setGuest] = useState(initialMemory?.guest ?? emptyGuestDetails);
-  const currentWardSelection = useRef({
-    locale,
-    provinceCode: guest.province_code,
-  });
-  currentWardSelection.current = { locale, provinceCode: guest.province_code };
   const [acceptedTermIds, setAcceptedTermIds] = useState<string[]>(() => {
     const restoredIds = initialMemory?.acceptedTermIds;
     if (restoredIds) {
@@ -1118,7 +1112,8 @@ function CSAPurchaseWizard({
         : couponAction === "remove"
           ? copy.processing
           : copy.preparingPaymentDetails
-      : packagesState === "loading" || provincesLoading || wardsLoading
+      : packagesState === "loading" ||
+          (!user && !confirmed && step <= 2 && shippingAreasState === "loading")
         ? copy.processing
         : null;
 
@@ -1183,10 +1178,8 @@ function CSAPurchaseWizard({
       packagesState,
       user,
       sessionReady,
-      provinces,
-      provincesLocale,
-      wards,
-      wardsResourceKey,
+      shippingAreas,
+      shippingAreasLocale,
       selectedPackageId,
       selectedOptionId,
       selectedPlanId,
@@ -1230,8 +1223,8 @@ function CSAPurchaseWizard({
     packagesLocale,
     packagesState,
     profileIncomplete,
-    provinces,
-    provincesLocale,
+    shippingAreas,
+    shippingAreasLocale,
     purchase,
     quote,
     qrFailed,
@@ -1245,8 +1238,6 @@ function CSAPurchaseWizard({
     termsAccepted,
     termsSubmitted,
     user,
-    wards,
-    wardsResourceKey,
   ]);
 
   useEffect(() => {
@@ -1308,6 +1299,14 @@ function CSAPurchaseWizard({
       return;
     handledQuoteErrorRef.current = quoteCreation;
     setPaymentView("method");
+    if (quoteCreation.error.code === "csa_shipping_area_unsupported" && !user) {
+      resetQuoteAndCoupon();
+      setErrorKey(null);
+      setShippingAreasLocale(null);
+      setShippingAreasState("loading");
+      setStep(2);
+      return;
+    }
     const failedCouponAction = couponActionRef.current;
     if (
       failedCouponAction ||
@@ -1351,6 +1350,8 @@ function CSAPurchaseWizard({
     invalidateQuote,
     quoteCreation,
     quoteTarget,
+    resetQuoteAndCoupon,
+    user,
   ]);
 
   useEffect(() => {
@@ -1558,51 +1559,6 @@ function CSAPurchaseWizard({
     [locale],
   );
 
-  const loadWards = useCallback(
-    async (provinceCode: string) => {
-      if (!provinceCode) return;
-      const resourceKey = `${locale}:${provinceCode}`;
-      if (wardRequest.current?.resourceKey === resourceKey) return;
-      wardRequest.current?.controller.abort();
-      const controller = new AbortController();
-      const sequence = ++wardSequence.current;
-      wardRequest.current = { sequence, resourceKey, controller };
-      setWards([]);
-      setWardsResourceKey("");
-      setWardsLoading(true);
-      const isCurrent = () =>
-        wardRequest.current?.sequence === sequence &&
-        !controller.signal.aborted &&
-        currentWardSelection.current.locale === locale &&
-        currentWardSelection.current.provinceCode === provinceCode;
-      try {
-        const payload = await accountApi<AdministrativeUnit[]>(
-          `administrative-wards?province=${encodeURIComponent(provinceCode)}`,
-          { headers: { "Accept-Language": locale }, signal: controller.signal },
-        );
-        if (isCurrent()) setWards(payload.data);
-      } catch {
-        if (isCurrent()) setWards([]);
-      } finally {
-        if (isCurrent()) {
-          wardRequest.current = null;
-          setWardsResourceKey(resourceKey);
-          setWardsLoading(false);
-        }
-      }
-    },
-    [locale],
-  );
-
-  useEffect(
-    () => () => {
-      wardSequence.current += 1;
-      wardRequest.current?.controller.abort();
-      wardRequest.current = null;
-    },
-    [],
-  );
-
   useEffect(() => {
     if (confirmed) return;
     if (packagesLocale !== locale) {
@@ -1610,42 +1566,31 @@ function CSAPurchaseWizard({
     }
   }, [confirmed, loadPackages, locale, packagesLocale]);
 
+  const needsShippingAreas = !user && !confirmed && step <= 2;
   useEffect(() => {
-    if (confirmed) return;
-    const headers = { "Accept-Language": locale };
-    if (provincesLocale !== locale) {
-      const controller = new AbortController();
-      let active = true;
-      setProvincesLoading(true);
-      void accountApi<AdministrativeUnit[]>("administrative-provinces", {
-        headers,
-        signal: controller.signal,
-      })
-        .then((payload) => {
-          if (active) {
-            setProvinces(payload.data);
-            setProvincesLocale(locale);
-          }
-        })
-        .catch(() => {
-          if (active) setProvinces([]);
-        })
-        .finally(() => {
-          if (active) setProvincesLoading(false);
-        });
-      return () => {
-        active = false;
-        controller.abort();
-      };
+    if (!needsShippingAreas) return;
+    if (shippingAreasLocale === locale) {
+      setShippingAreasState("ready");
+      return;
     }
-  }, [confirmed, locale, provincesLocale]);
-
-  useEffect(() => {
-    if (confirmed) return;
-    if (!guest.province_code) return;
-    if (wardsResourceKey === `${locale}:${guest.province_code}`) return;
-    void loadWards(guest.province_code);
-  }, [confirmed, guest.province_code, loadWards, locale, wardsResourceKey]);
+    const controller = new AbortController();
+    let active = true;
+    setShippingAreasState("loading");
+    void getSupportedShippingAreas(locale, controller.signal)
+      .then((areas) => {
+        if (!active) return;
+        setShippingAreas(areas);
+        setShippingAreasLocale(locale);
+        setShippingAreasState("ready");
+      })
+      .catch(() => {
+        if (active) setShippingAreasState("error");
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [needsShippingAreas, locale, shippingAreasLocale, shippingAreasRetry]);
 
   const availablePackages = useMemo(
     () =>
@@ -1654,13 +1599,22 @@ function CSAPurchaseWizard({
         : [],
     [packages, packagesState],
   );
+  const shippingAreasReady =
+    shippingAreasState === "ready" && shippingAreasLocale === locale;
+  const selectedShippingProvince = shippingAreas.find(
+    (area) => area.code === guest.province_code,
+  );
+  const selectedShippingWard = selectedShippingProvince?.wards.find(
+    (ward) => ward.code === guest.ward_code,
+  );
   const orderedProvinces = useMemo(
-    () => sortAdministrativeUnits(provinces, locale),
-    [locale, provinces],
+    () => sortAdministrativeUnits(shippingAreas, locale),
+    [locale, shippingAreas],
   );
   const orderedWards = useMemo(
-    () => sortAdministrativeUnits(wards, locale),
-    [locale, wards],
+    () =>
+      sortAdministrativeUnits(selectedShippingProvince?.wards ?? [], locale),
+    [locale, selectedShippingProvince],
   );
   const selectedPackage = useMemo(
     () => availablePackages.find((item) => item.id === selectedPackageId),
@@ -1686,12 +1640,15 @@ function CSAPurchaseWizard({
   const guestComplete = Boolean(
     guest.name.trim() &&
     normalizedPhone &&
-    guest.province_code &&
-    guest.ward_code &&
+    selectedShippingProvince &&
+    selectedShippingWard &&
     guest.address.trim(),
   );
   const packageComplete = Boolean(selectedPackage && selectedOption);
-  const informationComplete = Boolean(sessionReady && (user || guestComplete));
+  const informationComplete = Boolean(
+    sessionReady &&
+    (user || (guestComplete && (step > 2 || shippingAreasReady))),
+  );
   const canCreate = Boolean(
     packageComplete && informationComplete && termsAccepted && !creating,
   );
@@ -1701,21 +1658,13 @@ function CSAPurchaseWizard({
     setGuest(update);
   }
 
-  async function selectProvince(provinceCode: string) {
+  function selectProvince(provinceCode: string) {
     resetQuoteAndCoupon();
-    currentWardSelection.current = { locale, provinceCode };
-    wardRequest.current?.controller.abort();
-    wardRequest.current = null;
-    wardSequence.current += 1;
     setGuest((current) => ({
       ...current,
       province_code: provinceCode,
       ward_code: "",
     }));
-    setWards([]);
-    setWardsResourceKey("");
-    setWardsLoading(Boolean(provinceCode));
-    if (provinceCode) await loadWards(provinceCode);
   }
 
   function createQuote(
@@ -1756,45 +1705,42 @@ function CSAPurchaseWizard({
           address: guest.address.trim(),
         };
     setStep(4);
-    startQuoteCreation(
-      user?.sub ?? null,
-      () =>
-        accountApi<CSAPaymentQuote>("csa-payment-quotes", {
-          method: "POST",
-          body: JSON.stringify({
-            package_id: selectedPackage.id,
-            price_option_id: selectedOption.id,
-            ...(plan.id !== SINGLE_MONTH_FULL_PAYMENT_ID
-              ? { payment_plan_id: plan.id }
-              : {}),
-            terms_accepted: true,
-            terms_locale: locale,
-            ...(expectedCouponCode ? { coupon_code: expectedCouponCode } : {}),
-            ...(guestIdentity ? { guest_identity: guestIdentity } : {}),
-          }),
-        }).then((payload) => {
-          if (
-            !isPaymentQuote(payload.data, plan) ||
-            !buildVietQRUrl(payload.data) ||
-            (payload.data.coupon &&
-              positiveInteger(
-                payload.data.payment_summary.contract_total_before_discount ??
-                  "",
-              ) !== positiveInteger(selectedOption.total_price_vnd)) ||
-            (expectedCouponCode
-              ? payload.data.coupon?.code !== expectedCouponCode
-              : Boolean(payload.data.coupon))
-          )
-            throw new AccountApiError("csa_payment_quote_unavailable", 502);
-          if (Date.parse(payload.data.expires_at) <= Date.now())
-            throw new AccountApiError(
-              expectedCouponCode
-                ? couponQuoteExpiredCode
-                : paymentQuoteExpiredCode,
-              409,
-            );
-          return payload.data;
+    startQuoteCreation(user?.sub ?? null, () =>
+      accountApi<CSAPaymentQuote>("csa-payment-quotes", {
+        method: "POST",
+        body: JSON.stringify({
+          package_id: selectedPackage.id,
+          price_option_id: selectedOption.id,
+          ...(plan.id !== SINGLE_MONTH_FULL_PAYMENT_ID
+            ? { payment_plan_id: plan.id }
+            : {}),
+          terms_accepted: true,
+          terms_locale: locale,
+          ...(expectedCouponCode ? { coupon_code: expectedCouponCode } : {}),
+          ...(guestIdentity ? { guest_identity: guestIdentity } : {}),
         }),
+      }).then((payload) => {
+        if (
+          !isPaymentQuote(payload.data, plan) ||
+          !buildVietQRUrl(payload.data) ||
+          (payload.data.coupon &&
+            positiveInteger(
+              payload.data.payment_summary.contract_total_before_discount ?? "",
+            ) !== positiveInteger(selectedOption.total_price_vnd)) ||
+          (expectedCouponCode
+            ? payload.data.coupon?.code !== expectedCouponCode
+            : Boolean(payload.data.coupon))
+        )
+          throw new AccountApiError("csa_payment_quote_unavailable", 502);
+        if (Date.parse(payload.data.expires_at) <= Date.now())
+          throw new AccountApiError(
+            expectedCouponCode
+              ? couponQuoteExpiredCode
+              : paymentQuoteExpiredCode,
+            409,
+          );
+        return payload.data;
+      }),
     );
   }
 
@@ -2749,6 +2695,30 @@ function CSAPurchaseWizard({
                       </small>
                     ) : null}
                   </div>
+                  {shippingAreasState === "error" ? (
+                    <div className="notice error full" role="alert">
+                      <p>{copy.shippingAreasError}</p>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() =>
+                          setShippingAreasRetry((value) => value + 1)
+                        }
+                      >
+                        {copy.retry}
+                      </button>
+                    </div>
+                  ) : shippingAreasReady && shippingAreas.length === 0 ? (
+                    <p className="notice full" role="status">
+                      {copy.noShippingAreas}
+                    </p>
+                  ) : shippingAreasReady &&
+                    ((guest.province_code && !selectedShippingProvince) ||
+                      (guest.ward_code && !selectedShippingWard)) ? (
+                    <p className="notice error full" role="alert">
+                      {copy.unsupportedShippingArea}
+                    </p>
+                  ) : null}
                   <div className="field">
                     <label htmlFor="csa-purchase-province">
                       {copy.province}
@@ -2756,9 +2726,7 @@ function CSAPurchaseWizard({
                     <select
                       id="csa-purchase-province"
                       value={guest.province_code}
-                      onChange={(event) =>
-                        void selectProvince(event.target.value)
-                      }
+                      onChange={(event) => selectProvince(event.target.value)}
                       aria-invalid={
                         informationSubmitted && !guest.province_code
                       }
@@ -2766,6 +2734,7 @@ function CSAPurchaseWizard({
                         informationSubmitted && !guest.province_code,
                         "csa-purchase-province-error",
                       )}
+                      disabled={!shippingAreasReady}
                       required
                     >
                       <option value="">{copy.selectProvince}</option>
@@ -2793,9 +2762,7 @@ function CSAPurchaseWizard({
                         }))
                       }
                       disabled={
-                        !guest.province_code ||
-                        wardsLoading ||
-                        wardsResourceKey !== `${locale}:${guest.province_code}`
+                        !selectedShippingProvince || !shippingAreasReady
                       }
                       aria-invalid={informationSubmitted && !guest.ward_code}
                       aria-describedby={describedBy(
@@ -2805,10 +2772,7 @@ function CSAPurchaseWizard({
                       required
                     >
                       <option value="">{copy.selectWard}</option>
-                      {(wardsResourceKey === `${locale}:${guest.province_code}`
-                        ? orderedWards
-                        : []
-                      ).map((item) => (
+                      {orderedWards.map((item) => (
                         <option key={item.code} value={item.code}>
                           {item.name}
                         </option>

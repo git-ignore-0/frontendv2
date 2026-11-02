@@ -544,6 +544,44 @@ describe("account BFF proxy", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("proxies supported shipping areas without OAuth and preserves locale", async () => {
+    const upstream = vi.fn(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        expect(String(input)).toBe(
+          "https://auth.example.test/api/v1/public/shipping-areas?locale=en",
+        );
+        expect(new Headers(init?.headers).has("authorization")).toBe(false);
+        return Response.json({ data: [] });
+      },
+    );
+    vi.stubGlobal("fetch", upstream);
+    const response = await GET(
+      new NextRequest(
+        "https://site.example.test/api/account/shipping-areas?locale=en",
+      ),
+      { params: Promise.resolve({ path: ["shipping-areas"] }) },
+    );
+    expect(response.status).toBe(200);
+    expect(readSession).not.toHaveBeenCalled();
+    expect(upstream).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["locale=fr", "locale=vi&locale=en", "locale=vi&province=66"])(
+    "rejects invalid shipping-area query %s",
+    async (query) => {
+      const upstream = vi.fn();
+      vi.stubGlobal("fetch", upstream);
+      const response = await GET(
+        new NextRequest(
+          `https://site.example.test/api/account/shipping-areas?${query}`,
+        ),
+        { params: Promise.resolve({ path: ["shipping-areas"] }) },
+      );
+      expect(response.status).toBe(404);
+      expect(upstream).not.toHaveBeenCalled();
+    },
+  );
+
   it("supports guest purchase requests while forwarding administrative-unit locale", async () => {
     const fetchMock = vi
       .fn()
